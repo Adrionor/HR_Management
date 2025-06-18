@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportes de Reclutamiento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
+        .container { max-width: 1400px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; }
+        .header h1 { color: #2c3e50; margin: 0; }
+        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+        h2 { color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 2.5em; }
+        table.dataTable thead th { background-color: #34495e; color: #ffffff; }
+        table.dataTable tbody tr:hover { background-color: #ecf0f1 !important; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; margin-bottom: 3em; }
+        .chart-container { padding: 1.5em; border: 1px solid #ddd; border-radius: 8px; }
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        .toggle-button { background-color: #34495e; color: white; border: none; padding: 10px 20px; font-size: 1.1em; font-family: 'Poppins', sans-serif; font-weight: 600; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 2em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Panel de Reportes</h1>
+            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+        </div>
+
+        <button id="toggle-charts-btn" class="toggle-button">📊 Mostrar/Ocultar Resumen Visual</button>
+
+        <div id="charts-wrapper" style="display: none;">
+            <div class="charts-grid">
+                <div class="chart-container"><h3>Carga de Trabajo por Asesora</h3><canvas id="chartCargaAsesoras"></canvas></div>
+                <div class="chart-container"><h3>Estatus General de Vacantes</h3><canvas id="chartEstatusVacantes"></canvas></div>
+                <div class="chart-container"><h3>Puestos de Mayor Interés (Top 10)</h3><canvas id="chartInteresPuestos"></canvas></div>
+                <div class="chart-container"><h3>Composición de la Bolsa de Trabajo</h3><canvas id="chartCandidatos"></canvas></div>
+            </div>
+        </div>
+
+        <hr>
+
+        <h2>Datos Detallados</h2>
+
+        <h3>Reporte General de Candidatos</h3>
+        <table id="candidatosReportTable" class="display" style="width:100%">
+            <thead>
+                <tr><th>Candidato</th><th>Email</th><th>Puesto de Interés</th><th>Estatus Actual</th><th>Asesora Asignada</th></tr>
+            </thead>
+            <tbody>
+                {% for candidato in candidatos %}
+                <tr>
+                    <td>{{ candidato.nombre_completo }}</td>
+                    <td>{{ candidato.email }}</td>
+                    <td>{{ candidato.puesto_de_interes.titulo|default:"N/A" }}</td>
+                    <td>
+                        {% if candidato.proceso %}
+                            {{ candidato.proceso.get_estatus_proceso_display }}
+                        {% else %}
+                            <span style="color: #27ae60; font-weight: bold;">Libre (Sin Proceso)</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ candidato.proceso.asesora_asignada.username|default:"N/A" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 2em;">Reporte General de Puestos</h3>
+        <table id="puestosReportTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Puesto</th>
+                    <th>Estatus de Aprobación</th>
+                    <th>Asesora Encargada</th>
+                    <th>Estado del Proceso</th> </tr>
+            </thead>
+            <tbody>
+                {% for puesto in puestos %}
+                <tr>
+                    <td>{{ puesto.titulo }}</td>
+                    <td>{{ puesto.get_estatus_autorizacion_display }}</td>
+                    <td>{{ puesto.asesora_encargada.username|default:"<span style='color:gray;'>Sin Asignar</span>"|safe }}</td>
+                    <td>
+                        {% if puesto.num_procesos > 0 %}
+                            <span style="color: #27ae60; font-weight: bold;">Iniciado ({{ puesto.num_procesos }})</span>
+                        {% elif puesto.asesora_encargada %}
+                            <span style="color: #e67e22;">Asignado (Sin Iniciar)</span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {{ data_carga_asesoras|json_script:"data-carga-asesoras" }}
+    {{ data_estatus_vacantes|json_script:"data-estatus-vacantes" }}
+    {{ data_candidatos_totales|json_script:"data-candidatos-totales" }}
+    {{ data_interes_puestos|json_script:"data-interes-puestos" }}
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Inicializamos las tablas
+            $('#candidatosReportTable').DataTable({ "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" } });
+            $('#puestosReportTable').DataTable({ "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" } });
+
+            // Lógica para el botón de mostrar/ocultar gráficos
+            $('#toggle-charts-btn').on('click', function() {
+                $('#charts-wrapper').slideToggle();
+            });
+
+            // Código para dibujar los gráficos
+            const dataCarga = JSON.parse(document.getElementById('data-carga-asesoras').textContent);
+            const dataEstatus = JSON.parse(document.getElementById('data-estatus-vacantes').textContent);
+            const dataCandidatos = JSON.parse(document.getElementById('data-candidatos-totales').textContent);
+            const dataInteres = JSON.parse(document.getElementById('data-interes-puestos').textContent);
+
+            new Chart(document.getElementById('chartCargaAsesoras'), { type: 'bar', data: { labels: dataCarga.map(item => item.asesora_asignada__username), datasets: [{ label: 'Procesos Activos', data: dataCarga.map(item => item.total), backgroundColor: 'rgba(52, 152, 219, 0.7)' }] }, options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+            new Chart(document.getElementById('chartEstatusVacantes'), { type: 'pie', data: { labels: dataEstatus.map(item => item.estatus_autorizacion), datasets: [{ label: 'Nº de Vacantes', data: dataEstatus.map(item => item.total), backgroundColor: ['rgba(46, 204, 113, 0.7)', 'rgba(241, 196, 15, 0.7)', 'rgba(231, 76, 60, 0.7)'] }] } });
+            new Chart(document.getElementById('chartInteresPuestos'), { type: 'bar', data: { labels: dataInteres.map(item => item.puesto_de_interes__titulo), datasets: [{ label: 'Nº de Interesados', data: dataInteres.map(item => item.total), backgroundColor: 'rgba(142, 68, 173, 0.7)' }] }, options: { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
+            new Chart(document.getElementById('chartCandidatos'), { type: 'doughnut', data: { labels: dataCandidatos.map(item => item.estatus), datasets: [{ label: 'Nº de Candidatos', data: dataCandidatos.map(item => item.total), backgroundColor: ['rgba(26, 188, 156, 0.7)', 'rgba(52, 73, 94, 0.7)'] }] } });
+        });
+    </script>
+</body>
+</html>

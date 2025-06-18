@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Proceso - {{ proceso.candidato.nombre_completo }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+        .header h1 { color: #2c3e50; margin: 0; }
+        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+        .grid-detalle { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; align-items: flex-start; }
+        @media (max-width: 900px) { .grid-detalle { grid-template-columns: 1fr; } }
+        .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .card h2, .card h3 { margin-top: 0; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
+        .card h4 { color: #3498db; margin-bottom: 0.5em; margin-top: 1.5em; }
+        .card p, .card li { color: #34495e; line-height: 1.6; }
+        .card strong { color: #2c3e50; }
+        .form-group { margin-bottom: 1.5em; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5em; }
+        .form-group select, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        .boton-actualizar { width: 100%; background-color: #3498db; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; }
+        .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
+        .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
+        .history-list { list-style-type: none; padding: 0; margin-top: 1em; }
+        .history-list li { border-left: 3px solid #3498db; padding: 10px 15px; margin-bottom: 10px; background-color: #f8f9fa; }
+        .history-list .date { font-size: 0.8em; color: #7f8c8d; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Gestión de Proceso</h1><a href="{% url 'mis_procesos' %}" class="boton-volver">← Volver a Mis Procesos</a></div>
+        {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+        <div class="grid-detalle">
+            <div class="card">
+                <h2>{{ proceso.candidato.nombre_completo }}</h2>
+                <p><strong>Contacto:</strong> {{ proceso.candidato.email }} | {{ proceso.candidato.telefono|default:"N/A" }}</p>
+                {% if proceso.candidato.cv %}<p><strong>CV:</strong> <a href="{{ proceso.candidato.cv.url }}" target="_blank">Ver Documento Adjunto</a></p>{% endif %}
+
+                <h4>Perfil del Candidato</h4>
+                <p><strong>Nivel Educativo:</strong> {{ proceso.candidato.get_nivel_educativo_display|default:"No especificado" }}</p>
+                <p><strong>Años de Experiencia:</strong> {{ proceso.candidato.años_de_experiencia|default:"No especificado" }}</p>
+                <p><strong>Expectativa Salarial:</strong> ${{ proceso.candidato.expectativa_salarial|default:"No especificada" }}</p>
+                <p><strong>Habilidades:</strong> {{ proceso.candidato.habilidades|default:"No especificadas" }}</p>
+
+                <h3 style="margin-top: 2em;">Detalles de la Vacante</h3>
+                <h4>{{ proceso.puesto.titulo }}</h4>
+                <p><strong>Agencia:</strong> {{ proceso.puesto.agencia }} | <strong>Área:</strong> {{ proceso.puesto.get_area_display }}</p>
+                <p><strong>Horario:</strong> {{ proceso.puesto.horario }} | <strong>Sueldo Base:</strong> ${{ proceso.puesto.sueldo_base }}</p>
+
+                <h4>Objetivo del Puesto</h4>
+                <p>{{ proceso.puesto.objetivo_puesto|linebreaksbr }}</p>
+                <h4>Funciones Principales</h4>
+                <p>{{ proceso.puesto.funciones_puesto|linebreaksbr }}</p>
+            </div>
+
+            <div>
+                <div class="card">
+                    <h2>Actualizar Proceso</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="estatus_proceso">Estatus del Proceso:</label>
+                            <select name="estatus_proceso" id="estatus_proceso">
+                                {% for value, text in proceso.Estatus.choices %}
+                                <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="retroalimentacion">Notas / Retroalimentación:</label>
+                            <textarea name="retroalimentacion" id="retroalimentacion">{{ proceso.retroalimentacion }}</textarea>
+                        </div>
+                        <button type="submit" class="boton-actualizar">Actualizar Proceso</button>
+                    </form>
+                </div>
+
+                <div class="card" style="margin-top: 2em;">
+                    <h2>Historial de Actividad</h2>
+                    <ul class="history-list">
+                        {% for registro in historial %}
+                            <li>
+                                <span class="date">{{ registro.fecha_hora|date:"d/m/Y H:i" }} - por {{ registro.usuario.username }}</span>
+                                {{ registro.accion }}
+                            </li>
+                        {% empty %}
+                            <li>No hay acciones registradas para este proceso.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

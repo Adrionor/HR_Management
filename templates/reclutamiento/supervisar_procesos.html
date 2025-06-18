@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Supervisión de Procesos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
+        .container { max-width: 1400px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; }
+        .header h1 { color: #2c3e50; margin: 0; }
+        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+        #procesosTable thead th { background-color: #34495e; color: #ffffff; }
+        #procesosTable tbody tr:hover { background-color: #ecf0f1 !important; }
+        .boton-reasignar { background-color: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9em; }
+        .boton-reasignar:hover { background-color: #d35400; }
+        select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; font-family: 'Poppins', sans-serif; }
+        .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
+        .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Supervisión y Reasignación de Procesos</h1>
+            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+        </div>
+        <p>Aquí puedes ver todos los procesos activos y reasignarlos a una asesora diferente si es necesario.</p>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <table id="procesosTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Candidato</th>
+                    <th>Puesto</th>
+                    <th>Estatus Actual</th>
+                    <th>Asesora Actual</th>
+                    <th style="width: 300px;">Reasignar a</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proceso in procesos %}
+                <tr>
+                    <td>{{ proceso.candidato.nombre_completo }}</td>
+                    <td>{{ proceso.puesto.titulo }}</td>
+                    <td>{{ proceso.get_estatus_proceso_display }}</td>
+                    <td>
+                        {% if proceso.asesora_asignada %}
+                            {{ proceso.asesora_asignada.get_full_name|default:proceso.asesora_asignada.username }}
+                        {% else %}
+                            <span style="color:red;">SIN ASIGNAR</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="proceso_id" value="{{ proceso.id }}">
+                            <select name="nueva_asesora_id" required>
+                                <option value="">-- Elige nueva asesora --</option>
+                                {% for asesora in asesoras %}
+                                <option value="{{ asesora.id }}" {% if proceso.asesora_asignada == asesora %}selected{% endif %}>
+                                    {{ asesora.get_full_name|default:asesora.username }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="boton-reasignar">Reasignar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#procesosTable').DataTable({ "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" } });
+        });
+    </script>
+</body>
+</html>

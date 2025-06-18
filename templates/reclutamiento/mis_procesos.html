@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Procesos Asignados</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+        .header h1 { color: #2c3e50; margin: 0; }
+        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+        #misProcesosTable thead th { background-color: #34495e; color: #ffffff; }
+        #misProcesosTable tbody tr:hover { background-color: #ecf0f1 !important; }
+        .boton-gestionar { display: inline-block; text-decoration: none; color: #ffffff; background-color: #16a085; padding: 0.5em 1em; border-radius: 5px; font-weight: 600; }
+        .boton-gestionar:hover { background-color: #117a65; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mis Procesos Asignados</h1>
+            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+        </div>
+        <p>Estos son los candidatos que tienes bajo tu gestión. Haz clic en "Gestionar" para ver los detalles y actualizar su estatus.</p>
+
+        <table id="misProcesosTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Candidato</th>
+                    <th>Puesto</th>
+                    <th>Estatus Actual del Proceso</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proceso in procesos %}
+                <tr>
+                    <td>{{ proceso.candidato.nombre_completo }}</td>
+                    <td>{{ proceso.puesto.titulo }}</td>
+                    <td>{{ proceso.get_estatus_proceso_display }}</td>
+                    <td>
+                        <a href="{% url 'detalle_proceso' proceso.id %}" class="boton-gestionar">Ver / Gestionar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#misProcesosTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                }
+            });
+        });
+    </script>
+</body>
+</html>
