@@ -1,0 +1,112 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Aprobación de Solicitudes{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 1400px; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1, h2 { color: #2c3e50; }
+    h2 { margin-top: 2em; border-top: 1px solid #eee; padding-top: 1.5em; }
+    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+    table.dataTable thead th { background-color: #34495e; color: #ffffff; }
+    table.dataTable tbody tr:hover { background-color: #ecf0f1 !important; }
+    .boton-aprobar { font-weight: 600; text-decoration: none; color: #27ae60; }
+    .boton-rechazar { font-weight: 600; text-decoration: none; color: #c0392b; }
+    .boton-disabled { color: #95a5a6; cursor: not-allowed; font-weight: normal; }
+    .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
+    .messages li { padding: 15px; margin-bottom: 1em; border-radius: 5px; border: 1px solid; }
+    .messages .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+    .messages .error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    .sueldo { font-weight: 700; color: #2c3e50; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Aprobación de Solicitudes</h1>
+        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+    </div>
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    {% if usuario_es_gerente_general and solicitudes_gerente_general %}
+        <h2>Pendientes de Aprobación (Gerencia General)</h2>
+        <table id="pendientesGteTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Puesto</th>
+                    <th>Solicitante</th>
+                    <th>Fecha</th>
+                    <th>Sueldo Propuesto</th> <th>Motivo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for solicitud in solicitudes_gerente_general %}
+                <tr>
+                    <td>{{ solicitud.titulo.nombre }}</td>
+                    <td>{{ solicitud.solicitado_por.username }}</td>
+                    <td>{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</td>
+                    <td class="sueldo">${{ solicitud.sueldo_base|default:"N/A" }}</td> <td>{{ solicitud.get_motivo_requisicion_display }}</td>
+                    <td>
+                        <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="boton-aprobar">Aprobar (1/2)</a> |
+                        <a href="{% url 'rechazar_solicitud' solicitud.id %}" class="boton-rechazar">Rechazar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    {% if user.is_staff and solicitudes_director %}
+        <h2>Pendientes de Aprobación (Dirección)</h2>
+        <p>Estas solicitudes ya fueron aprobadas por Gerencia General y requieren tu aprobación final.</p>
+        <table id="pendientesDirTable" class="display" style="width:100%">
+             <thead>
+                <tr>
+                    <th>Puesto</th>
+                    <th>Solicitante</th>
+                    <th>Aprob. Gerente</th>
+                    <th>Sueldo Propuesto</th> <th>Motivo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+             <tbody>
+                {% for solicitud in solicitudes_director %}
+                <tr>
+                    <td>{{ solicitud.titulo.nombre }}</td>
+                    <td>{{ solicitud.solicitado_por.username }}</td>
+                    <td>{{ solicitud.fecha_aprobacion_gerente_marca|date:"d/m/Y" }}</td>
+                    <td class="sueldo">${{ solicitud.sueldo_base|default:"N/A" }}</td> <td>{{ solicitud.get_motivo_requisicion_display }}</td>
+                    <td>
+                        <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="boton-aprobar">Aprobar (Final)</a> |
+                        <a href="{% url 'rechazar_solicitud' solicitud.id %}" class="boton-rechazar">Rechazar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+             </tbody>
+        </table>
+    {% endif %}
+
+    {% if not solicitudes_director and not solicitudes_gerente_general %}
+        <p>No hay solicitudes pendientes de aprobación en tu bandeja.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    if ($('#pendientesGteTable').length) {
+        $('#pendientesGteTable').DataTable({"language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" }});
+    }
+    if ($('#pendientesDirTable').length) {
+        $('#pendientesDirTable').DataTable({"language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" }});
+    }
+});
+</script>
+{% endblock %}

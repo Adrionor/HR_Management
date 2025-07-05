@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevas Postulaciones</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 2em; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+        .header h1 { color: #2c3e50; margin: 0; }
+        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; transition: background-color 0.2s; }
+        .header .boton-volver:hover { background-color: #7f8c8d; }
+        #postulacionesTable thead th { background-color: #34495e; color: #ffffff; font-weight: 600; }
+        #postulacionesTable tbody tr:hover { background-color: #ecf0f1 !important; }
+        .filters input { width: 95%; padding: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .filters th { padding: 8px !important; background-color: #f8f9fa; }
+        .boton-asignar { display: inline-block; text-decoration: none; color: #ffffff; background-color: #3498db; padding: 0.5em 1em; border-radius: 5px; font-weight: 600; transition: background-color 0.2s; white-space: nowrap; }
+        .boton-asignar:hover { background-color: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Nuevas Postulaciones por Asignar</h1>
+            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+        </div>
+        <table id="postulacionesTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Candidato</th>
+                    <th>Email</th>
+                    <th>Puesto Aplicado</th>
+                    <th>Acción</th>
+                </tr>
+                <tr class="filters">
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th class="no-filter"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proceso in procesos %}
+                <tr>
+                    <td>{{ proceso.candidato.nombre_completo }}</td>
+                    <td>{{ proceso.candidato.email }}</td>
+                    <td>{{ proceso.puesto.titulo|default:"N/A" }}</td>
+                    <td>
+                        <a href="{% url 'asignar_proceso' proceso.id %}" class="boton-asignar">Asignarme</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#postulacionesTable thead tr.filters th').each(function() {
+            var title = $('#postulacionesTable thead tr:eq(0) th').eq($(this).index()).text();
+            if (!$(this).hasClass('no-filter')) {
+                $(this).html('<input type="text" placeholder="Filtrar ' + title + '" />');
+            }
+        });
+        $('#postulacionesTable').DataTable({
+            orderCellsTop: true,
+            fixedHeader: true,
+            initComplete: function() {
+                var api = this.api();
+                api.columns().every(function() {
+                    var that = this;
+                    $('input', $('.filters th').eq($(this.header()).index())).off('keyup change').on('keyup change', function(e) {
+                        if (e.keyCode == 13) {
+                            if (that.search() !== this.value) { that.search(this.value).draw(); }
+                        }
+                    });
+                });
+            },
+            "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
+        });
+    });
+    </script>
+</body>
+</html>

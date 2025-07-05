@@ -1,0 +1,8 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{# Este bloque le dice a Django que cargue nuestro archivo de estilos extra #}
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'reclutamiento/css/admin_custom.css' %}">
+{% endblock %}

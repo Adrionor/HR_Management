@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+    {# Esta línea mágica carga todos los estilos originales del admin #}
+    {{ block.super }}
+
+    {# Y esta línea carga nuestro nuevo archivo de estilos personalizado DESPUÉS de los originales #}
+    <link rel="stylesheet" type="text/css" href="{% static 'reclutamiento/css/admin_custom.css' %}">
+{% endblock %}

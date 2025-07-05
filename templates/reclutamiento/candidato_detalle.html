@@ -1,0 +1,105 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Perfil de Candidato: {{ candidato.nombre_completo }}{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 900px; }
+    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1 { color: #2c3e50; font-size: 1.8em; }
+    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5em 2.5em;
+        margin-top: 2em;
+    }
+    .detail-item {
+        padding-bottom: 1em;
+        border-bottom: 1px solid #ecf0f1;
+    }
+    .detail-item .label {
+        font-weight: 600;
+        color: #3498db;
+        display: block;
+        font-size: 0.9em;
+        margin-bottom: 0.3em;
+    }
+    .detail-item .value {
+        font-size: 1.1em;
+        color: #34495e;
+    }
+    .cv-link-container { margin-top: 2em; text-align: center; }
+    .cv-link { display: inline-block; background-color: #27ae60; color: white; padding: 0.8em 2em; border-radius: 5px; text-decoration: none; font-weight: 600; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <h1>Perfil de Candidato</h1>
+        </div>
+
+        <h2>{{ candidato.nombre_completo }}</h2>
+
+        <div class="profile-grid">
+            <div class="detail-item">
+                <span class="label">Correo Electrónico</span>
+                <span class="value">{{ candidato.email }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Teléfono de Contacto</span>
+                <span class="value">{{ candidato.telefono|default:"No proporcionado" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">RFC</span>
+                <span class="value">{{ candidato.rfc|default:"No proporcionado" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Fecha de Nacimiento</span>
+                <span class="value">{{ candidato.fecha_nacimiento|date:"d F, Y"|default:"No proporcionada" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Puesto de Interés Inicial</span>
+                <span class="value">{{ candidato.puesto_de_interes.titulo.nombre|default:"General / Futuras Oportunidades" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Máximo Nivel Educativo</span>
+                <span class="value">{{ candidato.get_nivel_educativo_display|default:"No proporcionado" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Años de Experiencia</span>
+                <span class="value">{{ candidato.años_de_experiencia }} años</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Expectativa Salarial (Bruta)</span>
+                <span class="value">${{ candidato.expectativa_salarial|default:"No proporcionada" }}</span>
+            </div>
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <span class="label">Último Puesto y Empresa</span>
+                <span class="value">{{ candidato.ultimo_puesto|default:"N/A" }} en {{ candidato.ultima_empresa|default:"N/A" }}</span>
+            </div>
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <span class="label">Habilidades Principales</span>
+                <span class="value">{{ candidato.habilidades|linebreaksbr|default:"No proporcionadas" }}</span>
+            </div>
+            {% if candidato.es_colaborador_actual %}
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <span class="label">Razón de Búsqueda (como colaborador interno)</span>
+                <span class="value">{{ candidato.get_motivo_busqueda_display|default:"No proporcionada" }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if candidato.cv %}
+        <div class="cv-link-container">
+            <a href="{{ candidato.cv.url }}" target="_blank" class="cv-link">Ver CV Adjunto</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

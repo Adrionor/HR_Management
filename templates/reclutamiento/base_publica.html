@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Bolsa de Trabajo Premier{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
+        main { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: calc(100vh - 80px); padding: 2em 1em; box-sizing: border-box; }
+        .footer { height: auto; min-height: 80px; text-align: center; padding: 1em; box-sizing: border-box; background-color: #e9ecef; color: #7f8c8d; font-size: 0.9em; }
+    </style>
+    {% block style %}{% endblock %}
+</head>
+<body>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Copyright © {% now "Y" %} Premier Automotriz. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Biblioteca de Perfiles de Puesto{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 1400px; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1 { color: #2c3e50; }
+    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+    #perfilesTable thead th { background-color: #34495e; color: #ffffff; }
+    #perfilesTable tbody tr:hover { background-color: #ecf0f1 !important; }
+    .boton-ver { background-color: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background-color: white; padding: 2em; border-radius: 10px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; }
+    .modal-content h2 { margin-top: 0; color: #16a085; }
+    .modal-content h4 { color: #3498db; margin-top: 1.5em; margin-bottom: 0.5em; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .modal-content p { white-space: pre-wrap; line-height: 1.6; }
+    .modal-content .close-btn { float: right; font-size: 1.8em; cursor: pointer; line-height: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Biblioteca de Perfiles de Puesto</h1>
+        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+    </div>
+    <p>Consulta los perfiles detallados de vacantes definidos por las asesoras para reutilizar el conocimiento y estandarizar los requerimientos.</p>
+
+    <table id="perfilesTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Puesto</th>
+                <th>Gerente Solicitante</th>
+                <th>Perfil Creado por</th>
+                <th>Fecha de Creación</th>
+                <th>Detalles</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for perfil in perfiles %}
+            <tr>
+                <td>{{ perfil.puesto.titulo }}</td>
+                <td>
+                    {% if perfil.puesto.solicitado_por %}
+                        {{ perfil.puesto.solicitado_por.get_full_name|default:perfil.puesto.solicitado_por.username }}
+                    {% else %}
+                        <span style="color: #c0392b; font-style: italic;">Usuario Eliminado</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if perfil.creado_por %}
+                        {{ perfil.creado_por.get_full_name|default:perfil.creado_por.username }}
+                    {% else %}
+                        <span style="color: #7f8c8d; font-style: italic;">No registrado</span>
+                    {% endif %}
+                </td>
+                <td>{{ perfil.fecha_creacion|date:"d/m/Y" }}</td>
+                <td>
+                    <button class="boton-ver ver-detalles-btn"
+                            data-titulo="{{ perfil.puesto.titulo }}"
+                            data-habilidades-clave="{{ perfil.habilidades_clave|escapejs }}"
+                            data-habilidades-deseables="{{ perfil.habilidades_deseables|escapejs }}"
+                            data-rasgos="{{ perfil.rasgos_personalidad|escapejs }}"
+                            data-preguntas="{{ perfil.preguntas_sugeridas|escapejs }}">
+                        Ver Perfil
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="detalle-modal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span><h2 id="modal-titulo"></h2>
+        <h4>Habilidades Clave (Indispensables)</h4><p id="modal-habilidades-clave"></p>
+        <h4>Habilidades Deseables (Plus)</h4><p id="modal-habilidades-deseables"></p>
+        <h4>Rasgos de Personalidad Ideales</h4><p id="modal-rasgos"></p>
+        <h4>Preguntas Sugeridas para Entrevista</h4><p id="modal-preguntas"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#perfilesTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
+
+        $('.ver-detalles-btn').on('click', function() {
+            const button = $(this);
+            $('#modal-titulo').text(button.data('titulo'));
+            $('#modal-habilidades-clave').text(button.data('habilidades-clave'));
+            $('#modal-habilidades-deseables').text(button.data('habilidades-deseables'));
+            $('#modal-rasgos').text(button.data('rasgos'));
+            $('#modal-preguntas').text(button.data('preguntas'));
+            $('#detalle-modal').css('display', 'flex');
+        });
+
+        $('.close-btn, .modal-overlay').on('click', function(e) {
+            if (e.target === this || $(e.target).is('.close-btn')) {
+                $('#detalle-modal').hide();
+            }
+        });
+    });
+</script>
+{% endblock %}

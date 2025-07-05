@@ -1,0 +1,60 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Detalle de Requisición: {{ puesto.titulo.nombre }}{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 900px; }
+    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1 { color: #2c3e50; font-size: 1.8em; }
+    h3 { color: #16a085; margin-top: 2em; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
+    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em 2.5em; }
+    .detail-item { padding-bottom: 1em; }
+    .detail-item .label { font-weight: 600; color: #7f8c8d; display: block; font-size: 0.9em; margin-bottom: 0.3em; }
+    .detail-item .value { font-size: 1.1em; color: #34495e; white-space: pre-wrap; }
+    .full-width { grid-column: 1 / -1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <h1>Ficha de Requisición</h1>
+            <a href="{% url 'mis_vacantes' %}" class="boton-volver">← Volver a Mis Vacantes</a>
+        </div>
+        
+        <h3>Información General</h3>
+        <div class="detail-grid">
+            <div class="detail-item"><span class="label">Título del Puesto</span><span class="value">{{ puesto.titulo.nombre }}</span></div>
+            <div class="detail-item"><span class="label">Marca</span><span class="value">{{ puesto.marca.nombre }}</span></div>
+            <div class="detail-item"><span class="label">Agencia</span><span class="value">{{ puesto.agencia }}</span></div>
+            <div class="detail-item"><span class="label">Ciudad</span><span class="value">{{ puesto.get_ciudad_display }}</span></div>
+            <div class="detail-item"><span class="label">Área</span><span class="value">{{ puesto.get_area_display }}</span></div>
+            <div class="detail-item"><span class="label">Jefe Inmediato</span><span class="value">{{ puesto.jefe_inmediato_nombre }}</span></div>
+        </div>
+
+        <h3>Justificación y Funciones</h3>
+        <div class="detail-grid">
+            <div class="detail-item"><span class="label">Motivo de Requisición</span><span class="value">{{ puesto.get_motivo_requisicion_display }}</span></div>
+            {% if puesto.reemplaza_a %}<div class="detail-item"><span class="label">Reemplaza a</span><span class="value">{{ puesto.reemplaza_a }}</span></div>{% endif %}
+            <div class="detail-item full-width"><span class="label">Objetivo del Puesto</span><span class="value">{{ puesto.objetivo_puesto|linebreaks }}</span></div>
+            <div class="detail-item full-width"><span class="label">Funciones Principales</span><span class="value">{{ puesto.funciones_puesto|linebreaks }}</span></div>
+        </div>
+
+        <h3>Requisitos y Condiciones</h3>
+        <div class="detail-grid">
+            <div class="detail-item"><span class="label">Experiencia Mínima</span><span class="value">{{ puesto.experiencia_minima|default:"N/A" }} años</span></div>
+            <div class="detail-item"><span class="label">Carrera Sugerida</span><span class="value">{{ puesto.carrera_sugerida|default:"N/A" }}</span></div>
+            <div class="detail-item"><span class="label">Horario</span><span class="value">{{ puesto.horario }}</span></div>
+            <div class="detail-item"><span class="label">Sueldo Base (Bruto)</span><span class="value">${{ puesto.sueldo_base|default:"N/A" }}</span></div>
+            <div class="detail-item full-width"><span class="label">Conocimientos y Herramientas</span><span class="value">{{ puesto.conocimientos_tecnicos }} / {{ puesto.herramientas_puesto }}</span></div>
+            {% if puesto.esquema_comisiones %}<div class="detail-item full-width"><span class="label">Esquema de Comisiones/Bonos</span><span class="value">{{ puesto.esquema_comisiones|linebreaks }}</span></div>{% endif %}
+            {% if puesto.archivo_justificacion %}<div class="detail-item full-width"><span class="label">Documento de Justificación</span><span class="value"><a href="{{ puesto.archivo_justificacion.url }}" target="_blank">Ver Documento Adjunto</a></span></div>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

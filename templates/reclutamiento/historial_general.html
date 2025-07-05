@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Actividad del Sistema</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
+        .container { max-width: 1400px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+        h1, h2 { color: #2c3e50; }
+        .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+
+        /* --- ESTILOS PARA EL FORMULARIO DE FILTROS --- */
+        .filtros-container {
+            background-color: #ecf0f1;
+            padding: 1.5em;
+            border-radius: 8px;
+            margin-bottom: 2em;
+        }
+        .filtros-form {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .filtro-grupo { flex-grow: 1; }
+        .filtro-grupo label { font-weight: 600; margin-right: 10px; }
+        .filtro-grupo select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #bdc3c7; }
+        .filtro-acciones button { padding: 8px 15px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; }
+        .boton-filtrar { background-color: #3498db; color: white; }
+        .boton-limpiar { background-color: #e74c3c; color: white; text-decoration: none; display: inline-block; }
+        /* ------------------------------------------- */
+
+        #historialTable thead th { background-color: #34495e; color: #ffffff; }
+        #historialTable tbody tr:hover { background-color: #f1f2f6 !important; }
+        .detalles-nota { font-style: italic; color: #7f8c8d; margin-top: 5px; padding-left: 15px; border-left: 3px solid #bdc3c7; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>Historial de Actividad del Sistema</h1><a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a></div>
+        <p>Aquí se muestra un registro de todas las acciones importantes. Usa los filtros para refinar tu búsqueda.</p>
+
+        <div class="filtros-container">
+            <form method="get" action="" class="filtros-form">
+                <div class="filtro-grupo">
+                    <label for="candidato">Filtrar por Candidato:</label>
+                    <select name="candidato" id="candidato">
+                        <option value="">-- Todos los Candidatos --</option>
+                        {% for c in filtro_candidatos %}
+                            <option value="{{ c.id }}" {% if c.id|stringformat:"s" == candidato_id_seleccionado %}selected{% endif %}>{{ c.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filtro-grupo">
+                    <label for="usuario">Filtrar por Usuario:</label>
+                    <select name="usuario" id="usuario">
+                        <option value="">-- Todos los Usuarios --</option>
+                        {% for u in filtro_usuarios %}
+                            <option value="{{ u.id }}" {% if u.id|stringformat:"s" == usuario_id_seleccionado %}selected{% endif %}>{{ u.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filtro-acciones">
+                    <button type="submit" class="boton-filtrar">Filtrar</button>
+                    <a href="{% url 'vista_historial_general' %}" class="boton-limpiar">Limpiar</a>
+                </div>
+            </form>
+        </div>
+
+        <table id="historialTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Fecha y Hora</th>
+                    <th>Usuario</th>
+                    <th>Acción Realizada</th>
+                    <th>Notas Adicionales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros %}
+                <tr>
+                    <td>{{ registro.fecha_hora|date:"d/m/Y, P" }}</td>
+                    <td>{{ registro.usuario.username|default:"Sistema" }}</td>
+                    <td>{{ registro.accion }}</td>
+                    <td>{% if registro.detalles %}<div class="detalles-nota">{{ registro.detalles|linebreaksbr }}</div>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#historialTable').DataTable({
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
+                "order": [[ 0, "desc" ]]
+            });
+        });
+    </script>
+</body>
+</html>
