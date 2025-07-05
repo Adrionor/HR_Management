@@ -1,58 +1,111 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Mis Vacantes Pendientes</title>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-        h1 { color: #2c3e50; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        #vacantesTable thead th { background-color: #34495e; color: #ffffff; }
-        .boton-buscar { display: inline-block; text-decoration: none; color: #ffffff; background-color: #3498db; padding: 0.5em 1em; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Mis Vacantes por Iniciar</h1>
-            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
-        </div>
-        <p>Estas son las vacantes que te han sido asignadas y que aún no tienen ningún candidato en proceso. ¡Es hora de buscar talento!</p>
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
 
-        <table id="vacantesTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Título de la Vacante</th>
-                    <th>Fecha de Asignación (Aprobación)</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for vacante in vacantes %}
-                <tr>
-                    <td>{{ vacante.titulo }}</td>
-                    <td>{{ vacante.fecha_autorizacion|date:"d/m/Y" }}</td>
-                    <td>
-                        <a href="{% url 'bolsa_trabajo' %}" class="boton-buscar">Buscar Candidatos</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3" style="text-align: center; padding: 20px;">¡Felicidades! No tienes vacantes pendientes de iniciar.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% block title %}Mis Vacantes por Iniciar{% endblock %}
+
+{% block style %}
+<style>
+    /* Hacemos el contenedor un poco más ancho para la nueva tabla */
+    .container {
+        max-width: 90%;
+        margin: 2em auto;
+        background-color: #fff;
+        padding: 2em;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5em;
+    }
+    h1 {
+        color: #2c3e50;
+    }
+    #vacantesTable thead th {
+        background-color: #34495e;
+        color: #ffffff;
+    }
+    .boton-accion {
+        display: inline-block;
+        text-decoration: none;
+        color: white;
+        padding: 0.6em 1.2em;
+        border-radius: 5px;
+        font-weight: 600;
+        text-align: center;
+        transition: background-color 0.2s;
+    }
+    .boton-definir { background-color: #e67e22; }
+    .boton-definir:hover { background-color: #d35400; }
+    .boton-buscar { background-color: #27ae60; }
+    .boton-buscar:hover { background-color: #229954; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Mis Vacantes por Iniciar</h1>
     </div>
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#vacantesTable').DataTable({ "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" } });
+    <p>Revisa la información de tus vacantes asignadas. Haz clic en el título del puesto para ver la requisición completa y, posteriormente, definir el perfil detallado.</p>
+
+    <table id="vacantesTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Puesto</th>
+                <th>Área</th>
+                <th>Jefe Inmediato</th>
+                <th>Experiencia Mín.</th>
+                <th>Sueldo</th>
+                <th>Justificación</th>
+                <th>Acción Siguiente</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vacante in vacantes %}
+            <tr>
+                <td>
+                    <a href="{% url 'puesto_detalle' vacante.id %}" style="font-weight: 600;">{{ vacante.titulo.nombre }}</a>
+                    <small style="display: block; color: #7f8c8d;">{{ vacante.marca.nombre }} - {{ vacante.get_ciudad_display }}</small>
+                </td>
+                <td>{{ vacante.get_area_display }}</td>
+                <td>{{ vacante.jefe_inmediato_nombre }}</td>
+                <td>{{ vacante.experiencia_minima|default:"N/A" }} años</td>
+                <td style="white-space: nowrap;">${{ vacante.sueldo_base|default:"N/A" }}</td>
+                <td>
+                    {% if vacante.archivo_justificacion %}
+                        <a href="{{ vacante.archivo_justificacion.url }}" target="_blank">Ver Adjunto</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if vacante.perfil_detallado %}
+                        <a href="{% url 'bolsa_trabajo' %}?puesto={{ vacante.id }}" class="boton-accion boton-buscar">✅ Perfil Completo (Buscar Candidatos)</a>
+                    {% else %}
+                        <a href="{% url 'gestion_perfil_puesto' vacante.id %}" class="boton-accion boton-definir">✏️ Definir Perfil de Puesto</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 20px;">¡Felicidades! No tienes vacantes pendientes de iniciar.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#vacantesTable').DataTable({
+            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+            "order": []
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

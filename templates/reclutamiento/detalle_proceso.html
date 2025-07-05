@@ -1,100 +1,155 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestión de Proceso - {{ proceso.candidato.nombre_completo }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-        .header h1 { color: #2c3e50; margin: 0; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        .grid-detalle { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; align-items: flex-start; }
-        @media (max-width: 900px) { .grid-detalle { grid-template-columns: 1fr; } }
-        .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .card h2, .card h3 { margin-top: 0; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
-        .card h4 { color: #3498db; margin-bottom: 0.5em; margin-top: 1.5em; }
-        .card p, .card li { color: #34495e; line-height: 1.6; }
-        .card strong { color: #2c3e50; }
-        .form-group { margin-bottom: 1.5em; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5em; }
-        .form-group select, .form-group textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; }
-        .form-group textarea { resize: vertical; min-height: 120px; }
-        .boton-actualizar { width: 100%; background-color: #3498db; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; }
-        .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
-        .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
-        .history-list { list-style-type: none; padding: 0; margin-top: 1em; }
-        .history-list li { border-left: 3px solid #3498db; padding: 10px 15px; margin-bottom: 10px; background-color: #f8f9fa; }
-        .history-list .date { font-size: 0.8em; color: #7f8c8d; display: block; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header"><h1>Gestión de Proceso</h1><a href="{% url 'mis_procesos' %}" class="boton-volver">← Volver a Mis Procesos</a></div>
-        {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
 
-        <div class="grid-detalle">
+{% block title %}Gestión de Proceso - {{ proceso.candidato.nombre_completo }}{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 1200px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1, h2, h3, h4 { color: #2c3e50; }
+    h2, h3 { margin-top: 0; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
+    h3 { margin-top: 2em; }
+    h4 { color: #3498db; margin-bottom: 0.5em; margin-top: 1.5em; }
+    .grid-detalle { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; align-items: flex-start; }
+    @media (max-width: 900px) { .grid-detalle { grid-template-columns: 1fr; } }
+    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .form-group { margin-bottom: 1.5em; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.5em; }
+    .form-group select, .form-group textarea, .form-group input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-size: 1em; box-sizing: border-box; }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    .boton { width: 100%; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; text-align: center; }
+    .boton-actualizar { background-color: #3498db; }
+    .boton-transferir { background-color: #e67e22; }
+    .boton-add-pub { background-color: #27ae60; margin-top: 1em; }
+    .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
+    .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
+    .history-list { list-style-type: none; padding: 0; margin-top: 1em; max-height: 400px; overflow-y: auto; }
+    .history-list li { border-left: 3px solid #3498db; padding: 10px 15px; margin-bottom: 10px; background-color: #f8f9fa; }
+    .history-list .date { font-size: 0.8em; color: #7f8c8d; }
+    .publication-table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-bottom: 1.5em; }
+    .publication-table th, .publication-table td { padding: 8px; border-bottom: 1px solid #ecf0f1; text-align: left;}
+    .publication-table thead th { background-color: #ecf0f1; font-weight: 600; }
+    .error-message { color: #e74c3c; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header"><h1>Gestión de Proceso</h1><a href="{% url 'mis_procesos' %}" class="boton-volver">← Volver a Mis Procesos</a></div>
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    <div class="grid-detalle">
+        <div class="card">
+            <h2>{{ proceso.candidato.nombre_completo }}</h2>
+            <p><strong>Contacto:</strong> {{ proceso.candidato.email }} | {{ proceso.candidato.telefono|default:"N/A" }}</p>
+            {% if proceso.candidato.cv %}<p><strong>CV:</strong> <a href="{{ proceso.candidato.cv.url }}" target="_blank">Ver Documento Adjunto</a></p>{% endif %}
+
+            <h3 style="margin-top: 2em;">Detalles de la Vacante</h3>
+            <h4>{{ proceso.puesto.titulo.nombre }}</h4>
+            <p><strong>Agencia:</strong> {{ proceso.puesto.agencia }} | <strong>Ciudad:</strong> {{ proceso.puesto.get_ciudad_display }}</p>
+
+            <h3 style="margin-top: 2em;">Publicaciones de la Vacante</h3>
+            <table class="publication-table">
+                <thead><tr><th>Plataforma</th><th>Enlace</th><th>Inversión (MXN)</th></tr></thead>
+                <tbody>
+                    {% for pub in publicaciones %}
+                    <tr>
+                        <td>{{ pub.get_plataforma_display }}</td>
+                        <td><a href="{{ pub.enlace }}" target="_blank" rel="noopener noreferrer">Ver Post</a></td>
+                        <td>${{ pub.monto_inversion|default:"0.00" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="text-align: center; color: #7f8c8d;">Aún no se han registrado publicaciones.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h4 style="margin-top: 1em;">Añadir Nueva Publicación</h4>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_publication">
+                {% if form_publicacion.non_field_errors %}<div class="error-message">{{ form_publicacion.non_field_errors }}</div>{% endif %}
+
+                <div class="form-group">
+                    {{ form_publicacion.plataforma.label_tag }}
+                    {{ form_publicacion.plataforma }}
+                    <div class="error-message">{{ form_publicacion.plataforma.errors }}</div>
+                </div>
+                <div class="form-group">
+                    {{ form_publicacion.enlace.label_tag }}
+                    {{ form_publicacion.enlace }}
+                    <div class="error-message">{{ form_publicacion.enlace.errors }}</div>
+                </div>
+                <div class="form-group">
+                    {{ form_publicacion.monto_inversion.label_tag }}
+                    {{ form_publicacion.monto_inversion }}
+                    <div class="error-message">{{ form_publicacion.monto_inversion.errors }}</div>
+                </div>
+                <button type="submit" class="boton boton-add-pub">Añadir Publicación</button>
+            </form>
+        </div>
+
+        <div>
             <div class="card">
-                <h2>{{ proceso.candidato.nombre_completo }}</h2>
-                <p><strong>Contacto:</strong> {{ proceso.candidato.email }} | {{ proceso.candidato.telefono|default:"N/A" }}</p>
-                {% if proceso.candidato.cv %}<p><strong>CV:</strong> <a href="{{ proceso.candidato.cv.url }}" target="_blank">Ver Documento Adjunto</a></p>{% endif %}
-
-                <h4>Perfil del Candidato</h4>
-                <p><strong>Nivel Educativo:</strong> {{ proceso.candidato.get_nivel_educativo_display|default:"No especificado" }}</p>
-                <p><strong>Años de Experiencia:</strong> {{ proceso.candidato.años_de_experiencia|default:"No especificado" }}</p>
-                <p><strong>Expectativa Salarial:</strong> ${{ proceso.candidato.expectativa_salarial|default:"No especificada" }}</p>
-                <p><strong>Habilidades:</strong> {{ proceso.candidato.habilidades|default:"No especificadas" }}</p>
-
-                <h3 style="margin-top: 2em;">Detalles de la Vacante</h3>
-                <h4>{{ proceso.puesto.titulo }}</h4>
-                <p><strong>Agencia:</strong> {{ proceso.puesto.agencia }} | <strong>Área:</strong> {{ proceso.puesto.get_area_display }}</p>
-                <p><strong>Horario:</strong> {{ proceso.puesto.horario }} | <strong>Sueldo Base:</strong> ${{ proceso.puesto.sueldo_base }}</p>
-
-                <h4>Objetivo del Puesto</h4>
-                <p>{{ proceso.puesto.objetivo_puesto|linebreaksbr }}</p>
-                <h4>Funciones Principales</h4>
-                <p>{{ proceso.puesto.funciones_puesto|linebreaksbr }}</p>
+                <h2>Actualizar Proceso</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="actualizar_estatus">
+                    <div class="form-group">
+                        <label for="estatus_proceso">Estatus del Proceso:</label>
+                        <select name="estatus_proceso" id="estatus_proceso">
+                            {% for value, text in proceso.Estatus.choices %}
+                            <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="retroalimentacion">Notas / Retroalimentación:</label>
+                        <textarea name="retroalimentacion" id="retroalimentacion">{{ proceso.retroalimentacion }}</textarea>
+                    </div>
+                    <button type="submit" class="boton boton-actualizar">Actualizar Proceso</button>
+                </form>
             </div>
 
-            <div>
-                <div class="card">
-                    <h2>Actualizar Proceso</h2>
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="estatus_proceso">Estatus del Proceso:</label>
-                            <select name="estatus_proceso" id="estatus_proceso">
-                                {% for value, text in proceso.Estatus.choices %}
-                                <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>{{ text }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="retroalimentacion">Notas / Retroalimentación:</label>
-                            <textarea name="retroalimentacion" id="retroalimentacion">{{ proceso.retroalimentacion }}</textarea>
-                        </div>
-                        <button type="submit" class="boton-actualizar">Actualizar Proceso</button>
-                    </form>
-                </div>
+            {% if proceso.asesora_asignada == user and proceso.estatus_proceso == 'REF' %}
+            <div class="card" style="margin-top: 2em; border-top: 4px solid #e67e22;">
+                <h2>Transferir Proceso</h2>
+                <p>El candidato ha completado la fase inicial. Transfiere este proceso para continuar.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="transferir_proceso">
+                    <div class="form-group">
+                        <label for="nueva_asesora_id">Selecciona la nueva asesora encargada:</label>
+                        <select name="nueva_asesora_id" id="nueva_asesora_id" required>
+                            <option value="">-- Elige asesora --</option>
+                            {% for asesora in asesoras_disponibles %}
+                                {% if asesora != user %}
+                                <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="boton boton-transferir">Confirmar y Transferir</button>
+                </form>
+            </div>
+            {% endif %}
 
-                <div class="card" style="margin-top: 2em;">
-                    <h2>Historial de Actividad</h2>
-                    <ul class="history-list">
-                        {% for registro in historial %}
-                            <li>
-                                <span class="date">{{ registro.fecha_hora|date:"d/m/Y H:i" }} - por {{ registro.usuario.username }}</span>
-                                {{ registro.accion }}
-                            </li>
-                        {% empty %}
-                            <li>No hay acciones registradas para este proceso.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+            <div class="card" style="margin-top: 2em;">
+                <h2>Historial de Actividad del Proceso</h2>
+                <ul class="history-list">
+                    {% for registro in proceso.registros_de_actividad %}
+                        <li>
+                            <div class="date">{{ registro.fecha_hora|date:"d/m/Y, P" }} - por {{ registro.usuario.username }}</div>
+                            <div class="accion">{{ registro.accion }}</div>
+                            {% if registro.detalles %}<div class="detalles-nota">{{ registro.detalles|linebreaksbr }}</div>{% endif %}
+                        </li>
+                    {% empty %}
+                        <li>No hay acciones registradas para este proceso.</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

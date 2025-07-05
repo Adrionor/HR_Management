@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Registro Exitoso</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
@@ -8,14 +9,17 @@
         body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; display: grid; place-items: center; height: 100vh; margin: 0; }
         .container { max-width: 500px; padding: 3em; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
         h1 { color: #27ae60; }
-        a { display: inline-block; margin-top: 1.5em; text-decoration: none; background-color: #3498db; color: white; padding: 10px 20px; border-radius: 5px; }
+        p { color: #34495e; line-height: 1.6; }
+        a { display: inline-block; margin-top: 1.5em; text-decoration: none; background-color: #3498db; color: white; padding: 10px 20px; border-radius: 5px; font-weight: 600; transition: background-color 0.2s; }
+        a:hover { background-color: #2980b9; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>¡Gracias por registrarte!</h1>
         <p>Hemos recibido tu información correctamente. Nuestro equipo de reclutamiento se pondrá en contacto si tu perfil coincide con alguna de nuestras vacantes.</p>
-        <a href="{% url 'login' %}">Volver a la página principal</a>
+
+        <a href="{% url 'homepage_publica' %}">Ver Todas las Oportunidades</a>
     </div>
 </body>
 </html>

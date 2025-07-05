@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -15,43 +16,40 @@
         h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 2em; }
         .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
         form { margin-top: 1.5em; }
-        .form-section { border: 1px solid #ddd; padding: 1.5em; border-radius: 8px; margin-bottom: 2em; }
+        .form-section { border: 1px solid #ddd; padding: 1.5em 2em; border-radius: 8px; margin-bottom: 2em; }
         .form-section legend { font-weight: 600; font-size: 1.2em; color: #34495e; padding: 0 0.5em; margin-left: 1em; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5em; }
         .form-group { margin-bottom: 1em; }
         .form-group label { display: block; margin-bottom: 0.5em; font-weight: 600; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: 'Poppins', sans-serif; font-size: 1em; }
-        .form-group .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; }
-        .boton-submit { background-color: #2ecc71; color: white; border: none; padding: 12px 25px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 1em; }
-        .boton-submit:hover { background-color: #27ae60; }
-
-        /* --- Estilos para el botón de subir archivo --- */
+        .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; display: block; }
         .file-upload-wrapper input[type="file"] { display: none; }
         .boton-file { display: inline-block; padding: 10px 15px; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 600; }
         #file-chosen-justificacion { margin-left: 10px; font-style: italic; color: #555; }
-
-        /* Estilos para la tabla */
+        .boton-submit { background-color: #2ecc71; color: white; border: none; padding: 12px 25px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 1em; }
+        .boton-submit:hover { background-color: #27ae60; }
         #solicitudesTable thead th { background-color: #34495e; color: #ffffff; }
         #solicitudesTable tbody tr:hover { background-color: #ecf0f1 !important; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .checkbox-group input { width: auto; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Portal del Gerente Operativo</h1>
-            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
-        </div>
+        <div class="header"><h1>Portal del Gerente Operativo</h1><a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a></div>
 
         <section>
             <h2>Solicitar Nueva Vacante</h2>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
+                {% if form.errors %}<p style="color:red;">Por favor, corrige los errores en el formulario.</p>{% endif %}
 
-                <fieldset class="form-section">
-                    <legend>Información General</legend>
+                <fieldset class="form-section"><legend>Información General</legend>
                     <div class="form-grid">
+                        <div class="form-group">{{ form.marca.label_tag }}{{ form.marca }}</div>
                         <div class="form-group">{{ form.agencia.label_tag }}{{ form.agencia }}</div>
                         <div class="form-group">{{ form.titulo.label_tag }}{{ form.titulo }}</div>
+                        <div class="form-group">{{ form.ciudad.label_tag }}{{ form.ciudad }}</div>
                         <div class="form-group">{{ form.area.label_tag }}{{ form.area }}</div>
                         <div class="form-group">{{ form.cantidad_vacantes.label_tag }}{{ form.cantidad_vacantes }}</div>
                         <div class="form-group">{{ form.nombre_jefe_inmediato.label_tag }}{{ form.nombre_jefe_inmediato }}</div>
@@ -59,16 +57,31 @@
                     </div>
                 </fieldset>
 
-                <fieldset class="form-section">
-                    <legend>Justificación y Funciones</legend>
-                    </fieldset>
+                <fieldset class="form-section"><legend>Justificación y Funciones</legend>
+                    <div class="form-group">{{ form.motivo_requisicion.label_tag }}{{ form.motivo_requisicion }}</div>
 
-                <fieldset class="form-section">
-                    <legend>Requisitos y Condiciones</legend>
-                    </fieldset>
+                    <div class="form-group" id="reemplaza_a_wrapper" style="display: none;">
+                        {{ form.reemplaza_a.label_tag }}
+                        {{ form.reemplaza_a }}
+                    </div>
+                    <div class="form-group">{{ form.objetivo_puesto.label_tag }}{{ form.objetivo_puesto }}</div>
+                    <div class="form-group">{{ form.funciones_puesto.label_tag }}<small class="help-text">{{ form.funciones_puesto.help_text }}</small>{{ form.funciones_puesto }}</div>
+                    <div class="form-group">{{ form.indicador_puesto.label_tag }}{{ form.indicador_puesto }}</div>
+                </fieldset>
 
-                <fieldset class="form-section">
-                    <legend>Documentación de Soporte</legend>
+                <fieldset class="form-section"><legend>Requisitos y Condiciones</legend>
+                    <div class="form-grid">
+                        <div class="form-group">{{ form.experiencia_minima.label_tag }}{{ form.experiencia_minima }}</div>
+                        <div class="form-group">{{ form.carrera_sugerida.label_tag }}{{ form.carrera_sugerida }}</div>
+                        <div class="form-group">{{ form.horario.label_tag }}{{ form.horario }}</div>
+                        <div class="form-group">{{ form.sueldo_base.label_tag }}{{ form.sueldo_base }}</div>
+                    </div>
+                    <div class="form-group">{{ form.herramientas_puesto.label_tag }}<small class="help-text">{{ form.herramientas_puesto.help_text }}</small>{{ form.herramientas_puesto }}</div>
+                    <div class="form-group">{{ form.conocimientos_tecnicos.label_tag }}<small class="help-text">{{ form.conocimientos_tecnicos.help_text }}</small>{{ form.conocimientos_tecnicos }}</div>
+                    <div class="form-group">{{ form.esquema_comisiones.label_tag }}{{ form.esquema_comisiones }}</div>
+                </fieldset>
+
+                <fieldset class="form-section"><legend>Documentación de Soporte</legend>
                     <div class="form-group">
                         <label for="{{ form.archivo_justificacion.id_for_label }}">{{ form.archivo_justificacion.label }}</label>
                         <small class="help-text">{{ form.archivo_justificacion.help_text }}</small>
@@ -80,6 +93,16 @@
                     </div>
                 </fieldset>
 
+                {% if user.is_superuser %}
+                <fieldset class="form-section" style="border-color: #c0392b;">
+                    <legend style="color: #c0392b;">Opciones de Administrador</legend>
+                    <div class="form-group checkbox-group">
+                        {{ form.es_confidencial }} {{ form.es_confidencial.label_tag }}
+                    </div>
+                    <small class="help-text">Al marcar esta opción, la vacante no pasará por aprobación y no será pública.</small>
+                </fieldset>
+                {% endif %}
+
                 <button type="submit" class="boton-submit">Enviar Solicitud de Requisición</button>
             </form>
         </section>
@@ -89,6 +112,19 @@
         <section>
             <h2>Historial y Estatus de Mis Solicitudes</h2>
             <table id="solicitudesTable" class="display" style="width:100%">
+                <thead>
+                    <tr><th>Puesto</th><th>Fecha</th><th>Estatus</th><th>Asesora</th><th>Procesos</th></tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes %}
+                    <tr>
+                        <td>{{ solicitud.titulo }}</td><td>{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</td>
+                        <td>{{ solicitud.get_estatus_autorizacion_display }}</td>
+                        <td>{{ solicitud.asesora_encargada.username|default:"<span style='color:gray;'>Sin asignar</span>"|safe }}</td>
+                        <td>{{ solicitud.num_procesos }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </section>
     </div>
@@ -97,13 +133,25 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#solicitudesTable').DataTable({ "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" } });
+            $('#solicitudesTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json"  } });
 
-            // CAMBIO 3: Añadimos el JavaScript para el nuevo botón
             $('#id_archivo_justificacion').on('change', function(){
                 const fileName = $(this)[0].files.length > 0 ? $(this)[0].files[0].name : 'Ningún archivo seleccionado';
                 $('#file-chosen-justificacion').text(fileName);
             });
+
+            const motivoSelect = $('#id_motivo_requisicion');
+            const reemplazaWrapper = $('#reemplaza_a_wrapper');
+            function toggleReemplazaField() {
+                const selectedValue = motivoSelect.val();
+                if (selectedValue === 'ROT' || selectedValue === 'INCA') {
+                    reemplazaWrapper.slideDown();
+                } else {
+                    reemplazaWrapper.slideUp();
+                }
+            }
+            toggleReemplazaField();
+            motivoSelect.on('change', toggleReemplazaField);
         });
     </script>
 </body>

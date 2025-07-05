@@ -1,98 +1,115 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Bolsa de Trabajo - Candidatos Disponibles</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; }
-        .header h1 { color: #2c3e50; margin: 0; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        #candidatosTable thead th { background-color: #34495e; color: #ffffff; }
-        #candidatosTable tbody tr:hover { background-color: #ecf0f1 !important; }
-        .boton-tomar { background-color: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9em; }
-        select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; font-family: 'Poppins', sans-serif; }
-        a.cv-link { color: #2980b9; font-weight: 600; text-decoration: none; }
-        a.cv-link:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Bolsa de Trabajo - Candidatos Libres</h1>
-            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
-        </div>
-        <p>Esta es la base de datos general de candidatos sin proceso. Elige un candidato y asígnalo a una de tus vacantes abiertas.</p>
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
 
-        <table id="candidatosTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Candidato</th>
-                    <th>Email</th>
-                    <th>Puesto de Interés</th>
-                    <th>CV Adjunto</th>
-                    <th style="width: 280px;">Asignar a mi Vacante</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for candidato in candidatos %}
-                <tr class="data-row">
-                    <td>{{ candidato.nombre_completo }}</td>
-                    <td>{{ candidato.email }}</td>
-                    <td>{{ candidato.puesto_de_interes|default:"N/A" }}</td>
-                    <td>
-                        {% if candidato.cv %}
-                            <a href="{{ candidato.cv.url }}" target="_blank" class="cv-link">Ver CV</a>
+{% block title %}Bolsa de Trabajo{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 95%; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1 { color: #2c3e50; }
+    #candidatosTable thead th, #candidatosTable tfoot th { background-color: #34495e; color: #ffffff; white-space: nowrap; }
+    #candidatosTable thead tr.filters th { padding: 8px; background-color: #f1f2f6; }
+    #candidatosTable thead tr.filters input { width: 100%; padding: 6px; box-sizing: border-box; }
+    #candidatosTable tbody tr:hover { background-color: #ecf0f1 !important; }
+    .action-container { display: flex; align-items: center; gap: 10px; }
+    .action-button { background-color: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    .boton-ver-historial { text-decoration: none; background-color: #7f8c8d; color: white; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; }
+    .info-banner { background-color: #eaf2f8; color: #2e86c1; border: 1px solid #aed6f1; border-radius: 8px; padding: 1em; margin-bottom: 1.5em; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header"><h1>Bolsa de Trabajo - Candidatos Disponibles</h1></div>
+    {% if puesto_seleccionado %}<div class="info-banner">Estás asignando candidatos para la vacante: <strong>{{ puesto_seleccionado.titulo.nombre }}</strong>. (<a href="{% url 'bolsa_trabajo' %}">Ver todas las opciones</a>)</div>{% endif %}
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    <table id="candidatosTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Candidato</th>
+                <th>Teléfono</th>
+                <th>Nivel Educativo</th>
+                <th>Experiencia (años)</th>
+                <th>Último Puesto</th>
+                <th>Expectativa Salarial</th>
+                <th>Puesto de Interés</th> <th>CV</th>
+                <th>Acciones</th>
+            </tr>
+            <tr class="filters">
+                <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for candidato in candidatos %}
+            <tr class="data-row">
+                <td>
+                    <a href="{% url 'candidato_detalle' candidato.id %}">{{ candidato.nombre_completo }}</a>
+                    {% if candidato.alerta == 'NO_APROBADO' %}<span title="No aprobó psicometría..." style="cursor:help; color:#c0392b;"> 🛑</span>
+                    {% elif candidato.alerta == 'EN_BOLSA' %}<span title="Proceso previo. Ver historial." style="cursor:help; color:#3498db;"> ℹ️</span>
+                    {% endif %}
+                </td>
+                <td>{{ candidato.telefono|default_if_none:"" }}</td>
+                <td>{{ candidato.get_nivel_educativo_display|default_if_none:"" }}</td>
+                <td>{{ candidato.años_de_experiencia|default_if_none:"" }}</td>
+                <td>{{ candidato.ultimo_puesto|default_if_none:"" }}</td>
+                <td>${{ candidato.expectativa_salarial|default_if_none:"0.00" }}</td>
+
+                <td>{{ candidato.puesto_de_interes.titulo.nombre|default_if_none:"General" }}</td>
+
+                <td>
+                    {% if candidato.cv %}<a href="{{ candidato.cv.url }}" target="_blank">Ver CV</a>
+                    {% else %}No adjunto{% endif %}
+                </td>
+                <td>
+                    <div class="action-container">
+                        {% if puesto_seleccionado %}
+                            <form action="{% url 'bolsa_trabajo' %}" method="POST" style="margin: 0;">
+                                {% csrf_token %}<input type="hidden" name="candidato_id" value="{{ candidato.id }}"><input type="hidden" name="puesto_id" value="{{ puesto_seleccionado.id }}"><input type="hidden" name="puesto_fijo" value="1"><button type="submit" class="action-button">Asignar</button>
+                            </form>
                         {% else %}
-                            No adjuntó
+                            <form action="{% url 'bolsa_trabajo' %}" method="POST" style="display: flex; align-items: center; gap: 5px; margin: 0;">
+                                {% csrf_token %}<input type="hidden" name="candidato_id" value="{{ candidato.id }}"><select name="puesto_id" required><option value="">-- Asignar --</option>{% for puesto in mis_puestos %}<option value="{{ puesto.id }}">{{ puesto.titulo.nombre }}</option>{% endfor %}</select><button type="submit" class="action-button">Tomar</button>
+                            </form>
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if mis_puestos %}
-                        <form method="post" style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-                            {% csrf_token %}
-                            <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
-                            <select name="puesto_id" required>
-                                <option value="">-- Elige vacante --</option>
-                                {% for puesto in mis_puestos %}
-                                <option value="{{ puesto.id }}">{{ puesto.titulo }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="boton-tomar">Tomar</button>
-                        </form>
-                        {% else %}
-                        No tienes vacantes asignadas.
+                        {% if candidato.alerta %}
+                            <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="boton-ver-historial">Historial</a>
                         {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 20px;">No hay candidatos libres en la bolsa de trabajo general.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align: center; padding: 20px;">No hay candidatos disponibles en la bolsa de trabajo.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Contamos cuántas filas de datos reales hay en la tabla (gracias a la clase "data-row")
-            var rowCount = $('#candidatosTable tbody tr.data-row').length;
 
-            // Solo inicializamos DataTables si hay al menos una fila de datos
-            if (rowCount > 0) {
-                $('#candidatosTable').DataTable({
-                    "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
-                });
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#candidatosTable thead tr:eq(0) th').each(function(i) {
+        var title = $(this).text();
+        if ($(this).index() < 7) {
+            $(this).closest('table').find('thead tr.filters th').eq(i).html('<input type="text" placeholder="Buscar ' + title + '" />');
+        }
+    });
+    var table = $('#candidatosTable').DataTable({
+        "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+        orderCellsTop: true,
+        fixedHeader: true,
+    });
+    table.columns().every(function () {
+        var that = this;
+        $('input', this.header()).on('keyup change clear', function () {
+            if (that.search() !== this.value) {
+                that.search(this.value).draw();
             }
         });
-    </script>
-</body>
-</html>
+    });
+});
+</script>
+{% endblock %}

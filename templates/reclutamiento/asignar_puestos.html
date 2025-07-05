@@ -1,80 +1,89 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Asignar Vacantes a Asesoras</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; }
-        .header h1 { color: #2c3e50; margin: 0; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        #puestosTable thead th { background-color: #34495e; color: #ffffff; }
-        #puestosTable tbody tr:hover { background-color: #ecf0f1 !important; }
-        .boton-asignar { background-color: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9em; }
-        .boton-asignar:hover { background-color: #229954; }
-        select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; font-family: 'Poppins', sans-serif; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Asignar Vacantes a Asesoras</h1>
-            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
-        </div>
-        <p>Estas vacantes han sido autorizadas y están listas para ser asignadas a una asesora de reclutamiento.</p>
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
 
-        <table id="puestosTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Vacante (Puesto)</th>
-                    <th>Solicitado por</th>
-                    <th>Fecha de Solicitud</th>
-                    <th style="width: 280px;">Asignar a</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for puesto in puestos %}
-                <tr>
-                    <td>{{ puesto.titulo }}</td>
-                    <td>{{ puesto.solicitado_por.username }}</td>
-                    <td>{{ puesto.fecha_solicitud|date:"d/m/Y" }}</td>
-                    <td>
-                        <form method="post" style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-                            {% csrf_token %}
-                            <input type="hidden" name="puesto_id" value="{{ puesto.id }}">
-                            <select name="asesora_id" required>
-                                <option value="">-- Elige asesora --</option>
-                                {% for asesora in asesoras %}
-                                <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="boton-asignar">Asignar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 20px;">No hay vacantes autorizadas pendientes de asignación.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% block title %}Asignar Vacantes{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 95%; } /* Hacemos el contenedor más ancho */
+    #asignarTable thead th { background-color: #34495e; color: #ffffff; }
+    .action-form { display: flex; align-items: center; gap: 10px; }
+    .action-form select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    .action-form button { background-color: #8e44ad; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Asignar Vacantes Autorizadas</h1>
+        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
     </div>
+    <p>Revisa las requisiciones autorizadas y asígnalas a una asesora para que inicie el proceso de reclutamiento.</p>
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Le damos un ID único a esta tabla y la inicializamos
-            $('#puestosTable').DataTable({
-                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
-            });
+    <table id="asignarTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Puesto (Vacante)</th>
+                <th>Área</th>
+                <th>Jefe Inmediato</th>
+                <th>Motivo</th>
+                <th>Exp. Mín.</th>
+                <th>Sueldo Base</th>
+                <th>Justificación</th>
+                <th style="width: 280px;">Asignar A</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for puesto in puestos %}
+            <tr>
+                <td>
+                    <a href="{% url 'puesto_detalle' puesto.id %}" style="font-weight: 600;">{{ puesto.titulo.nombre }}</a>
+                    <small style="display: block; color: #7f8c8d;">{{ puesto.marca.nombre }} - {{ puesto.get_ciudad_display }}</small>
+                </td>
+                <td>{{ puesto.get_area_display }}</td>
+                <td>{{ puesto.jefe_inmediato_nombre }}</td>
+                <td>{{ puesto.get_motivo_requisicion_display }}</td>
+                <td style="text-align: center;">{{ puesto.experiencia_minima|default:"N/A" }}</td>
+                <td style="white-space: nowrap;">${{ puesto.sueldo_base|default:"N/A" }}</td>
+                <td>
+                    {% if puesto.archivo_justificacion %}
+                        <a href="{{ puesto.archivo_justificacion.url }}" target="_blank">Ver Adjunto</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{% url 'vista_asignar_puestos' %}" method="POST" class="action-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="puesto_id" value="{{ puesto.id }}">
+                        <select name="asesora_id" required>
+                            <option value="">-- Elige asesora --</option>
+                            {% for asesora in asesoras %}
+                                <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Asignar</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align:center; padding:20px;">No hay vacantes autorizadas pendientes de asignación.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#asignarTable').DataTable({
+            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" }
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

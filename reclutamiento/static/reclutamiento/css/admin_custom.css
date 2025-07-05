@@ -1,0 +1,48 @@
+/* reclutamiento/static/reclutamiento/css/admin_custom.css */
+/* VERSIÓN FINAL PARA REORGANIZAR EL LAYOUT DEL ADMIN */
+
+/* * Con este selector, afectamos SOLAMENTE a la página de inicio del admin.
+ * Forzamos al contenedor principal a apilar sus hijos verticalmente.
+*/
+body.index #content {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* * Forzamos a ambos bloques (la lista de modelos y las acciones recientes)
+ * a ocupar todo el ancho disponible.
+*/
+body.index #content-main,
+body.index #content-related {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Añadimos un espacio superior al bloque de acciones para separarlo */
+body.index #content-related {
+    margin-top: 30px !important;
+}
+
+
+/* --- Estilos para mejorar la legibilidad del timeline de Acciones Recientes --- */
+#recent-actions-module .action-list li {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    line-height: 1.5;
+    flex-wrap: wrap;
+}
+#recent-actions-module .action-description {
+    font-weight: 500;
+    color: #333;
+}
+#recent-actions-module .action-time {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+    white-space: nowrap;
+    flex-shrink: 0;
+}

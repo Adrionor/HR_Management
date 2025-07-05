@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,48 +9,81 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
-        .navbar { background-color: #ffffff; padding: 1em 2em; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .navbar .logo { font-weight: 700; font-size: 1.5em; color: #2c3e50; }
-        .navbar .cta-button { text-decoration: none; background-color: #2ecc71; color: white; padding: 0.8em 1.5em; border-radius: 5px; font-weight: 600; transition: background-color 0.2s; }
-        .navbar .cta-button:hover { background-color: #27ae60; }
+        .hero-header { background-color: #ffffff; padding: 2.5em 2em; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-bottom: 1px solid #e0e0e0; }
+        .hero-header .logo { max-width: 300px; height: auto; margin-bottom: 1em; }
+        .hero-header .slogan { font-size: 1.2em; color: #555; max-width: 600px; margin: 0 auto 1.5em auto; line-height: 1.6; }
+        .hero-header .apply-button { display: inline-block; text-decoration: none; background-color: #2ecc71; color: white; padding: 0.8em 2em; border-radius: 5px; font-weight: 600; font-size: 1.1em; transition: background-color 0.2s; }
+        .hero-header .apply-button:hover { background-color: #27ae60; }
+
         .container { max-width: 900px; margin: 2em auto; padding: 0 2em; }
         .page-title { text-align: center; color: #2c3e50; margin-bottom: 1.5em; }
-        .vacante-card { background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); margin-bottom: 2em; padding: 2em; }
-        .vacante-card h2 { margin-top: 0; color: #3498db; }
-        .vacante-card .fecha { color: #7f8c8d; font-size: 0.9em; margin-bottom: 1em; }
-        .vacante-card .descripcion { color: #34495e; line-height: 1.6; }
+
+        /* Estilos para las nuevas tarjetas de vacantes */
+        .vacante-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5em;
+            padding: 1.5em 2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1em;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .vacante-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+        .vacante-info { flex-grow: 1; }
+        .vacante-info h2 { margin: 0 0 0.3em 0; color: #3498db; }
+        .vacante-info .meta { color: #7f8c8d; font-size: 0.9em; }
+        .vacante-actions .boton-postular { text-decoration: none; background-color: #3498db; color: white; padding: 0.8em 1.5em; border-radius: 5px; font-weight: 600; white-space: nowrap; }
+
         .footer { text-align: center; padding: 2em; color: #7f8c8d; font-size: 0.9em; }
         .footer a { color: #34495e; font-weight: 600; }
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="logo">Bolsa de Trabajo Premier</div>
-        <a href="{% url 'registro_candidato' %}" class="cta-button">¿Te interesa alguna vacante? ¡Aplica aquí!</a>
-    </nav>
+    <header class="hero-header">
+        <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier Automotriz" class="logo">
+        <p class="slogan">
+            Bolsa de Trabajo de Premier Automotriz <br><br> Ingresa y postúlate para tu vacante favorita, o bien, te invitamos a registrar tus datos para futuras oportunidades.
+        </p>
+        <a href="{% url 'registro_candidato' %}" class="apply-button">Aplica aquí</a>
+    </header>
 
     <div class="container">
-        <h1 class="page-title">Oportunidades de Carrera</h1>
+        <h1 class="page-title">Oportunidades de Carrera Disponibles</h1>
 
-        {% for vacante in vacantes %}
         <div class="vacante-card">
-            <h2>{{ vacante.titulo }}</h2>
-            <p class="fecha">Publicado el: {{ vacante.fecha_autorizacion|date:"d F, Y" }}</p>
-            <div class="descripcion">
-                {{ vacante.descripcion|linebreaks }}
+            <div class="vacante-info">
+                <h2>Prácticas Profesionales</h2>
+                <div class="meta">
+                    <span>Todas las ciudades</span>
+                </div>
+            </div>
+            <div class="vacante-actions">
+                <a href="{% url 'registro_candidato' %}?puesto=PRACTICAS" class="boton-postular">Postularme</a>
             </div>
         </div>
-        {% empty %}
+
+        {% for puesto in vacantes %}
         <div class="vacante-card">
-            <h2>No hay vacantes por el momento</h2>
-            <p>Actualmente no tenemos posiciones abiertas, pero te invitamos a registrarte en nuestra bolsa de trabajo para futuras oportunidades.</p>
+            <div class="vacante-info">
+                <h2>{{ puesto.titulo.nombre }}</h2>
+                <div class="meta">
+                    <span> {{ puesto.get_ciudad_display }}</span>
+                </div>
+            </div>
+            <div class="vacante-actions">
+                <a href="{% url 'registro_candidato' %}?puesto={{ puesto.id }}" class="boton-postular">Postularme</a>
+            </div>
         </div>
         {% endfor %}
     </div>
 
     <footer class="footer">
-        <p>Portal para empleados: <a href="{% url 'login' %}">Iniciar Sesión</a></p>
+        <p>¿Eres parte del equipo? <a href="{% url 'login' %}">Acceso a Colaboradores</a></p>
+        <p>Copyright © {% now "Y" %} Premier Automotriz. Todos los derechos reservados.</p>
     </footer>
 
 </body>

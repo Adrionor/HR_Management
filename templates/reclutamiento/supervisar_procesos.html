@@ -13,13 +13,18 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; }
         .header h1 { color: #2c3e50; margin: 0; }
         .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+
+        /* Estilos para la tabla y formularios */
         #procesosTable thead th { background-color: #34495e; color: #ffffff; }
         #procesosTable tbody tr:hover { background-color: #ecf0f1 !important; }
         .boton-reasignar { background-color: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9em; }
         .boton-reasignar:hover { background-color: #d35400; }
+        .boton-ver-detalle { text-decoration: none; background-color: #16a085; color: white; padding: 5px 10px; border-radius: 5px; font-weight: 600; font-size: 0.9em; }
         select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; margin-right: 10px; font-family: 'Poppins', sans-serif; }
+
+        /* Estilos para los mensajes de éxito o error */
         .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
-        .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
+        .messages .success { padding: 15px; margin-bottom: 1em; border-radius: 5px; border: 1px solid #c3e6cb; background-color: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
@@ -30,13 +35,7 @@
         </div>
         <p>Aquí puedes ver todos los procesos activos y reasignarlos a una asesora diferente si es necesario.</p>
 
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-            <li class="{{ message.tags }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
+        {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
 
         <table id="procesosTable" class="display" style="width:100%">
             <thead>
@@ -46,6 +45,7 @@
                     <th>Estatus Actual</th>
                     <th>Asesora Actual</th>
                     <th style="width: 300px;">Reasignar a</th>
+                    <th>Detalle / Historial</th>
                 </tr>
             </thead>
             <tbody>
@@ -58,11 +58,11 @@
                         {% if proceso.asesora_asignada %}
                             {{ proceso.asesora_asignada.get_full_name|default:proceso.asesora_asignada.username }}
                         {% else %}
-                            <span style="color:red;">SIN ASIGNAR</span>
+                            <span style="color:red; font-weight: bold;">SIN ASIGNAR</span>
                         {% endif %}
                     </td>
                     <td>
-                        <form method="post">
+                        <form action="{% url 'vista_supervisar_procesos' %}" method="post" style="display: flex; align-items: center; gap: 10px;">
                             {% csrf_token %}
                             <input type="hidden" name="proceso_id" value="{{ proceso.id }}">
                             <select name="nueva_asesora_id" required>
@@ -76,6 +76,9 @@
                             <button type="submit" class="boton-reasignar">Reasignar</button>
                         </form>
                     </td>
+                    <td>
+                        <a href="{% url 'detalle_proceso' proceso.id %}" class="boton-ver-detalle">Ver Detalle</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -86,7 +89,10 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#procesosTable').DataTable({ "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" } });
+            $('#procesosTable').DataTable({
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
+                "order": [[ 2, "asc" ]] // Ordena por estatus por defecto
+            });
         });
     </script>
 </body>

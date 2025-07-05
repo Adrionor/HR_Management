@@ -1,0 +1,67 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Perfil de Puesto: {{ puesto.titulo }}{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 900px; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1 { color: #2c3e50; font-size: 1.8em; }
+    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+
+    form { margin-top: 2em; }
+    form p { margin-bottom: 1.5em; }
+    form label { display: block; font-weight: 600; color: #34495e; margin-bottom: 0.5em; }
+    form input, form textarea, form select {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1em;
+    }
+    .boton-guardar {
+        display: inline-block;
+        width: auto;
+        padding: 12px 30px;
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
+    .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
+    .form-group.required label::after {
+    content: " *";
+    color: red;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Perfil Detallado para: {{ puesto.titulo }}</h1>
+        <a href="{% url 'mis_vacantes' %}" class="boton-volver">← Volver a Mis Vacantes</a>
+    </div>
+
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    <p>Define los requerimientos específicos para esta vacante después de tu sesión con el gerente solicitante.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_publication">
+
+        {{ form.as_p }}
+
+        <button type="submit" class="boton-guardar">Guardar Perfil</button>
+    </form>
+</div>
+{% endblock %}

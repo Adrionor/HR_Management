@@ -1,137 +1,178 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Bolsa de Trabajo - Regístrate</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; padding: 3em 1em; min-height: 100vh; }
-        .form-container { width: 100%; max-width: 650px; padding: 2em 2.5em; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
-        h1 { color: #2c3e50; text-align: center; }
-        .form-group { margin-bottom: 1.2em; text-align: left; }
-        label { display: block; margin-bottom: 0.5em; font-weight: 600; color: #34495e; }
-        input[type="text"], input[type="email"], input[type="number"], textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: 'Poppins', sans-serif; font-size: 1em; background-color: #f8f9fa; }
-        .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; display: block; }
-        .error-message { color: #e74c3c; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
-        .form-errors { list-style-type: none; padding: 10px; margin-bottom: 1em; background-color: #fbeae5; border: 1px solid #e74c3c; border-radius: 5px; color: #c0392b; }
-        .file-upload-wrapper input[type="file"] { display: none; }
-        .boton-file { display: inline-block; padding: 10px 15px; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 600; }
-        #file-chosen { margin-left: 10px; font-style: italic; color: #555; }
-        .boton-submit { width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #2ecc71; color: white; font-family: 'Poppins', sans-serif; font-size: 1.1em; font-weight: 600; cursor: pointer; margin-top: 1em; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background-color: white; padding: 2em; border-radius: 10px; max-width: 500px; width: 90%; text-align: left; }
-        .modal-content h2 { margin-top: 0; color: #2c3e50; }
-        .modal-content p { margin-bottom: 0.7em; }
-        .modal-actions { margin-top: 2em; text-align: right; }
-        .modal-actions button { padding: 10px 20px; border-radius: 5px; border: none; font-weight: 600; cursor: pointer; margin-left: 10px; }
-        #cancel-btn { background-color: #bdc3c7; }
-        #confirm-btn { background-color: #27ae60; color: white; }
-    </style>
-</head>
-<body>
-    <div class="form-container">
-        <h1>Únete a nuestra Bolsa de Trabajo</h1>
-        <p>Completa el formulario para ser considerado en futuras vacantes.</p>
+{% extends "reclutamiento/base_publica.html" %}
+{% load static %}
 
-        <form id="registro-form" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
+{% block title %}Bolsa de Trabajo - Regístrate{% endblock %}
 
-            {% if form.non_field_errors %}
-                <ul class="form-errors">
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
+{% block style %}
+<style>
+    .form-container { width: 100%; max-width: 800px; padding: 2em 2.5em; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
+    .logo-container { text-align: center; margin-bottom: 1em; }
+    .logo-container img { max-width: 250px; height: auto; }
+    h1 { color: #2c3e50; text-align: center; }
 
-            {% for field in form %}
-                <div class="form-group">
-                    {{ field.label_tag }}
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
 
-                    {% if field.name == 'cv' %}
-                        <div class="file-upload-wrapper">
-                            <label for="{{ field.id_for_label }}" class="boton-file">Seleccionar Archivo</label>
-                            <span id="file-chosen">Ningún archivo seleccionado</span>
-                            {{ field }}
-                        </div>
-                    {% else %}
-                        {{ field }}
-                    {% endif %}
+    .form-group { margin-bottom: 1.2em; text-align: left; }
+    .form-group--full-width { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 0.5em; font-weight: 600; color: #34495e; }
+    input[type="text"], input[type="email"], input[type="number"], input[type="date"], textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-family: 'Poppins', sans-serif; font-size: 1em; background-color: #f8f9fa; }
+    .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; display: block; }
+    .error-message { color: #e74c3c; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+    .checkbox-group input[type="checkbox"] { width: auto; height: 1.2em; }
+    .form-group-conditional { display: none; } /* Ocultamos el campo de motivo por defecto */
 
-                    {% if field.help_text %}
-                        <small class="help-text">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% if field.errors %}
-                        <div class="error-message">{{ field.errors|striptags }}</div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+    .file-upload-wrapper input[type="file"] { display: none; }
+    .boton-file { display: inline-block; padding: 10px 15px; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 600; }
+    #file-chosen { margin-left: 10px; font-style: italic; color: #555; }
+    .boton-submit { width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #2ecc71; color: white; font-family: 'Poppins', sans-serif; font-size: 1.1em; font-weight: 600; cursor: pointer; margin-top: 1em; }
 
-            <button type="button" id="review-button" class="boton-submit">Revisar y Enviar mis Datos</button>
-        </form>
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background-color: white; padding: 2em; border-radius: 10px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .modal-header h3 { margin: 0; color: #2c3e50; }
+    .modal-body { margin-top: 1.5em; border-top: 1px solid #eee; padding-top: 1.5em;}
+    .modal-body p { margin: 0.5em 0; }
+    .modal-body strong { color: #34495e; }
+    .modal-actions { margin-top: 2em; text-align: right; }
+    .modal-actions button { padding: 10px 20px; border-radius: 5px; border: none; font-weight: 600; cursor: pointer; margin-left: 10px; }
+    #cancel-btn { background-color: #bdc3c7; }
+    #confirm-btn { background-color: #27ae60; color: white; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="form-container">
+    <div class="logo-container">
+        <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier Automotriz">
     </div>
+    <h1>Únete a nuestra Bolsa de Trabajo</h1>
+    <p style="text-align:center;">Completa el formulario para ser considerado en futuras vacantes.</p>
 
-    <div id="confirmation-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>Por favor, verifica tus datos</h2>
-            <p><strong>Nombre:</strong> <span id="confirm-nombre"></span></p>
+    <form id="registro-form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="form-grid">
+            <div class="form-group">{{ form.nombres.label_tag }}{{ form.nombres }}{{ form.nombres.errors }}</div>
+            <div class="form-group">{{ form.apellidos.label_tag }}{{ form.apellidos }}{{ form.apellidos.errors }}</div>
+            <div class="form-group">{{ form.email.label_tag }}{{ form.email }}{{ form.email.errors }}</div>
+            <div class="form-group">{{ form.telefono.label_tag }}{{ form.telefono }}{{ form.telefono.errors }}</div>
+            <div class="form-group">{{ form.rfc.label_tag }}{{ form.rfc }}{{ form.rfc.errors }}</div>
+            <div class="form-group">{{ form.fecha_nacimiento.label_tag }}{{ form.fecha_nacimiento }}{{ form.fecha_nacimiento.errors }}</div>
+            <div class="form-group form-group--full-width">{{ form.puesto_de_interes.label_tag }}{{ form.puesto_de_interes }}{{ form.puesto_de_interes.errors }}</div>
+            <div class="form-group">{{ form.nivel_educativo.label_tag }}{{ form.nivel_educativo }}{{ form.nivel_educativo.errors }}</div>
+            <div class="form-group">{{ form.años_de_experiencia.label_tag }}{{ form.años_de_experiencia }}{{ form.años_de_experiencia.errors }}</div>
+            <div class="form-group">{{ form.ultimo_puesto.label_tag }}{{ form.ultimo_puesto }}{{ form.ultimo_puesto.errors }}</div>
+            <div class="form-group">{{ form.ultima_empresa.label_tag }}{{ form.ultima_empresa }}{{ form.ultima_empresa.errors }}</div>
+
+            <div class="form-group checkbox-group form-group--full-width">
+                {{ form.es_colaborador_actual }}
+                {{ form.es_colaborador_actual.label_tag }}
+            </div>
+            <div class="form-group form-group-conditional form-group--full-width" id="motivo_busqueda_wrapper">
+                {{ form.motivo_busqueda.label_tag }}
+                {{ form.motivo_busqueda }}
+                {{ form.motivo_busqueda.errors }}
+            </div>
+
+            <div class="form-group form-group--full-width">{{ form.habilidades.label_tag }}{{ form.habilidades }}{{ form.habilidades.errors }}</div>
+            <div class="form-group form-group--full-width">{{ form.expectativa_salarial.label_tag }}{{ form.expectativa_salarial }}{{ form.expectativa_salarial.errors }}</div>
+            <div class="form-group form-group--full-width">
+                {{ form.cv.label_tag }}
+                <div class="file-upload-wrapper">
+                    <label for="{{ form.cv.id_for_label }}" class="boton-file">Seleccionar Archivo</label>
+                    <span id="file-chosen">Ningún archivo seleccionado</span>
+                    {{ form.cv }}
+                </div>
+                {{ form.cv.errors }}
+            </div>
+        </div>
+        <button type="button" id="review-button" class="boton-submit">Revisar y Enviar mis Datos</button>
+    </form>
+</div>
+
+<div id="confirmation-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Por favor, verifica tus datos</h3></div>
+        <div class="modal-body">
+            <p><strong>Nombres:</strong> <span id="confirm-nombres"></span></p>
+            <p><strong>Apellidos:</strong> <span id="confirm-apellidos"></span></p>
             <p><strong>Email:</strong> <span id="confirm-email"></span></p>
             <p><strong>Teléfono:</strong> <span id="confirm-telefono"></span></p>
+            <p><strong>RFC:</strong> <span id="confirm-rfc"></span></p>
+            <p><strong>Fecha de Nacimiento:</strong> <span id="confirm-nacimiento"></span></p>
             <p><strong>Puesto de Interés:</strong> <span id="confirm-puesto"></span></p>
             <p><strong>Nivel Educativo:</strong> <span id="confirm-educacion"></span></p>
             <p><strong>Años de Experiencia:</strong> <span id="confirm-experiencia"></span></p>
-            <p><strong>Habilidades:</strong> <span id="confirm-habilidades"></span></p>
-            <p><strong>Expectativa Salarial:</strong> <span id="confirm-salario"></span></p>
+            <p><strong>Último Puesto:</strong> <span id="confirm-ultimo-puesto"></span></p>
+            <p><strong>Última Empresa:</strong> <span id="confirm-ultima-empresa"></span></p>
+            <p><strong>¿Colaborador Actual?:</strong> <span id="confirm-es-colaborador"></span></p>
+            <p id="motivo-confirm-wrapper" style="display: none;"><strong>Motivo de Búsqueda:</strong> <span id="confirm-motivo"></span></p>
             <p><strong>CV Adjunto:</strong> <span id="confirm-cv"></span></p>
-            <div class="modal-actions">
-                <button id="cancel-btn">Editar</button>
-                <button id="confirm-btn">Confirmar y Enviar</button>
-            </div>
+        </div>
+        <div class="modal-actions">
+            <button id="cancel-btn">Editar</button>
+            <button id="confirm-btn">Confirmar y Enviar</button>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script>
-        $(document).ready(function() {
-            const form = $('#registro-form');
-            const modal = $('#confirmation-modal');
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    const form = $('#registro-form');
+    const modal = $('#confirmation-modal');
+    const checkboxColaborador = $('#id_es_colaborador_actual');
+    const motivoWrapper = $('#motivo_busqueda_wrapper');
 
-            // Script para mostrar el nombre del archivo del CV
-            $('#id_cv').on('change', function() {
-                const fileName = $(this)[0].files.length > 0 ? $(this)[0].files[0].name : 'Ningún archivo seleccionado';
-                $('#file-chosen').text(fileName);
-            });
+    function toggleMotivoField() {
+        if (checkboxColaborador.is(':checked')) {
+            motivoWrapper.slideDown();
+        } else {
+            motivoWrapper.slideUp();
+            $('#id_motivo_busqueda').val('');
+        }
+    }
+    toggleMotivoField();
+    checkboxColaborador.on('change', toggleMotivoField);
 
-            // Al hacer clic en "Revisar y Enviar"
-            $('#review-button').on('click', function() {
-                // Llenamos la ventana modal con los datos del formulario
-                $('#confirm-nombre').text($('input[name="nombre_completo"]').val());
-                $('#confirm-email').text($('input[name="email"]').val());
-                $('#confirm-telefono').text($('input[name="telefono"]').val());
-                $('#confirm-puesto').text($('select[name="puesto_de_interes"] option:selected').text());
-                $('#confirm-educacion').text($('select[name="nivel_educativo"] option:selected').text());
-                $('#confirm-experiencia').text($('input[name="años_de_experiencia"]').val());
-                $('#confirm-habilidades').text($('textarea[name="habilidades"]').val());
-                $('#confirm-salario').text($('input[name="expectativa_salarial"]').val());
-                $('#confirm-cv').text($('#file-chosen').text());
+    $('#id_cv').on('change', function() {
+        const fileName = $(this)[0].files.length > 0 ? $(this)[0].files[0].name : 'Ningún archivo seleccionado';
+        $('#file-chosen').text(fileName);
+    });
 
-                modal.css('display', 'flex');
-            });
+    $('#review-button').on('click', function() {
+        $('#confirm-nombres').text($('input[name="nombres"]').val());
+        $('#confirm-apellidos').text($('input[name="apellidos"]').val());
+        $('#confirm-email').text($('input[name="email"]').val());
+        $('#confirm-telefono').text($('input[name="telefono"]').val());
+        $('#confirm-rfc').text($('input[name="rfc"]').val());
+        $('#confirm-fecha-nacimiento').text($('input[name="fecha_nacimiento"]').val());
+        $('#confirm-puesto').text($('#id_puesto_de_interes option:selected').text());
+        $('#confirm-educacion').text($('#id_nivel_educativo option:selected').text());
+        $('#confirm-experiencia').text($('input[name="años_de_experiencia"]').val());
+        $('#confirm-ultimo-puesto').text($('input[name="ultimo_puesto"]').val());
+        $('#confirm-ultima-empresa').text($('input[name="ultima_empresa"]').val());
+        $('#confirm-cv').text($('#file-chosen').text());
 
-            // Al hacer clic en "Editar" o fuera de la ventana
-            $('#cancel-btn, .modal-overlay').on('click', function(e) {
-                if (e.target === this || $(e.target).is('#cancel-btn')) {
-                    modal.hide();
-                }
-            });
+        const esColaborador = checkboxColaborador.is(':checked');
+        $('#confirm-es-colaborador').text(esColaborador ? 'Sí' : 'No');
 
-            // Al hacer clic en "Confirmar y Enviar"
-            $('#confirm-btn').on('click', function() {
-                form.submit();
-            });
-        });
-    </script>
-</body>
-</html>
+        if (esColaborador) {
+            $('#motivo-confirm-wrapper').show();
+            $('#confirm-motivo').text($('#id_motivo_busqueda option:selected').text());
+        } else {
+            $('#motivo-confirm-wrapper').hide();
+        }
+        modal.css('display', 'flex');
+    });
+
+    $('#cancel-btn').on('click', function(e) { modal.hide(); });
+    $('#confirm-btn').on('click', function() { form.submit(); });
+    $('.modal-overlay').on('click', function(e) { if(e.target === this) { modal.hide(); }});
+});
+</script>
+{% endblock %}

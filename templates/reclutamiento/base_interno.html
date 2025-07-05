@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Portal de Reclutamiento{% endblock %} - Premier Automotriz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
+        .navbar {
+            background-color: #3498db;
+            color: white;
+            padding: 0.8em 2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar .logo-container {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+        }
+        .navbar .logo-container img {
+            height: 50px;
+            width: auto;
+            margin-right: 15px;
+        }
+        .navbar .logo-container h1 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        .navbar .user-info { display: flex; align-items: center; }
+        .navbar-link { text-decoration: underline; margin: 0 10px; color: white; font-weight: 600; }
+        .logout-button { background: none; border: none; color: white; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 1em; cursor: pointer; padding: 0; margin-left: 5px; text-decoration: underline; }
+
+        /* Bloque para que cada página hija pueda añadir sus propios estilos */
+        {% block style %}{% endblock %}
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="{% url 'dashboard' %}" class="logo-container">
+            <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier">
+            <h1>Portal de Reclutamiento</h1>
+        </a>
+        <div class="user-info">
+            <span>Hola, {{ user.get_full_name|default:user.username }} |</span>
+            <a href="{% url 'password_change' %}" class="navbar-link">Cambiar Contraseña</a> |
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Cerrar Sesión</button>
+            </form>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Copyright © {% now "Y" %} Premier Automotriz. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>
