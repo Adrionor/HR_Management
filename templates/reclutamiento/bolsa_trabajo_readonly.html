@@ -8,10 +8,12 @@
     .container { max-width: 95%; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
     h1 { color: #2c3e50; }
+
     #candidatosTable thead th { background-color: #34495e; color: #ffffff; white-space: nowrap; }
     #candidatosTable thead tr.filters th { padding: 8px; background-color: #f1f2f6; }
     #candidatosTable thead tr.filters input { width: 100%; padding: 6px; box-sizing: border-box; }
     #candidatosTable tbody tr:hover { background-color: #ecf0f1 !important; }
+
     .boton-ver-historial { text-decoration: none; background-color: #7f8c8d; color: white; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; }
 </style>
 {% endblock %}
@@ -26,17 +28,16 @@
         <thead>
             <tr>
                 <th>Candidato</th>
-                <th>Colaborador Actual</th>
-                <th>Teléfono</th>
+                <th>Colaborador Actual</th> <th>Teléfono</th>
                 <th>Nivel Educativo</th>
                 <th>Experiencia (años)</th>
                 <th>Último Puesto</th>
                 <th>Puesto de Interés</th>
-                <th>Ciudad de Interés</th> <th>CV</th>
+                <th>CV</th>
                 <th>Historial</th>
             </tr>
             <tr class="filters">
-                <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
             </tr>
         </thead>
         <tbody>
@@ -44,26 +45,36 @@
             <tr class="data-row">
                 <td>
                     <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank">{{ candidato.nombre_completo }}</a>
-                    {% if candidato.alerta == 'NO_APROBADO' %}<span title="No aprobó psicometría..." style="cursor:help; color:#c0392b;"> 🛑</span>{% endif %}
-                    {% if candidato.alerta == 'EN_BOLSA' %}<span title="Proceso previo. Ver historial." style="cursor:help; color:#3498db;"> ℹ️</span>{% endif %}
+                    {% if candidato.alerta == 'NO_APROBADO' %}<span title="No aprobó psicometría..." style="cursor:help; color:#c0392b;"> 🛑</span>
+                    {% elif candidato.alerta == 'EN_BOLSA' %}<span title="Proceso previo. Ver historial." style="cursor:help; color:#3498db;"> ℹ️</span>
+                    {% endif %}
                 </td>
                 <td style="text-align: center;">
-                    {% if candidato.es_colaborador_actual %}<span style="color: #27ae60; font-weight: bold;" title="Colaborador interno">Sí ✅</span>
-                    {% else %}No{% endif %}
+                    {% if candidato.es_colaborador_actual %}
+                        <span style="color: #27ae60; font-weight: bold;" title="Este candidato es un colaborador interno.">Sí ✅</span>
+                    {% else %}
+                        No
+                    {% endif %}
                 </td>
                 <td>{{ candidato.telefono|default_if_none:"" }}</td>
                 <td>{{ candidato.get_nivel_educativo_display|default_if_none:"" }}</td>
-                <td style="text-align: center;">{{ candidato.años_de_experiencia|default_if_none:"" }}</td>
+                <td>{{ candidato.años_de_experiencia|default_if_none:"" }}</td>
                 <td>{{ candidato.ultimo_puesto|default_if_none:"" }}</td>
                 <td>
-                    {% if candidato.puesto_de_interes %}{{ candidato.puesto_de_interes.titulo.nombre }}{% else %}<span style="font-style: italic;">General</span>{% endif %}
+                    {% if candidato.puesto_de_interes %}
+                        {{ candidato.puesto_de_interes.titulo.nombre }}
+                    {% else %}
+                        <span style="font-style: italic;">{{ candidato.interes_custom|default:"General" }}</span>
+                    {% endif %}
                 </td>
-                <td>{{ candidato.puesto_de_interes.get_ciudad_display|default_if_none:"" }}</td>
                 <td>
-                    {% if candidato.cv %}<a href="{{ candidato.cv.url }}" target="_blank">Ver CV</a>{% else %}No adjunto{% endif %}
+                    {% if candidato.cv %}<a href="{{ candidato.cv.url }}" target="_blank">Ver CV</a>
+                    {% else %}No adjunto{% endif %}
                 </td>
                 <td>
-                    {% if candidato.alerta %}<a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="boton-ver-historial">Ver</a>{% endif %}
+                    {% if candidato.alerta %}
+                        <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="boton-ver-historial">Ver</a>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}
@@ -77,10 +88,11 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    // El script para los filtros se adapta al nuevo número de columnas
+    // El script para los filtros se adapta a la nueva columna
     $('#candidatosTable thead tr:eq(0) th').each(function(i) {
         var title = $(this).text();
-        if (title && title !== 'CV' && title !== 'Historial') { // No ponemos filtro en las últimas columnas
+        // No ponemos filtro en las columnas que no lo necesitan
+        if (title && title !== 'CV' && title !== 'Historial' && title !== 'Colaborador Actual') {
             $(this).closest('table').find('thead tr.filters th').eq(i).html('<input type="text" placeholder="Buscar ' + title + '" />');
         }
     });

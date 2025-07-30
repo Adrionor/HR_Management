@@ -5,18 +5,17 @@
 
 {% block style %}
 <style>
-    .container { max-width: 1400px; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1 { color: #2c3e50; }
-    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+    /* Los estilos generales no cambian */
+    .container { max-width: 1400px; }
     #perfilesTable thead th { background-color: #34495e; color: #ffffff; }
-    #perfilesTable tbody tr:hover { background-color: #ecf0f1 !important; }
     .boton-ver { background-color: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+    /* Estilos para la ventana modal */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background-color: white; padding: 2em; border-radius: 10px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; }
-    .modal-content h2 { margin-top: 0; color: #16a085; }
-    .modal-content h4 { color: #3498db; margin-top: 1.5em; margin-bottom: 0.5em; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-    .modal-content p { white-space: pre-wrap; line-height: 1.6; }
+    .modal-content { background-color: white; padding: 2em; border-radius: 10px; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; }
+    .modal-content h2 { margin-top: 0; color: #16a085; border-bottom: 1px solid #eee; padding-bottom: 0.5em; }
+    .modal-content h4 { color: #3498db; margin-top: 1.5em; margin-bottom: 0.5em; }
+    .modal-content p { white-space: pre-wrap; line-height: 1.6; margin: 0.2em 0 1em 0; }
     .modal-content .close-btn { float: right; font-size: 1.8em; cursor: pointer; line-height: 1; }
 </style>
 {% endblock %}
@@ -42,7 +41,7 @@
         <tbody>
             {% for perfil in perfiles %}
             <tr>
-                <td>{{ perfil.puesto.titulo }}</td>
+                <td>{{ perfil.puesto.titulo.nombre }}</td>
                 <td>
                     {% if perfil.puesto.solicitado_por %}
                         {{ perfil.puesto.solicitado_por.get_full_name|default:perfil.puesto.solicitado_por.username }}
@@ -60,11 +59,16 @@
                 <td>{{ perfil.fecha_creacion|date:"d/m/Y" }}</td>
                 <td>
                     <button class="boton-ver ver-detalles-btn"
-                            data-titulo="{{ perfil.puesto.titulo }}"
-                            data-habilidades-clave="{{ perfil.habilidades_clave|escapejs }}"
-                            data-habilidades-deseables="{{ perfil.habilidades_deseables|escapejs }}"
-                            data-rasgos="{{ perfil.rasgos_personalidad|escapejs }}"
-                            data-preguntas="{{ perfil.preguntas_sugeridas|escapejs }}">
+                            data-titulo="{{ perfil.puesto.titulo.nombre }}"
+                            data-rango-edad="{{ perfil.rango_edad|default:'No especificado' }}"
+                            data-preferencia-sexo="{{ perfil.get_preferencia_sexo_display }}"
+                            data-motivo-sexo="{{ perfil.get_motivo_preferencia_sexo_display|default:'' }}"
+                            data-area-experiencia="{{ perfil.get_area_experiencia_enfoque_display }}"
+                            data-importancia-apariencia="{{ perfil.get_importancia_apariencia_display }}"
+                            data-justificacion-apariencia="{{ perfil.justificacion_apariencia|escapejs }}"
+                            data-feedback-anterior="{{ perfil.feedback_anterior|escapejs }}"
+                            data-requiere-licencia="{{ perfil.get_requiere_licencia_display }}"
+                            data-comentarios-adicionales="{{ perfil.comentarios_adicionales|escapejs }}">
                         Ver Perfil
                     </button>
                 </td>
@@ -76,35 +80,68 @@
 
 <div id="detalle-modal" class="modal-overlay">
     <div class="modal-content">
-        <span class="close-btn">&times;</span><h2 id="modal-titulo"></h2>
-        <h4>Habilidades Clave (Indispensables)</h4><p id="modal-habilidades-clave"></p>
-        <h4>Habilidades Deseables (Plus)</h4><p id="modal-habilidades-deseables"></p>
-        <h4>Rasgos de Personalidad Ideales</h4><p id="modal-rasgos"></p>
-        <h4>Preguntas Sugeridas para Entrevista</h4><p id="modal-preguntas"></p>
+        <span class="close-btn">&times;</span>
+        <h2 id="modal-titulo"></h2>
+
+        <h4>1. Rango de edad ideal</h4><p id="modal-rango-edad"></p>
+        <h4>2. ¿Preferencia de sexo?</h4><p id="modal-preferencia-sexo"></p>
+        <div id="modal-motivo-sexo-wrapper" style="display: none;">
+            <h4>3. Motivo de la preferencia</h4><p id="modal-motivo-sexo"></p>
+        </div>
+        <h4>4. Área de experiencia de enfoque</h4><p id="modal-area-experiencia"></p>
+        <h4>5. Importancia de la apariencia</h4><p id="modal-importancia-apariencia"></p>
+        <div id="modal-justificacion-apariencia-wrapper" style="display: none;">
+            <h4>5a. Justificación de la apariencia</h4><p id="modal-justificacion-apariencia"></p>
+        </div>
+        <h4>6. Feedback sobre ocupante anterior</h4><p id="modal-feedback-anterior"></p>
+        <h4>7. ¿Requiere licencia y conducir estándar?</h4><p id="modal-requiere-licencia"></p>
+        <h4>Comentarios adicionales</h4><p id="modal-comentarios-adicionales"></p>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    $(document).ready(function() {
-        $('#perfilesTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
+$(document).ready(function() {
+    $('#perfilesTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
 
-        $('.ver-detalles-btn').on('click', function() {
-            const button = $(this);
-            $('#modal-titulo').text(button.data('titulo'));
-            $('#modal-habilidades-clave').text(button.data('habilidades-clave'));
-            $('#modal-habilidades-deseables').text(button.data('habilidades-deseables'));
-            $('#modal-rasgos').text(button.data('rasgos'));
-            $('#modal-preguntas').text(button.data('preguntas'));
-            $('#detalle-modal').css('display', 'flex');
-        });
+    // CAMBIO: El script ahora lee los nuevos datos y los pone en los nuevos campos del modal
+    $('.ver-detalles-btn').on('click', function() {
+        const button = $(this);
+        $('#modal-titulo').text("Perfil para: " + button.data('titulo'));
+        $('#modal-rango-edad').text(button.data('rango-edad'));
+        $('#modal-preferencia-sexo').text(button.data('preferencia-sexo'));
+        $('#modal-area-experiencia').text(button.data('area-experiencia'));
+        $('#modal-importancia-apariencia').text(button.data('importancia-apariencia'));
+        $('#modal-feedback-anterior').text(button.data('feedback-anterior'));
+        $('#modal-requiere-licencia').text(button.data('requiere-licencia'));
+        $('#modal-comentarios-adicionales').text(button.data('comentarios-adicionales'));
 
-        $('.close-btn, .modal-overlay').on('click', function(e) {
-            if (e.target === this || $(e.target).is('.close-btn')) {
-                $('#detalle-modal').hide();
-            }
-        });
+        // Lógica para mostrar/ocultar los campos condicionales en el modal
+        const motivoSexo = button.data('motivo-sexo');
+        if (motivoSexo) {
+            $('#modal-motivo-sexo').text(motivoSexo);
+            $('#modal-motivo-sexo-wrapper').show();
+        } else {
+            $('#modal-motivo-sexo-wrapper').hide();
+        }
+
+        const justificacionApariencia = button.data('justificacion-apariencia');
+        if (justificacionApariencia) {
+            $('#modal-justificacion-apariencia').text(justificacionApariencia);
+            $('#modal-justificacion-apariencia-wrapper').show();
+        } else {
+            $('#modal-justificacion-apariencia-wrapper').hide();
+        }
+
+        $('#detalle-modal').css('display', 'flex');
     });
+
+    $('.close-btn, .modal-overlay').on('click', function(e) {
+        if (e.target === this || $(e.target).is('.close-btn')) {
+            $('#detalle-modal').hide();
+        }
+    });
+});
 </script>
 {% endblock %}

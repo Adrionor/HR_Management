@@ -1,0 +1,104 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Asignar Candidato a: {{ puesto_seleccionado.titulo.nombre }}{% endblock %}
+
+{% block style %}
+<style>
+    .container { max-width: 95%; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
+    h1 { color: #2c3e50; }
+    #candidatosTable thead th { background-color: #34495e; color: #ffffff; }
+    #candidatosTable tbody tr:hover { background-color: #ecf0f1 !important; }
+    .action-button { background-color: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+    .boton-ver-historial { text-decoration: none; background-color: #7f8c8d; color: white; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; white-space: nowrap; }
+    .info-banner { background-color: #eaf2f8; color: #2e86c1; border: 1px solid #aed6f1; border-radius: 8px; padding: 1em; margin-bottom: 1.5em; text-align: center; }
+    .info-banner a { color: #2980b9; font-weight: 600; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <div class="header"><h1>Asignar Candidatos</h1></div>
+
+    <div class="info-banner">
+        Estás seleccionando candidatos para la vacante: <strong>{{ puesto_seleccionado.titulo.nombre }}</strong>.
+        <a href="{% url 'mis_vacantes' %}" style="margin-left: 20px;">(Volver a Mis Vacantes)</a>
+    </div>
+
+    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+
+    <table id="candidatosTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Candidato</th>
+                <th>Colaborador Actual</th>
+                <th>Puesto de Interés</th>
+                <th>Ciudad de Interés</th> <th>Teléfono</th>
+                <th>Nivel Educativo</th>
+                <th>CV</th>
+                <th>Historial</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for candidato in candidatos %}
+            <tr>
+                <td>
+                    <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank">{{ candidato.nombre_completo }}</a>
+                    {% if candidato.alerta == 'NO_APROBADO' %}<span title="No aprobó psicometría..." style="cursor:help; color:#c0392b;"> 🛑</span>{% endif %}
+                    {% if candidato.alerta == 'EN_BOLSA' %}<span title="Proceso previo. Ver historial." style="cursor:help; color:#3498db;"> ℹ️</span>{% endif %}
+                </td>
+                <td>
+                    {% if candidato.es_colaborador_actual %}
+                        <span style="color: #27ae60; font-weight: bold;">Sí ✅</span>
+                    {% else %}
+                        No
+                    {% endif %}
+                </td>
+<td>
+    {% if candidato.puesto_de_interes %}
+        {{ candidato.puesto_de_interes.titulo.nombre }}
+    {% elif candidato.interes_custom %}
+        <span style="font-style: italic;">{{ candidato.interes_custom }}</span>
+    {% else %}
+        <span style="font-style: italic;">Futuras Oportunidades</span>
+    {% endif %}
+</td>
+                <td>{{ candidato.puesto_de_interes.get_ciudad_display|default_if_none:"" }}</td>
+                <td>{{ candidato.telefono|default_if_none:"" }}</td>
+                <td>{{ candidato.get_nivel_educativo_display|default_if_none:"" }}</td>
+                <td>
+                    {% if candidato.cv %}<a href="{{ candidato.cv.url }}" target="_blank">Ver CV</a>{% else %}No adjunto{% endif %}
+                </td>
+                <td>
+                    {% if candidato.alerta %}<a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="boton-ver-historial">Ver</a>{% endif %}
+                </td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <form action="{% url 'asignar_candidato' puesto_id=puesto_seleccionado.id %}" method="POST" style="margin: 0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
+                            <button type="submit" class="action-button">Tomar Candidato</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" style="text-align: center; padding: 20px;">No hay más candidatos disponibles para asignar.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#candidatosTable').DataTable({
+        "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" }
+    });
+});
+</script>
+{% endblock %}

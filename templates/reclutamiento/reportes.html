@@ -1,163 +1,91 @@
-<!DOCTYPE html>
+{% extends "reclutamiento/base_interno.html" %}
 {% load static %}
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard de Reportes</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; background-color: #fff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .header h1 { color: #2c3e50; margin: 0; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        h2, h3 { color: #34495e; }
-        h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 1.5em; margin-bottom: 1em; }
 
-        /* Estilos para las tarjetas de KPIs */
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
-        .kpi-card { background-color: #ffffff; border-radius: 10px; padding: 1.5em; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid #3498db; }
-        .kpi-card h3 { margin: 0 0 0.5em 0; font-size: 1em; color: #7f8c8d; text-transform: uppercase; border: none; }
-        .kpi-card .number { font-size: 2.5em; font-weight: 700; color: #2c3e50; }
+{% block title %}Dashboard de Reportes{% endblock %}
 
-        /* Estilos para las tablas de resumen */
-        .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; }
-        .report-table-container { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-        .report-table thead th { background-color: #ecf0f1; color: #34495e; padding: 12px; text-align: left; }
-        .report-table tbody td { padding: 12px; border-bottom: 1px solid #ecf0f1; }
-        .report-table tbody tr:last-child td { border-bottom: none; }
-        .report-table .total-col { font-weight: 700; text-align: center; font-size: 1.2em; }
+{% block style %}
+<style>
+    .container { max-width: 1400px; }
+    h2, h3 { color: #34495e; }
+    h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 1.5em; margin-bottom: 1em; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
+    .kpi-card { background-color: #ffffff; border-radius: 10px; padding: 1.5em; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid #3498db; }
+    .kpi-card h3 { margin: 0 0 0.5em 0; font-size: 1em; color: #7f8c8d; text-transform: uppercase; border: none; }
+    .kpi-card .number { font-size: 2.5em; font-weight: 700; color: #2c3e50; }
+    .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; }
+    .report-table-container { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .report-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+    .report-table thead th { background-color: #ecf0f1; color: #34495e; padding: 12px; text-align: left; }
+    .report-table tbody td { padding: 12px; border-bottom: 1px solid #ecf0f1; }
+    .report-section { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 2em; }
+    table.dataTable thead th { background-color: #34495e; color: #ffffff; }
+    a.history-link { font-weight: 600; color: #3498db; text-decoration: none; }
+</style>
+{% endblock %}
 
-        /* Estilos para las tablas de detalle */
-        .report-section { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 2em; }
-        table.dataTable thead th { background-color: #34495e; color: #ffffff; }
-        table.dataTable tbody tr:hover { background-color: #ecf0f1 !important; }
-        a.history-link { font-weight: 600; color: #3498db; text-decoration: none; }
-        a.history-link:hover { text-decoration: underline; }
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Dashboard de Indicadores</h1>
+        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Portal</a>
+    </div>
 
-        @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Dashboard de Indicadores</h1>
-            <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Portal</a>
-        </div>
+    <h2>Indicadores Clave (KPIs)</h2>
+    <div class="kpi-grid">
+        <div class="kpi-card" style="border-color: #3498db;"><h3>Total de Candidatos</h3><div class="number">{{ kpi_total_candidatos }}</div></div>
+        <div class="kpi-card" style="border-color: #9b59b6;"><h3>Total de Requisiciones</h3><div class="number">{{ kpi_total_requisiciones }}</div></div>
+        <div class="kpi-card" style="border-color: #f1c40f;"><h3>Procesos Activos</h3><div class="number">{{ kpi_procesos_activos }}</div></div>
+        <div class="kpi-card" style="border-color: #2ecc71;"><h3>Contrataciones (Últ. 30 días)</h3><div class="number">{{ kpi_contrataciones_recientes }}</div></div>
+    </div>
 
-        <h2>Indicadores Clave (KPIs)</h2>
-        <div class="kpi-grid">
-            <div class="kpi-card" style="border-color: #3498db;"><h3>Total de Candidatos</h3><div class="number">{{ kpi_total_candidatos }}</div></div>
-            <div class="kpi-card" style="border-color: #9b59b6;"><h3>Total de Requisiciones</h3><div class="number">{{ kpi_total_requisiciones }}</div></div>
-            <div class="kpi-card" style="border-color: #f1c40f;"><h3>Procesos Activos</h3><div class="number">{{ kpi_procesos_activos }}</div></div>
-            <div class="kpi-card" style="border-color: #2ecc71;"><h3>Contrataciones (Últ. 30 días)</h3><div class="number">{{ kpi_contrataciones_recientes }}</div></div>
-        </div>
-
-        <h2>Resúmenes de Actividad</h2>
-        <div class="report-grid">
-            <div class="report-table-container">
-                <h3>Vacantes por Asesora</h3>
-                <table class="report-table">
-                    <thead><tr><th>Asesora</th><th class="total-col">Cantidad</th></tr></thead>
-                    <tbody>
-                        {% for item in tabla_vacantes_por_asesora %}
-                        <tr>
-                            <td>{{ item.asesora_encargada__username }}</td>
-                            <td class="total-col">{{ item.total }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="2" style="text-align: center;">No hay vacantes asignadas.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="report-table-container">
-                <h3>Procesos por Estatus</h3>
-                <table class="report-table">
-                    <thead><tr><th>Estatus del Proceso</th><th class="total-col">Cantidad</th></tr></thead>
-                    <tbody>
-                        {% for item in tabla_procesos_por_estatus %}
-                        <tr>
-                            <td>{{ item.estatus_legible }}</td>
-                            <td class="total-col">{{ item.total }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="2" style="text-align: center;">No hay procesos iniciados.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <hr style="margin-top: 3em;">
-
-        <h2>Datos Detallados</h2>
-        <div class="report-section">
-            <h3>Reporte General de Candidatos</h3>
-            <table id="candidatosReportTable" class="display" style="width:100%">
-                <thead>
-                    <tr><th>Candidato</th><th>Email</th><th>Puesto de Interés</th><th>Estatus Actual</th><th>Asesora Asignada</th></tr>
-                </thead>
-                    <tbody>
-                        {% for candidato in candidatos %}
-                        <tr>
-                            <td>{{ candidato.nombre_completo }}</td>
-                            <td>{{ candidato.email }}</td>
-                            <td>{{ candidato.puesto_de_interes.titulo|default:"N/A" }}</td>
-                            <td>
-                                {% if candidato.proceso_activo %}
-                                    {{ candidato.proceso_activo.get_estatus_proceso_display }}
-                                {% else %}
-                                    <span style="color: #27ae60; font-weight: bold;">Libre</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if candidato.proceso_activo %}
-                                    {{ candidato.proceso_activo.asesora_asignada.username|default:"N/A" }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
+    <h2>Resúmenes de Actividad</h2>
+    <div class="report-grid">
+        <div class="report-table-container">
+            <h3>Carga por Asesora</h3>
+            <table class="report-table">
+                <thead><tr><th>Asesora</th><th style="text-align:center;">Puestos Asignados</th></tr></thead>
+                <tbody>
+                    {% for item in tabla_vacantes_por_asesora %}<tr><td>{{ item.asesora_encargada__username }}</td><td style="text-align:center;">{{ item.total }}</td></tr>{% endfor %}
+                </tbody>
             </table>
         </div>
-
-        <div class="report-section">
-            <h3>Reporte General de Puestos</h3>
-            <table id="puestosReportTable" class="display" style="width:100%">
-                <thead>
-                    <tr><th>Puesto</th><th>Estatus de Aprobación</th><th>Asesora Encargada</th><th>Estado del Proceso</th><th>Acciones</th></tr>
-                </thead>
+        <div class="report-table-container">
+            <h3>Procesos por Estatus</h3>
+            <table class="report-table">
+                <thead><tr><th>Estatus del Proceso</th><th style="text-align:center;">Cantidad</th></tr></thead>
                 <tbody>
-                    {% for puesto in puestos %}
-                    <tr>
-                        <td>{{ puesto.titulo }}</td><td>{{ puesto.get_estatus_autorizacion_display }}</td>
-                        <td>{{ puesto.asesora_encargada.username|default:"<span style='color:gray;'>Sin Asignar</span>"|safe }}</td>
-                        <td>
-                            {% if puesto.num_procesos > 0 %}<span style="color: #27ae60; font-weight: bold;">Iniciado ({{ puesto.num_procesos }})</span>
-                            {% elif puesto.asesora_encargada %}<span style="color: #e67e22;">Asignado (Sin Iniciar)</span>
-                            {% else %}N/A
-                            {% endif %}
-                        </td>
-                        <td><a href="{% url 'historial_puesto' puesto.id %}" class="history-link">Ver Historial</a></td>
-                    </tr>
-                    {% endfor %}
+                    {% for item in tabla_procesos_por_estatus %}<tr><td>{{ item.estatus_legible }}</td><td style="text-align:center;">{{ item.total }}</td></tr>{% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#candidatosReportTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
-            $('#puestosReportTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
-        });
-    </script>
-</body>
-</html>
+    <div class="report-section">
+        <h3>Reporte General de Puestos</h3>
+        <table id="puestosReportTable" class="display" style="width:100%">
+            <thead>
+                <tr><th>Puesto</th><th>Estatus</th><th>Asesora</th><th>Procesos</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+                {% for puesto in puestos %}
+                <tr>
+                    <td>{{ puesto.titulo.nombre }}</td>
+                    <td>{{ puesto.get_estatus_autorizacion_display }}</td>
+                    <td>{{ puesto.asesora_encargada.username|default:"Sin Asignar"|safe }}</td>
+                    <td style="text-align: center;">{{ puesto.num_procesos }}</td>
+                    <td><a href="{% url 'historial_puesto' puesto.id %}" class="history-link">Ver Historial</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#puestosReportTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
+});
+</script>
+{% endblock %}

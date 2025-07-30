@@ -8,6 +8,7 @@
     .container { max-width: 1200px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
     h1, h2, h3, h4 { color: #2c3e50; }
+    h1 { font-size: 1.8em; }
     h2, h3 { margin-top: 0; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
     h3 { margin-top: 2em; }
     h4 { color: #3498db; margin-bottom: 0.5em; margin-top: 1.5em; }
@@ -34,9 +35,13 @@
 </style>
 {% endblock %}
 
+
 {% block content %}
 <div class="container">
-    <div class="header"><h1>Gestión de Proceso</h1><a href="{% url 'mis_procesos' %}" class="boton-volver">← Volver a Mis Procesos</a></div>
+    <div class="header">
+        <h1>Gestión de Proceso</h1>
+    </div>
+
     {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
 
     <div class="grid-detalle">
@@ -70,22 +75,9 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="add_publication">
                 {% if form_publicacion.non_field_errors %}<div class="error-message">{{ form_publicacion.non_field_errors }}</div>{% endif %}
-
-                <div class="form-group">
-                    {{ form_publicacion.plataforma.label_tag }}
-                    {{ form_publicacion.plataforma }}
-                    <div class="error-message">{{ form_publicacion.plataforma.errors }}</div>
-                </div>
-                <div class="form-group">
-                    {{ form_publicacion.enlace.label_tag }}
-                    {{ form_publicacion.enlace }}
-                    <div class="error-message">{{ form_publicacion.enlace.errors }}</div>
-                </div>
-                <div class="form-group">
-                    {{ form_publicacion.monto_inversion.label_tag }}
-                    {{ form_publicacion.monto_inversion }}
-                    <div class="error-message">{{ form_publicacion.monto_inversion.errors }}</div>
-                </div>
+                <div class="form-group">{{ form_publicacion.plataforma.label_tag }}{{ form_publicacion.plataforma }}{{ form_publicacion.plataforma.errors }}</div>
+                <div class="form-group">{{ form_publicacion.enlace.label_tag }}{{ form_publicacion.enlace }}{{ form_publicacion.enlace.errors }}</div>
+                <div class="form-group">{{ form_publicacion.monto_inversion.label_tag }}{{ form_publicacion.monto_inversion }}{{ form_publicacion.monto_inversion.errors }}</div>
                 <button type="submit" class="boton boton-add-pub">Añadir Publicación</button>
             </form>
         </div>

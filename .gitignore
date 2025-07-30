@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Base de datos de desarrollo
+db.sqlite3
+db.sqlite3-journal
+
+# Archivos del IDE (PyCharm)
+.idea/
+
+# Archivos generados por el usuario (CVs, etc.)
+/media/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db

@@ -1,28 +1,72 @@
 {% if 'Asesoras' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_staff %}
-    <a href="{% url 'bolsa_trabajo' %}" class="menu-item"><div class="menu-item__icon">👥</div><div class="menu-item__text"><h4>Bolsa de Trabajo</h4><p>Explora la base de datos de candidatos libres.</p></div><div class="menu-item__arrow">&rarr;</div></a>
-    <a href="{% url 'mis_procesos' %}" class="menu-item"><div class="menu-item__icon">📋</div><div class="menu-item__text"><h4>Mis Procesos</h4><p>Gestiona el avance de tus candidatos asignados.</p></div><div class="menu-item__arrow">&rarr;</div></a>
-    <a href="{% url 'mis_vacantes' %}" class="menu-item"><div class="menu-item__icon">📥</div><div class="menu-item__text"><h4>Mis Vacantes Asignadas</h4><p>Revisa las vacantes listas para iniciar la búsqueda.</p></div><div class="menu-item__arrow">&rarr;</div></a>
+    <a href="{% url 'bolsa_trabajo_consulta' %}" class="menu-item">
+        <div class="menu-item__icon">👥</div>
+        <div class="menu-item__text"><h4>Bolsa de Trabajo</h4><p>Explora la base de datos de candidatos libres.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
+    <a href="{% url 'mis_procesos' %}" class="menu-item">
+        <div class="menu-item__icon">📋</div>
+        <div class="menu-item__text"><h4>Mis Procesos</h4><p>Gestiona el avance de tus candidatos asignados.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
+    <a href="{% url 'mis_vacantes' %}" class="menu-item">
+        <div class="menu-item__icon">📥</div>
+        <div class="menu-item__text"><h4>Mis Vacantes Asignadas</h4><p>Revisa las vacantes listas para iniciar la búsqueda.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
 {% endif %}
 
 {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
-    <a href="{% url 'portal_gerente' %}" class="menu-item"><div class="menu-item__icon">✍️</div><div class="menu-item__text"><h4>Mi Portal de Gerente</h4><p>Crea nuevas solicitudes de vacantes y da seguimiento.</p></div><div class="menu-item__arrow">&rarr;</div></a>
+    <a href="{% url 'portal_gerente' %}" class="menu-item">
+        <div class="menu-item__icon">✍️</div>
+        <div class="menu-item__text"><h4>Mi Portal de Gerente</h4><p>Crea nuevas solicitudes de vacantes y da seguimiento.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
 {% endif %}
 
 {% if 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-    <a href="{% url 'vista_asignar_puestos' %}" class="menu-item"><div class="menu-item__icon">📌</div><div class="menu-item__text"><h4>Asignar Vacantes</h4><p>Distribuye las vacantes autorizadas entre las asesoras.</p></div><div class="menu-item__stat">{{ puestos_por_asignar }}</div></a>
-    <a href="{% url 'vista_supervisar_procesos' %}" class="menu-item"><div class="menu-item__icon">👀</div><div class="menu-item__text"><h4>Supervisar Procesos</h4><p>Monitorea y reasigna la carga de trabajo.</p></div><div class="menu-item__arrow">&rarr;</div></a>
+    <a href="{% url 'vista_asignar_puestos' %}" class="menu-item">
+        <div class="menu-item__icon">📌</div>
+        <div class="menu-item__text"><h4>Asignar Vacantes</h4><p>Distribuye las vacantes autorizadas entre las asesoras.</p></div>
+        <div class="menu-item__stat">{{ puestos_por_asignar }}</div>
+    </a>
+    <a href="{% url 'vista_supervisar_procesos' %}" class="menu-item">
+        <div class="menu-item__icon">👀</div>
+        <div class="menu-item__text"><h4>Supervisar Procesos</h4><p>Monitorea y reasigna la carga de trabajo.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
 {% endif %}
 
 {% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or 'Asesoras' in user_groups %}
-    <a href="{% url 'vista_reportes' %}" class="menu-item"><div class="menu-item__icon">📊</div><div class="menu-item__text"><h4>Dashboard de Indicadores</h4><p>Visualiza el estado general del sistema.</p></div><div class="menu-item__arrow">&rarr;</div></a>
-    <a href="{% url 'vista_historial_general' %}" class="menu-item"><div class="menu-item__icon">📜</div><div class="menu-item__text"><h4>Historial de Actividad</h4><p>Revisa un registro completo de todas las acciones.</p></div><div class="menu-item__arrow">&rarr;</div></a>
-    <a href="{% url 'biblioteca_perfiles' %}" class="menu-item"><div class="menu-item__icon">📚</div><div class="menu-item__text"><h4>Biblioteca de Perfiles</h4><p>Consulta y reutiliza los perfiles de vacantes.</p></div><div class="menu-item__arrow">&rarr;</div></a>
+    <a href="{% url 'vista_reportes' %}" class="menu-item">
+        <div class="menu-item__icon">📊</div>
+        <div class="menu-item__text"><h4>Dashboard de Indicadores</h4><p>Visualiza el estado general del sistema.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
+    <a href="{% url 'vista_historial_general' %}" class="menu-item">
+        <div class="menu-item__icon">📜</div>
+        <div class="menu-item__text"><h4>Historial de Actividad</h4><p>Revisa un registro completo de todas las acciones.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
+    <a href="{% url 'biblioteca_perfiles' %}" class="menu-item">
+        <div class="menu-item__icon">📚</div>
+        <div class="menu-item__text"><h4>Biblioteca de Perfiles</h4><p>Consulta y reutiliza los perfiles de vacantes.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
 {% endif %}
 
 {% if user.is_staff %}
-    <a href="{% url 'lista_solicitudes' %}" class="menu-item"><div class="menu-item__icon">✅</div><div class="menu-item__text"><h4>Aprobaciones Pendientes</h4><p>Nuevos puestos que requieren tu autorización.</p></div><div class="menu-item__stat">{{ pendientes_aprobacion }}</div></a>
+    <a href="{% url 'lista_solicitudes' %}" class="menu-item">
+        <div class="menu-item__icon">✅</div>
+        <div class="menu-item__text"><h4>Aprobaciones Pendientes</h4><p>Nuevos puestos que requieren tu autorización.</p></div>
+        <div class="menu-item__stat">{{ pendientes_aprobacion }}</div>
+    </a>
 {% endif %}
 
 {% if user.is_superuser %}
-    <a href="{% url 'admin:index' %}" class="menu-item"><div class="menu-item__icon">⚙️</div><div class="menu-item__text"><h4>Admin Avanzado</h4><p>Accede al panel de Django para una gestión detallada.</p></div><div class="menu-item__arrow">&rarr;</div></a>
+    <a href="{% url 'admin:index' %}" class="menu-item">
+        <div class="menu-item__icon">⚙️</div>
+        <div class="menu-item__text"><h4>Admin Avanzado</h4><p>Accede al panel de Django para una gestión detallada.</p></div>
+        <div class="menu-item__arrow">&rarr;</div>
+    </a>
 {% endif %}

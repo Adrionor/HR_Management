@@ -71,7 +71,7 @@
                     <small style="display: block; color: #7f8c8d;">{{ vacante.marca.nombre }} - {{ vacante.get_ciudad_display }}</small>
                 </td>
                 <td>{{ vacante.get_area_display }}</td>
-                <td>{{ vacante.jefe_inmediato_nombre }}</td>
+                <td>{{ vacante.nombre_jefe_inmediato }}</td>
                 <td>{{ vacante.experiencia_minima|default:"N/A" }} años</td>
                 <td style="white-space: nowrap;">${{ vacante.sueldo_base|default:"N/A" }}</td>
                 <td>
@@ -83,7 +83,7 @@
                 </td>
                 <td>
                     {% if vacante.perfil_detallado %}
-                        <a href="{% url 'bolsa_trabajo' %}?puesto={{ vacante.id }}" class="boton-accion boton-buscar">✅ Perfil Completo (Buscar Candidatos)</a>
+                        <a href="{% url 'asignar_candidato' vacante.id %}" class="boton-accion boton-buscar">✅ Perfil Completo (Buscar Candidatos)</a>
                     {% else %}
                         <a href="{% url 'gestion_perfil_puesto' vacante.id %}" class="boton-accion boton-definir">✏️ Definir Perfil de Puesto</a>
                     {% endif %}

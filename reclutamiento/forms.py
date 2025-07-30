@@ -33,17 +33,56 @@ class SolicitudPuestoForm(forms.ModelForm):
         }
 
 
+# reclutamiento/forms.py
+
 class PerfilDePuestoForm(forms.ModelForm):
     class Meta:
         model = PerfilDePuesto
-        fields = ['habilidades_clave', 'habilidades_deseables', 'rasgos_personalidad', 'preguntas_sugeridas']
+        # --- LISTA DE CAMPOS ACTUALIZADA CON LOS NUEVOS CAMPOS ---
+        fields = [
+            'rango_edad',
+            'preferencia_sexo',
+            'motivo_preferencia_sexo',
+            'area_experiencia_enfoque',
+            'importancia_apariencia',
+            'justificacion_apariencia',
+            'feedback_anterior',
+            'requiere_licencia',
+            'comentarios_adicionales',
+        ]
         widgets = {
-            'habilidades_clave': forms.Textarea(attrs={'rows': 4}),
-            'habilidades_deseables': forms.Textarea(attrs={'rows': 4}),
-            'rasgos_personalidad': forms.Textarea(attrs={'rows': 4}),
-            'preguntas_sugeridas': forms.Textarea(attrs={'rows': 4}),
+            # Hacemos que las opciones se vean como botones de radio en lugar de un menú
+            'preferencia_sexo': forms.RadioSelect,
+            'motivo_preferencia_sexo': forms.RadioSelect,
+            'importancia_apariencia': forms.RadioSelect,
+            'requiere_licencia': forms.RadioSelect,
+            # Hacemos los campos de texto más grandes para facilidad de uso
+            'justificacion_apariencia': forms.Textarea(attrs={'rows': 3}),
+            'feedback_anterior': forms.Textarea(attrs={'rows': 4}),
+            'comentarios_adicionales': forms.Textarea(attrs={'rows': 4}),
         }
 
+    # --- NUEVA FUNCIÓN DE VALIDACIÓN PERSONALIZADA ---
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Regla 1: Si se elige preferencia de sexo, el motivo es obligatorio
+        preferencia_sexo = cleaned_data.get("preferencia_sexo")
+        motivo_preferencia = cleaned_data.get("motivo_preferencia_sexo")
+
+        if preferencia_sexo in ['H', 'M'] and not motivo_preferencia:
+            self.add_error('motivo_preferencia_sexo',
+                           "Este campo es obligatorio si se especifica una preferencia de sexo.")
+
+        # Regla 2: Si la apariencia es muy importante, la justificación es obligatoria
+        importancia_apariencia = cleaned_data.get("importancia_apariencia")
+        justificacion_apariencia = cleaned_data.get("justificacion_apariencia")
+
+        if importancia_apariencia == 'ALTA' and not justificacion_apariencia:
+            self.add_error('justificacion_apariencia',
+                           "Debe justificar por qué la apariencia es muy importante para este puesto.")
+
+        return cleaned_data
 
 class RegistroCandidatoForm(forms.ModelForm):
     # Sobreescribimos el campo para tener control total
@@ -59,7 +98,10 @@ class RegistroCandidatoForm(forms.ModelForm):
         puestos_activos = Puesto.objects.filter(esta_abierto=True, estatus_autorizacion='AUTORIZADO')
 
         # Creamos una lista de opciones para el menú desplegable
-        opciones_puestos = [(puesto.id, puesto.titulo.nombre) for puesto in puestos_activos]
+        opciones_puestos = [
+            (puesto.id, f"{puesto.titulo.nombre} ({puesto.get_ciudad_display()})")
+            for puesto in puestos_activos
+        ]
 
         # Añadimos nuestras opciones personalizadas al principio
         opciones_personalizadas = [
