@@ -61,28 +61,42 @@ def lista_vacantes_publica_view(request):
 
 # reclutamiento/views.py
 
+# reclutamiento/views.py
+
 def registro_candidato_view(request):
     if request.method == 'POST':
         form = RegistroCandidatoForm(request.POST, request.FILES)
         if form.is_valid():
-            candidato = form.save(commit=False)
+            email = form.cleaned_data.get('email')
+            rfc = form.cleaned_data.get('rfc')
 
-            puesto_seleccionado_str = form.cleaned_data.get('puesto_de_interes')
+            # --- NUEVA VALIDACIÓN ---
+            # Verificamos si ya existe un candidato con ese email o RFC
+            query = Q()
+            if email:
+                query |= Q(email__iexact=email)
+            if rfc:
+                query |= Q(rfc__iexact=rfc)
 
-            # Reiniciamos los campos de interés
-            candidato.puesto_de_interes = None
-            candidato.interes_custom = None
+            if query and Candidato.objects.filter(query).exists():
+                messages.error(request,
+                               'Ya existe un candidato registrado con este RFC o correo electrónico. Si deseas actualizar tu información, por favor contacta al equipo de reclutamiento.')
+            # --- FIN DE LA VALIDACIÓN ---
+            else:
+                # Si no existe, procedemos a guardar como antes
+                candidato = form.save(commit=False)
+                puesto_seleccionado_str = form.cleaned_data.get('puesto_de_interes')
 
-            if puesto_seleccionado_str and puesto_seleccionado_str.isdigit():
-                # Si es un número, es un Puesto real
-                candidato.puesto_de_interes_id = int(puesto_seleccionado_str)
-            elif puesto_seleccionado_str == 'PRACTICAS':
-                # Si es 'PRACTICAS', lo guardamos en nuestro nuevo campo
-                candidato.interes_custom = 'Prácticas Profesionales'
+                if puesto_seleccionado_str and puesto_seleccionado_str.isdigit():
+                    candidato.puesto_de_interes_id = int(puesto_seleccionado_str)
+                elif puesto_seleccionado_str == 'PRACTICAS':
+                    candidato.interes_custom = 'Prácticas Profesionales'
+                else:
+                    candidato.puesto_de_interes = None
 
-            candidato.save()
-            form.save_m2m()
-            return redirect('registro_exitoso')
+                candidato.save()
+                form.save_m2m()
+                return redirect('registro_exitoso')
     else:
         form = RegistroCandidatoForm()
 
