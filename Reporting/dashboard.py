@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from datetime import datetime
 
 # ==============================================================================
-# CONFIGURATION Y SQL (Sin cambios)
+# 1. CONFIGURACIÓN Y CONSULTA A LA BASE DE DATOS
 # ==============================================================================
 DB_USER = "readonly_user"
 DB_PASSWORD = "GrupoPremi3r25$"
@@ -43,7 +43,7 @@ LEFT JOIN
 """
 
 # ==============================================================================
-# DICCIONARIO DE DÍAS META POR PUESTO (NUEVO)
+# 2. DÍAS META POR PUESTO (LÓGICA DE NEGOCIO)
 # ==============================================================================
 METAS_POR_PUESTO_DEFAULT = {
     'Asesor(a) de ventas': 20, 'Asesor(a) de ventas de flotillas': 20, 'Asesor de servicio': 20,
@@ -92,59 +92,50 @@ METAS_POR_PUESTO_DEFAULT = {
 
 
 # ==============================================================================
-# FUNCIÓN DE CARGA DE DATOS (MODIFICADA)
+# 3. FUNCIÓN DE CARGA Y PROCESAMIENTO DE DATOS
 # ==============================================================================
 @st.cache_data(ttl=600)
-def load_data():
-    """Conecta a la BD y ejecuta la consulta, retorna un DataFrame limpio."""
+def load_and_process_data(estatus_entrevista_gerente):
     connection_string = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     engine = create_engine(connection_string)
     df = pd.read_sql(SQL_QUERY, engine)
 
-    # Limpieza y preparación de datos
     df['fecha_requisicion'] = pd.to_datetime(df['fecha_requisicion'], errors='coerce').dt.tz_localize(None)
     df['fecha_del_estatus'] = pd.to_datetime(df['fecha_del_estatus'], errors='coerce').dt.tz_localize(None)
-    df.dropna(subset=['fecha_requisicion', 'fecha_del_estatus'], inplace=True)
+    df.dropna(subset=['fecha_requisicion'], inplace=True)
+
+    df['dias_maximos'] = df['puesto'].map(METAS_POR_PUESTO_DEFAULT).fillna(20)
+    df['fecha_vencimiento'] = df['fecha_requisicion'] + pd.to_timedelta(df['dias_maximos'], unit='d')
+
+    df_entrevistados = df[df['estatus'] == estatus_entrevista_gerente]
+    conteo_entrevistas = df_entrevistados.groupby('id_puesto')['candidato'].nunique().reset_index()
+    conteo_entrevistas = conteo_entrevistas.rename(columns={'candidato': 'num_candidatos_entrevistados'})
+
+    df = pd.merge(df, conteo_entrevistas, on='id_puesto', how='left')
+    df['num_candidatos_entrevistados'].fillna(0, inplace=True)
+
+    df['status_vencimiento'] = 'Activa'
+    df.loc[
+        (datetime.now() > df['fecha_vencimiento']) & (df['num_candidatos_entrevistados'] < 3),
+        'status_vencimiento'
+    ] = 'Vencida'
     return df
 
 
 # ==============================================================================
-# CONSTRUCCIÓN DEL DASHBOARD
+# 4. CONSTRUCCIÓN DEL DASHBOARD
 # ==============================================================================
 st.set_page_config(page_title="Dashboard de Reclutamiento", layout="wide")
 st.title("📊 Dashboard de Rendimiento de Reclutamiento")
 
-# --- INICIALIZACIÓN DEL SESSION STATE PARA METAS EDITABLES ---
-if 'metas_puestos' not in st.session_state:
-    st.session_state.metas_puestos = METAS_POR_PUESTO_DEFAULT.copy()
-
 try:
-    df_completo = load_data()
+    st.sidebar.header("Parámetros del Reporte")
+    estatus_entrevista = st.sidebar.text_input("Estatus de Entrevista con Gerente:", value='ENT_GR')
+    estatus_contratacion = st.sidebar.text_input("Estatus de Contratación:", value='CONTRATADO')
+
+    df_completo = load_and_process_data(estatus_entrevista_gerente=estatus_entrevista)
 
     if not df_completo.empty:
-        # --- EDITOR DE METAS EN LA BARRA LATERAL ---
-        with st.sidebar.expander("📝 Editar Días Meta por Puesto"):
-            for puesto, dias in st.session_state.metas_puestos.items():
-                # La clave única es crucial para que Streamlit sepa qué input corresponde a qué puesto
-                st.session_state.metas_puestos[puesto] = st.number_input(
-                    label=puesto,
-                    value=dias,
-                    min_value=1,
-                    max_value=90,
-                    step=1,
-                    key=f"meta_{puesto}"
-                )
-
-        # --- APLICAR LAS METAS ACTUALES (del session_state) AL DATAFRAME ---
-        df_completo['dias_maximos'] = df_completo['puesto'].map(st.session_state.metas_puestos).fillna(20)
-        df_completo['fecha_vencimiento'] = df_completo['fecha_requisicion'] + pd.to_timedelta(
-            df_completo['dias_maximos'], unit='d')
-        df_completo['dias_transcurridos'] = (datetime.now() - df_completo['fecha_requisicion']).dt.days
-        estatus_de_cierre = ['CONTRATADO']
-        df_completo['vencida'] = (datetime.now() > df_completo['fecha_vencimiento']) & (
-            ~df_completo['estatus'].isin(estatus_de_cierre))
-
-        # --- FILTROS EN LA BARRA LATERAL (Sin cambios) ---
         st.sidebar.header("Filtros Generales")
         asesoras_disponibles = ['Todas'] + sorted(df_completo['asesora'].dropna().unique())
         asesora_seleccionada = st.sidebar.selectbox("Selecciona una Asesora:", options=asesoras_disponibles)
@@ -156,101 +147,126 @@ try:
         agencia_seleccionada = st.sidebar.multiselect("Selecciona Agencias:", options=agencias_disponibles,
                                                       default=agencias_disponibles)
 
-        # --- APLICACIÓN DE FILTROS (Sin cambios) ---
         df_filtrado_fecha_agencia = df_completo[
             (df_completo['fecha_requisicion'].dt.date >= fecha_inicio) &
             (df_completo['fecha_requisicion'].dt.date <= fecha_fin) &
             (df_completo['agencia'].isin(agencia_seleccionada))
             ]
+
         if asesora_seleccionada == 'Todas':
             df_filtrado = df_filtrado_fecha_agencia
             titulo_principal = "Global (Todas las Asesoras)"
         else:
             df_filtrado = df_filtrado_fecha_agencia[df_filtrado_fecha_agencia['asesora'] == asesora_seleccionada]
             titulo_principal = f"para: {asesora_seleccionada}"
-        df_vacantes = df_filtrado.sort_values('fecha_del_estatus').groupby('id_puesto').last().reset_index()
 
-        # --- PESTAÑAS DE VISUALIZACIÓN (Sin cambios en su lógica interna) ---
+        df_vacantes = df_filtrado.sort_values('fecha_del_estatus', ascending=False).groupby(
+            'id_puesto').first().reset_index()
+
         tab1, tab2 = st.tabs(["Dashboard de KPIs", "Reporte Detallado por Vacante"])
 
-        # Pestaña 1: KPIs
         with tab1:
             st.header(f"Indicadores Clave {titulo_principal}")
-            # ... (El resto del código de la pestaña 1 no necesita cambios)
-            st.markdown(f"Periodo: **{fecha_inicio.strftime('%d/%m/%Y')}** al **{fecha_fin.strftime('%d/%m/%Y')}**")
             if df_vacantes.empty:
                 st.warning("No se encontraron datos con los filtros seleccionados.")
             else:
                 total_vacantes = df_vacantes['id_puesto'].nunique()
-                vacantes_vencidas = df_vacantes[df_vacantes['vencida'] == True]['id_puesto'].nunique()
+                vacantes_vencidas = df_vacantes[df_vacantes['status_vencimiento'] == 'Vencida']['id_puesto'].nunique()
                 vacantes_activas = total_vacantes - vacantes_vencidas
-                estatus_contratacion = st.text_input("Escribe el estatus que significa 'Contratado'",
-                                                     value='CONTRATADO')
                 vacantes_cerradas = df_vacantes[df_vacantes['estatus'] == estatus_contratacion]['id_puesto'].nunique()
+
                 col1, col2, col3, col4 = st.columns(4)
                 col1.metric("Total Vacantes Asignadas", f"{total_vacantes}")
                 col2.metric("Vacantes Vencidas", f"{vacantes_vencidas}")
                 col3.metric("Vacantes Activas", f"{vacantes_activas}")
-                col4.metric("Vacantes Cerradas (Contratación)", f"{vacantes_cerradas}")
+                col4.metric("Vacantes Cerradas", f"{vacantes_cerradas}")
                 st.markdown("---")
+
+                # --- CAMBIO CLAVE AQUÍ: Reorganización de gráficos ---
                 col_graf1, col_graf2 = st.columns(2)
                 with col_graf1:
+                    st.subheader("Vacantes Totales por Agencia")
+                    vacantes_por_agencia = df_vacantes['agencia'].value_counts()
+                    st.bar_chart(vacantes_por_agencia)
+
                     st.subheader("Vacantes por Motivo de Requisición")
                     motivos = df_vacantes['motivo_requisicion'].value_counts()
                     st.bar_chart(motivos)
-                    st.subheader("Contrataciones por Ubicación")
-                    contratados_df = df_vacantes[df_vacantes['estatus'] == estatus_contratacion]
-                    if not contratados_df.empty:
-                        contratados_df['ubicacion'] = contratados_df['ciudad'].apply(
-                            lambda x: 'Culiacán' if 'culiacan' in str(x).lower() else 'Foránea')
-                        ubicacion_counts = contratados_df['ubicacion'].value_counts()
-                        st.bar_chart(ubicacion_counts)
-                    else:
-                        st.info("No hay contrataciones en el periodo seleccionado.")
                 with col_graf2:
-                    st.subheader("Estado de Vacantes por Agencia")
-                    vencidas_por_agencia = df_vacantes.groupby('agencia')['vencida'].sum().astype(int)
+                    st.subheader("Estado de Vacantes (Vencidas/Activas) por Agencia")
+                    vencidas_por_agencia = df_vacantes.groupby('agencia')[
+                        'status_vencimiento'].value_counts().unstack().fillna(0)
                     st.bar_chart(vencidas_por_agencia)
+
                     st.subheader("Origen de Candidatos (Procesos)")
                     origen_candidatos = df_filtrado['medio_conocimiento'].value_counts()
                     if not origen_candidatos.empty:
                         st.bar_chart(origen_candidatos)
-                    else:
-                        st.info("No hay datos de origen de candidatos.")
-                total_inversion = df_vacantes['monto_inversion'].sum()
-                st.metric("Inversión Total en Publicaciones (periodo seleccionado)", f"${total_inversion:,.2f}")
 
-        # Pestaña 2: Reporte Detallado
         with tab2:
             st.header(f"Reporte Detallado {titulo_principal}")
-            # ... (El resto del código de la pestaña 2 no necesita cambios)
             if df_vacantes.empty:
                 st.warning("No se encontraron vacantes con los filtros seleccionados.")
             else:
-                df_reporte = df_vacantes[[
-                    'agencia', 'puesto', 'fecha_requisicion', 'fecha_vencimiento', 'dias_maximos',
-                    'vencida', 'estatus', 'retroalimentacion', 'id_puesto'
-                ]].rename(columns={
+                df_reporte_summary = df_vacantes.rename(columns={
                     'agencia': 'Agencia', 'puesto': 'Puesto', 'fecha_requisicion': 'Fecha Requisición',
                     'fecha_vencimiento': 'Fecha Vencimiento', 'dias_maximos': 'Días Meta',
-                    'vencida': 'Vencida', 'estatus': 'Último Estatus', 'retroalimentacion': 'Última Observación'
+                    'status_vencimiento': 'Estatus Vencimiento', 'estatus': 'Último Estatus',
+                    'retroalimentacion': 'Última Observación', 'id_puesto': 'ID Vacante',
+                    'num_candidatos_entrevistados': 'Candidatos en Entrevista Gerente'
                 })
 
 
+                # ... (código del botón de descarga sin cambios) ...
                 @st.cache_data
                 def convert_df_to_csv(df):
                     return df.to_csv(index=False).encode('utf-8')
 
 
-                csv = convert_df_to_csv(df_reporte)
+                csv = convert_df_to_csv(df_reporte_summary)
                 st.download_button(
-                    label="📥 Descargar Reporte a Excel (CSV)",
+                    label="📥 Descargar Resumen a Excel (CSV)",
                     data=csv,
-                    file_name=f'reporte_detallado_{asesora_seleccionada}_{fecha_inicio}_a_{fecha_fin}.csv',
+                    file_name=f'resumen_vacantes_{asesora_seleccionada}.csv',
                     mime='text/csv',
                 )
-                st.dataframe(df_reporte, use_container_width=True)
+
+                st.markdown("---")
+                header_cols = st.columns((2, 2, 2, 1, 2, 3, 1))  # Ajustar anchos
+                headers = ['Agencia', 'Puesto', 'Fecha Requisición', 'Vencida', 'Último Estatus', 'Última Observación',
+                           'ID Vacante']
+                for i, header in enumerate(headers):
+                    header_cols[i].markdown(f"**{header}**")
+
+                for index, row in df_reporte_summary.iterrows():
+                    with st.container():
+                        expander_title = f"{row['Puesto']} en {row['Agencia']} (ID: {row['ID Vacante']}) - Estatus: {row['Último Estatus']}"
+                        with st.expander(expander_title):
+                            detalles_vacante = df_filtrado[df_filtrado['id_puesto'] == row['ID Vacante']].sort_values(
+                                'fecha_del_estatus', ascending=False)
+                            vista_detalle = detalles_vacante[
+                                ['candidato', 'estatus', 'fecha_del_estatus', 'retroalimentacion']].rename(columns={
+                                'candidato': 'Candidato', 'estatus': 'Estatus del Proceso',
+                                'fecha_del_estatus': 'Fecha del Estatus', 'retroalimentacion': 'Observaciones'
+                            })
+                            st.dataframe(vista_detalle, use_container_width=True)
+
+                        summary_cols = st.columns((2, 2, 2, 1, 2, 3, 1))
+                        summary_cols[0].text(row['Agencia'])
+                        summary_cols[1].text(row['Puesto'])
+                        summary_cols[2].text(row['Fecha Requisición'].strftime('%Y-%m-%d'))
+
+                        # --- CAMBIO CLAVE AQUÍ: Colorear el estatus de vencimiento ---
+                        if row['Estatus Vencimiento'] == 'Vencida':
+                            summary_cols[3].markdown("🔴 Vencida")
+                        else:
+                            summary_cols[3].markdown("🟢 Activa")
+
+                        summary_cols[4].text(row['Último Estatus'])
+                        summary_cols[5].text(row['Última Observación'])
+                        summary_cols[6].text(row['ID Vacante'])
+                        st.markdown("---")
 
 except Exception as e:
-    st.error(f"Error al conectar a la base de datos o procesar los datos: {e}")
+    st.error(f"Ha ocurrido un error al conectar o procesar los datos: {e}")
     st.error("Detalles del error: " + str(e))
