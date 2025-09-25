@@ -270,3 +270,6 @@ try:
 except Exception as e:
     st.error(f"Ha ocurrido un error al conectar o procesar los datos: {e}")
     st.error("Detalles del error: " + str(e))
+
+
+    ##########prueba
