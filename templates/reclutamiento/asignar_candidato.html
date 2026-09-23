@@ -1,95 +1,189 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Asignar Candidato a: {{ puesto_seleccionado.titulo.nombre }}{% endblock %}
+{% block title %}Asignar Candidato a: {{ puesto_seleccionado.titulo.nombre }} - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 95%; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1 { color: #2c3e50; }
-    #candidatosTable thead th { background-color: #34495e; color: #ffffff; }
-    #candidatosTable tbody tr:hover { background-color: #ecf0f1 !important; }
-    .action-button { background-color: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
-    .boton-ver-historial { text-decoration: none; background-color: #7f8c8d; color: white; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; white-space: nowrap; }
-    .info-banner { background-color: #eaf2f8; color: #2e86c1; border: 1px solid #aed6f1; border-radius: 8px; padding: 1em; margin-bottom: 1.5em; text-align: center; }
-    .info-banner a { color: #2980b9; font-weight: 600; }
+    .assign-candidate-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .assign-candidate-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .assign-candidate-title p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .assign-candidate-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+    }
+    .position-context-box {
+        background: #f0f7ff;
+        border: 1px solid #cce3ff;
+        border-radius: var(--sap-radius);
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--sap-primary);
+    }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
-    <div class="header"><h1>Asignar Candidatos</h1></div>
-
-    <div class="info-banner">
-        Estás seleccionando candidatos para la vacante: <strong>{{ puesto_seleccionado.titulo.nombre }}</strong>.
-        <a href="{% url 'mis_vacantes' %}" style="margin-left: 20px;">(Volver a Mis Vacantes)</a>
+<div class="sap-container">
+    <div class="assign-candidate-header-strip">
+        <div class="assign-candidate-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                Asignación de Candidato a Vacante
+            </h1>
+            <p>Selecciona un prospecto disponible para iniciar formalmente el proceso de selección de esta requisición.</p>
+        </div>
+        <div>
+            <a href="{% url 'mis_vacantes' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver a Mis Vacantes
+            </a>
+        </div>
     </div>
 
-    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+    <div class="assign-candidate-card">
+        <div class="position-context-box">
+            <div>
+                Vacante Objetivo: <strong>{{ puesto_seleccionado.titulo.nombre }}</strong> &bull;
+                <span>{{ puesto_seleccionado.marca.nombre }} - {{ puesto_seleccionado.agencia }}</span>
+            </div>
+            <div>
+                <a href="{% url 'puesto_detalle' puesto_seleccionado.id %}" target="_blank" style="font-weight: 600; color: var(--sap-primary); text-decoration: underline;">
+                    Ver Requisitos del Puesto
+                </a>
+            </div>
+        </div>
 
-    <table id="candidatosTable" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th>Candidato</th>
-                <th>Colaborador Actual</th>
-                <th>Puesto de Interés</th>
-                <th>Ciudad de Interés</th> <th>Teléfono</th>
-                <th>Nivel Educativo</th>
-                <th>CV</th>
-                <th>Historial</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for candidato in candidatos %}
-            <tr>
-                <td>
-                    <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank">{{ candidato.nombre_completo }}</a>
-                    {% if candidato.alerta == 'NO_APROBADO' %}<span title="No aprobó psicometría..." style="cursor:help; color:#c0392b;"> 🛑</span>{% endif %}
-                    {% if candidato.alerta == 'EN_BOLSA' %}<span title="Proceso previo. Ver historial." style="cursor:help; color:#3498db;"> ℹ️</span>{% endif %}
-                </td>
-                <td>
-                    {% if candidato.es_colaborador_actual %}
-                        <span style="color: #27ae60; font-weight: bold;">Sí ✅</span>
-                    {% else %}
-                        No
-                    {% endif %}
-                </td>
-<td>
-    {% if candidato.puesto_de_interes %}
-        {{ candidato.puesto_de_interes.titulo.nombre }}
-    {% elif candidato.interes_custom %}
-        <span style="font-style: italic;">{{ candidato.interes_custom }}</span>
-    {% else %}
-        <span style="font-style: italic;">Futuras Oportunidades</span>
-    {% endif %}
-</td>
-                <td>{{ candidato.puesto_de_interes.get_ciudad_display|default_if_none:"" }}</td>
-                <td>{{ candidato.telefono|default_if_none:"" }}</td>
-                <td>{{ candidato.get_nivel_educativo_display|default_if_none:"" }}</td>
-                <td>
-                    {% if candidato.cv %}<a href="{{ candidato.cv.url }}" target="_blank">Ver CV</a>{% else %}No adjunto{% endif %}
-                </td>
-                <td>
-                    {% if candidato.alerta %}<a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="boton-ver-historial">Ver</a>{% endif %}
-                </td>
-                <td>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <form action="{% url 'asignar_candidato' puesto_id=puesto_seleccionado.id %}" method="POST" style="margin: 0;">
-                            {% csrf_token %}
-                            <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
-                            <button type="submit" class="action-button">Tomar Candidato</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="9" style="text-align: center; padding: 20px;">No hay más candidatos disponibles para asignar.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="table-responsive">
+            <table id="candidatosTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Candidato</th>
+                        <th>Origen</th>
+                        <th>Puesto de Interés</th>
+                        <th>Ciudad</th>
+                        <th>Teléfono</th>
+                        <th>Nivel Educativo</th>
+                        <th>CV</th>
+                        <th>Historial</th>
+                        <th style="text-align: right;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidato in candidatos %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank" style="font-weight: 700; color: var(--sap-primary); text-decoration: none;">
+                                {{ candidato.nombre_completo }}
+                            </a>
+                            {% if candidato.alerta == 'NO_APROBADO' %}
+                                <span class="sap-badge sap-badge-error" style="margin-left: 4px; font-size: 0.7rem;"><span class="sap-badge-dot"></span>No Aprobado</span>
+                            {% elif candidato.alerta == 'EN_BOLSA' %}
+                                <span class="sap-badge sap-badge-neutral" style="margin-left: 4px; font-size: 0.7rem;"><span class="sap-badge-dot"></span>En Bolsa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidato.es_colaborador_actual %}
+                                <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Interno</span>
+                            {% else %}
+                                <span style="color: var(--sap-text-secondary); font-size: 0.85rem;">Externo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidato.puesto_de_interes %}
+                                {{ candidato.puesto_de_interes.titulo.nombre }}
+                            {% elif candidato.interes_custom %}
+                                <span style="font-style: italic;">{{ candidato.interes_custom }}</span>
+                            {% else %}
+                                <span style="font-style: italic; color: var(--sap-text-secondary);">General</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ candidato.puesto_de_interes.get_ciudad_display|default_if_none:"N/A" }}</td>
+                        <td>{{ candidato.telefono|default_if_none:"N/A" }}</td>
+                        <td>{{ candidato.get_nivel_educativo_display|default_if_none:"N/A" }}</td>
+                        <td>
+                            {% if candidato.cv %}
+                                <a href="{{ candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-ghost" style="padding: 2px 6px; font-size: 0.8rem;">
+                                    Ver CV
+                                </a>
+                            {% else %}
+                                <span style="color: var(--sap-text-secondary); font-size: 0.8rem;">Sin CV</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidato.alerta %}
+                                <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="sap-btn sap-btn-secondary" style="padding: 3px 8px; font-size: 0.8rem;">
+                                    Consultar
+                                </a>
+                            {% else %}
+                                <span style="color: var(--sap-text-secondary); font-size: 0.8rem;">Sin historial</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <form action="{% url 'asignar_candidato' puesto_id=puesto_seleccionado.id %}" method="POST" style="margin: 0; display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
+                                <button type="submit" class="sap-btn sap-btn-positive" style="padding: 4px 10px; font-size: 0.8rem;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Vincular a Vacante
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2.5rem; color: var(--sap-text-secondary);">
+                            No hay candidatos disponibles en el repositorio para vincular a esta posición.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

@@ -1,49 +1,144 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Historial de Vacante: {{ puesto.titulo }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; background-color: #fff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        h1, h2 { color: #2c3e50; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        .timeline { list-style-type: none; padding: 0; margin-top: 2em; }
-        .timeline-item { background-color: #fff; border-left: 4px solid #3498db; margin-bottom: 1em; padding: 1.5em; border-radius: 0 5px 5px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .timeline-item .info { font-size: 0.9em; color: #7f8c8d; margin-bottom: 0.5em; }
-        .timeline-item .accion { font-size: 1.1em; font-weight: 600; color: #34495e; }
-        .timeline-item .detalles { background-color: #ecf0f1; border-radius: 5px; padding: 1em; margin-top: 1em; white-space: pre-wrap; font-style: italic; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Historial Completo de la Vacante</h1>
-            <a href="{% url 'vista_reportes' %}" class="boton-volver">← Volver a Reportes</a>
-        </div>
-        <h2>{{ puesto.titulo }}</h2>
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
 
-        <ul class="timeline">
+{% block title %}Historial de Vacante: {{ puesto.titulo }} - SAP Fiori{% endblock %}
+
+{% block style %}
+<style>
+    .puesto-history-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .puesto-history-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .puesto-history-title p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .puesto-history-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.75rem;
+    }
+    .sap-feed-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: relative;
+    }
+    .sap-feed-list::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: 11px;
+        width: 2px;
+        background: var(--sap-border);
+    }
+    .sap-feed-item {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1.25rem;
+    }
+    .sap-feed-item:last-child {
+        margin-bottom: 0;
+    }
+    .sap-feed-marker {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid var(--sap-primary);
+    }
+    .sap-feed-time {
+        font-size: 0.775rem;
+        color: var(--sap-text-secondary);
+        margin-bottom: 0.25rem;
+    }
+    .sap-feed-action {
+        font-weight: 600;
+        color: var(--sap-text);
+        font-size: 0.875rem;
+    }
+    .sap-feed-details {
+        margin-top: 0.4rem;
+        background: #f8fafc;
+        border: 1px solid var(--sap-border);
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.825rem;
+        color: var(--sap-text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sap-container" style="max-width: 900px;">
+    <div class="puesto-history-header-strip">
+        <div class="puesto-history-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                Trazabilidad Histórica de la Vacante
+            </h1>
+            <p>Posición: <strong>{{ puesto.titulo }}</strong> &bull; {{ puesto.marca.nombre }} - {{ puesto.agencia }}</p>
+        </div>
+        <div>
+            <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver a Reportes
+            </a>
+        </div>
+    </div>
+
+    <div class="puesto-history-card">
+        <ul class="sap-feed-list">
             {% for registro in historial %}
-            <li class="timeline-item">
-                <div class="info">
-                    <strong>{{ registro.fecha_hora|date:"d/m/Y, H:i" }}</strong> - por <strong>{{ registro.usuario.username }}</strong>
+            <li class="sap-feed-item">
+                <span class="sap-feed-marker"></span>
+                <div class="sap-feed-time">
+                    {{ registro.fecha_hora|date:"d/m/Y, H:i" }} &bull; por <strong>{{ registro.usuario.username }}</strong>
                 </div>
-                <div class="accion">{{ registro.accion }}</div>
+                <div class="sap-feed-action">{{ registro.accion }}</div>
                 {% if registro.detalles %}
-                <div class="detalles">
-                    <strong>Notas:</strong>
-                    <p>{{ registro.detalles|linebreaksbr }}</p>
+                <div class="sap-feed-details">
+                    {{ registro.detalles|linebreaksbr }}
                 </div>
                 {% endif %}
             </li>
             {% empty %}
-            <li>No hay historial de actividad para esta vacante.</li>
+            <li style="color: var(--sap-text-secondary); font-size: 0.85rem; padding: 1.5rem 0; text-align: center;">
+                No existe registro de movimientos o auditoría para esta vacante.
+            </li>
             {% endfor %}
         </ul>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

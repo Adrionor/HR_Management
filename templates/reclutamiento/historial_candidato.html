@@ -1,77 +1,186 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Historial de {{ candidato.nombre_completo }}{% endblock %}
+{% block title %}Historial y Antecedentes: {{ candidato.nombre_completo }} - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 900px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; background-color: #fff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    h1, h2, h4 { color: #2c3e50; }
-    h2 { font-size: 1.5em; }
-
-    .card { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2em; padding: 2em; }
-    .card h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 0.5em; }
-    .card p, .card li { line-height: 1.7; }
-    .card strong { color: #34495e; }
-
-    .history-list { list-style-type: none; padding-left: 0; }
-    .history-list li { border-left: 3px solid #bdc3c7; padding-left: 15px; margin-bottom: 10px; }
-    .history-list .date { font-size: 0.8em; color: #7f8c8d; }
-    .detalles-nota { background-color: #ecf0f1; border-radius: 5px; padding: 1em; margin-top: 0.5em; font-style: italic; }
-
-    .boton-cerrar {
-        text-decoration: none;
-        background-color: #95a5a6;
-        color: white;
-        padding: 0.6em 1.2em;
-        border-radius: 5px;
+    .history-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .history-title-group h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .history-title-group p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .process-history-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .process-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--sap-border);
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .process-history-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+    }
+    .sap-feed-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: relative;
+    }
+    .sap-feed-list::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: 11px;
+        width: 2px;
+        background: var(--sap-border);
+    }
+    .sap-feed-item {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1.25rem;
+    }
+    .sap-feed-item:last-child {
+        margin-bottom: 0;
+    }
+    .sap-feed-marker {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid var(--sap-primary);
+    }
+    .sap-feed-time {
+        font-size: 0.775rem;
+        color: var(--sap-text-secondary);
+        margin-bottom: 0.25rem;
+    }
+    .sap-feed-action {
         font-weight: 600;
-        cursor: pointer;
-        border: none;
-        font-family: 'Poppins', sans-serif;
-        font-size: 1em;
+        color: var(--sap-text);
+        font-size: 0.875rem;
+    }
+    .sap-feed-details {
+        margin-top: 0.4rem;
+        background: #f8fafc;
+        border: 1px solid var(--sap-border);
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.825rem;
+        color: var(--sap-text-secondary);
     }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h1>Historial de: {{ candidato.nombre_completo }}</h1>
-        <button onclick="window.close();" class="boton-cerrar">Cerrar Ventana</button>
+<div class="sap-container" style="max-width: 960px;">
+    <div class="history-header-strip">
+        <div class="history-title-group">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 14 14"></polyline>
+                </svg>
+                Historial y Antecedentes de Selección
+            </h1>
+            <p>Dossier histórico de: <strong>{{ candidato.nombre_completo }}</strong></p>
+        </div>
+        <div>
+            <button onclick="window.close();" class="sap-btn sap-btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cerrar Ventana
+            </button>
+        </div>
     </div>
 
     {% for proceso in procesos %}
-    <div class="card" style="border-left: 5px solid {% if proceso.estatus_proceso == 'NO_APROBADO_PSICO' %}#c0392b{% elif proceso.estatus_proceso == 'EN_BOLSA' %}#3498db{% else %}#2ecc71{% endif %};">
-        <h2>Puesto: {{ proceso.puesto.titulo.nombre }}</h2>
-        <p><strong>Estatus Final del Proceso:</strong> {{ proceso.get_estatus_proceso_display }}</p>
-        <p><strong>Asesora a Cargo:</strong> {{ proceso.asesora_asignada.get_full_name|default:proceso.asesora_asignada.username }}</p>
+    <div class="process-history-card">
+        <div class="process-history-header">
+            <div>
+                <h2>Puesto: {{ proceso.puesto.titulo.nombre }}</h2>
+                <div style="font-size: 0.825rem; color: var(--sap-text-secondary); margin-top: 2px;">
+                    Asesora asignada: <strong>{{ proceso.asesora_asignada.get_full_name|default:proceso.asesora_asignada.username }}</strong>
+                </div>
+            </div>
+            <div>
+                {% if proceso.estatus_proceso == 'NO_APROBADO_PSICO' %}
+                    <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>{{ proceso.get_estatus_proceso_display }}</span>
+                {% elif proceso.estatus_proceso == 'EN_BOLSA' %}
+                    <span class="sap-badge sap-badge-neutral"><span class="sap-badge-dot"></span>{{ proceso.get_estatus_proceso_display }}</span>
+                {% else %}
+                    <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>{{ proceso.get_estatus_proceso_display }}</span>
+                {% endif %}
+            </div>
+        </div>
 
-        <h4>Última Retroalimentación Registrada:</h4>
-        <p>
-            {{ proceso.retroalimentacion|linebreaksbr|default:"No hay notas registradas." }}
-        </p>
+        {% if proceso.retroalimentacion %}
+        <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--sap-text-secondary); margin-bottom: 0.25rem;">Última Observación Registrada</div>
+            <div style="font-size: 0.875rem; color: var(--sap-text); line-height: 1.5;">{{ proceso.retroalimentacion|linebreaksbr }}</div>
+        </div>
+        {% endif %}
 
-        <h4>Historial Detallado de Actividad del Proceso:</h4>
-        <ul class="history-list">
+        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--sap-text); margin: 0 0 1rem 0;">Registro de Eventos y Cambios de Estatus</h3>
+        <ul class="sap-feed-list">
             {% for registro in proceso.registros_de_actividad %}
-                <li>
-                    <div class="date">{{ registro.fecha_hora|date:"d/m/Y, P" }} - por {{ registro.usuario.username }}</div>
-                    {{ registro.accion }}
-                    {% if registro.detalles %}
-                        <div class="detalles-nota">{{ registro.detalles|linebreaksbr }}</div>
-                    {% endif %}
-                </li>
+            <li class="sap-feed-item">
+                <span class="sap-feed-marker"></span>
+                <div class="sap-feed-time">{{ registro.fecha_hora|date:"d/m/Y, H:i" }} &bull; por <strong>{{ registro.usuario.username }}</strong></div>
+                <div class="sap-feed-action">{{ registro.accion }}</div>
+                {% if registro.detalles %}
+                    <div class="sap-feed-details">{{ registro.detalles|linebreaksbr }}</div>
+                {% endif %}
+            </li>
             {% empty %}
-                <li>No hay acciones registradas para este proceso.</li>
+            <li style="color: var(--sap-text-secondary); font-size: 0.85rem; padding: 0.5rem 0;">
+                No hay eventos registrados en este proceso.
+            </li>
             {% endfor %}
         </ul>
     </div>
     {% empty %}
-    <div class="card">
-        <p>Este candidato no tiene ningún proceso histórico registrado.</p>
+    <div class="process-history-card" style="text-align: center; padding: 2.5rem; color: var(--sap-text-secondary);">
+        Este candidato no cuenta con procesos de selección previos archivados en el sistema.
     </div>
     {% endfor %}
 </div>

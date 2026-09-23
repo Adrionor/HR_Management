@@ -1,141 +1,377 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Aprobación de Solicitudes{% endblock %}
+{% block title %}Bandeja de Aprobación de Requisiciones - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 1400px; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1, h2 { color: #2c3e50; }
-    h2 { margin-top: 2em; border-top: 1px solid #eee; padding-top: 1.5em; }
-    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-    table.dataTable thead th { background-color: #34495e; color: #ffffff; }
-    table.dataTable tbody tr:hover { background-color: #ecf0f1 !important; }
-    .boton-aprobar { font-weight: 600; text-decoration: none; color: #27ae60; background: #e8f8f0; padding: 6px 12px; border-radius: 5px; border: 1px solid #a3e9b9; display: inline-block; cursor: pointer; }
-    .boton-aprobar:hover { background: #27ae60; color: white; }
-    .boton-rechazar { font-weight: 600; text-decoration: none; color: #c0392b; background: #fdf0ee; padding: 6px 12px; border-radius: 5px; border: 1px solid #f5b7b1; display: inline-block; cursor: pointer; border: none; font-family: inherit; font-size: inherit; }
-    .boton-rechazar:hover { background: #c0392b; color: white; }
-    .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
-    .messages li { padding: 15px; margin-bottom: 1em; border-radius: 5px; border: 1px solid; }
-    .messages .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
-    .messages .warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
-    .messages .error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-    .sueldo { font-weight: 700; color: #2c3e50; }
-
-    /* Modal de Rechazo */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { background: white; padding: 2em; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-    .modal-content h3 { margin-top: 0; color: #c0392b; }
-    .modal-content textarea { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit; resize: vertical; min-height: 100px; margin-top: 10px; margin-bottom: 15px; }
-    .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
-    .btn-cancel { background: #94a3b8; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: 600; }
-    .btn-confirm-reject { background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: 600; }
+    .inbox-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .inbox-title-group h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .inbox-title-group p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .inbox-section {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+        margin-bottom: 1.75rem;
+    }
+    .inbox-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--sap-border);
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .inbox-section-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .inbox-section-header p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.825rem;
+        color: var(--sap-text-secondary);
+    }
+    .link-puesto {
+        font-weight: 600;
+        color: var(--sap-primary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .link-puesto:hover {
+        text-decoration: underline;
+        color: var(--sap-primary-hover);
+    }
+    .sueldo-tag {
+        font-family: var(--sap-font-code);
+        font-weight: 700;
+        color: var(--sap-text);
+        background: var(--sap-bg-canvas);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid var(--sap-border);
+        display: inline-block;
+    }
+    .action-group {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    /* SAP Dialog Modal */
+    .sap-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    .sap-modal-dialog {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+        width: 92%;
+        max-width: 520px;
+        border: 1px solid var(--sap-border);
+        overflow: hidden;
+        animation: sapDialogPop 0.18s ease-out;
+    }
+    @keyframes sapDialogPop {
+        from { transform: scale(0.96); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .sap-modal-header {
+        background: #fbfcfd;
+        border-bottom: 1px solid var(--sap-border);
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .sap-modal-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--sap-negative);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .sap-modal-body {
+        padding: 1.25rem;
+    }
+    .sap-modal-footer {
+        background: #f8fafc;
+        border-top: 1px solid var(--sap-border);
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    .sap-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.75rem;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius);
+        font-family: inherit;
+        font-size: 0.875rem;
+        resize: vertical;
+        min-height: 110px;
+        margin-top: 0.5rem;
+    }
+    .sap-textarea:focus {
+        border-color: var(--sap-primary);
+        outline: 1px solid var(--sap-primary);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h1>Aprobación de Solicitudes</h1>
-        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+<div class="sap-container">
+    <!-- Header Strip -->
+    <div class="inbox-header-strip">
+        <div class="inbox-title-group">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                </svg>
+                Bandeja de Aprobación de Requisiciones
+            </h1>
+            <p>Control de aprobaciones de personal por niveles jerárquicos (Gerencia de Marca y Dirección General).</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver al Launchpad
+            </a>
+        </div>
     </div>
 
-    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
-
     {% if usuario_es_gerente_general and solicitudes_gerente_general %}
-        <h2>Pendientes de Aprobación (Fase 1: Gerencia General de Marca)</h2>
-        <p style="color: #64748b;">Haz clic en el puesto para consultar la requisición detallada y documentos antes de emitir tu autorización.</p>
-        <table id="pendientesGteTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Puesto</th>
-                    <th>Marca / Agencia</th>
-                    <th>Solicitante</th>
-                    <th>Fecha Solicitud</th>
-                    <th>Sueldo Propuesto</th>
-                    <th>Motivo</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for solicitud in solicitudes_gerente_general %}
-                <tr>
-                    <td>
-                        <a href="{% url 'puesto_detalle' solicitud.id %}" target="_blank" style="font-weight: 700; color: #2563eb; text-decoration: underline;" title="Ver requisición completa">
-                            {{ solicitud.titulo.nombre }} ↗
-                        </a>
-                    </td>
-                    <td>{{ solicitud.marca.nombre }} - {{ solicitud.agencia }}</td>
-                    <td>{{ solicitud.solicitado_por.get_full_name|default:solicitud.solicitado_por.username }}</td>
-                    <td>{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</td>
-                    <td class="sueldo">${{ solicitud.sueldo_base|default:"N/A" }}</td>
-                    <td>{{ solicitud.get_motivo_requisicion_display }}</td>
-                    <td>
-                        <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="boton-aprobar" onclick="return confirm('¿Aprobar la fase inicial de esta vacante? Pasará a Dirección.');">Aprobar (1/2)</a>
-                        <button type="button" class="boton-rechazar" onclick="abrirModalRechazo('{{ solicitud.id }}', '{{ solicitud.titulo.nombre }}');">Rechazar</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Section Fase 1: Gerencia General de Marca -->
+    <div class="inbox-section">
+        <div class="inbox-section-header">
+            <div>
+                <h2>
+                    <span class="sap-badge sap-badge-warning"><span class="sap-badge-dot"></span>Fase 1</span>
+                    Aprobación Gerencia General de Marca
+                </h2>
+                <p>Haz clic en el título de la vacante para revisar el expediente completo y documentos de soporte.</p>
+            </div>
+            <div>
+                <span class="sap-badge sap-badge-neutral">{{ solicitudes_gerente_general|length }} solicitudes</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="pendientesGteTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Puesto Solicitado</th>
+                        <th>Marca / Agencia</th>
+                        <th>Solicitante</th>
+                        <th>Fecha Solicitud</th>
+                        <th>Sueldo Propuesto</th>
+                        <th>Motivo</th>
+                        <th style="text-align: right;">Decisión</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes_gerente_general %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'puesto_detalle' solicitud.id %}" target="_blank" class="link-puesto" title="Ver requisición completa">
+                                {{ solicitud.titulo.nombre }}
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </td>
+                        <td><strong>{{ solicitud.marca.nombre }}</strong> - {{ solicitud.agencia }}</td>
+                        <td>{{ solicitud.solicitado_por.get_full_name|default:solicitud.solicitado_por.username }}</td>
+                        <td>{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</td>
+                        <td><span class="sueldo-tag">${{ solicitud.sueldo_base|default:"N/A" }}</span></td>
+                        <td><span class="sap-badge sap-badge-neutral">{{ solicitud.get_motivo_requisicion_display }}</span></td>
+                        <td style="text-align: right;">
+                            <div class="action-group">
+                                <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="sap-btn sap-btn-positive" onclick="return confirm('¿Aprobar la fase inicial de esta vacante? Pasará a autorización de Dirección.');">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Aprobar (1/2)
+                                </a>
+                                <button type="button" class="sap-btn sap-btn-negative" onclick="abrirModalRechazo('{{ solicitud.id }}', '{{ solicitud.titulo.nombre }}');">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Rechazar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     {% endif %}
 
     {% if user.is_staff and solicitudes_director %}
-        <h2>Pendientes de Aprobación (Fase 2: Dirección)</h2>
-        <p style="color: #64748b;">Estas solicitudes ya cuentan con la aprobación del Gerente General de Marca y requieren tu autorización final.</p>
-        <table id="pendientesDirTable" class="display" style="width:100%">
-             <thead>
-                <tr>
-                    <th>Puesto</th>
-                    <th>Marca / Agencia</th>
-                    <th>Solicitante</th>
-                    <th>Aprob. Gerente</th>
-                    <th>Sueldo Propuesto</th>
-                    <th>Motivo</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-             <tbody>
-                {% for solicitud in solicitudes_director %}
-                <tr>
-                    <td>
-                        <a href="{% url 'puesto_detalle' solicitud.id %}" target="_blank" style="font-weight: 700; color: #2563eb; text-decoration: underline;" title="Ver requisición completa">
-                            {{ solicitud.titulo.nombre }} ↗
-                        </a>
-                    </td>
-                    <td>{{ solicitud.marca.nombre }} - {{ solicitud.agencia }}</td>
-                    <td>{{ solicitud.solicitado_por.get_full_name|default:solicitud.solicitado_por.username }}</td>
-                    <td>{{ solicitud.fecha_aprobacion_gerente_marca|date:"d/m/Y" }}</td>
-                    <td class="sueldo">${{ solicitud.sueldo_base|default:"N/A" }}</td>
-                    <td>{{ solicitud.get_motivo_requisicion_display }}</td>
-                    <td>
-                        <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="boton-aprobar" onclick="return confirm('¿Aprobar definitivamente esta vacante? Quedará disponible para asignación.');">Aprobar (Final)</a>
-                        <button type="button" class="boton-rechazar" onclick="abrirModalRechazo('{{ solicitud.id }}', '{{ solicitud.titulo.nombre }}');">Rechazar</button>
-                    </td>
-                </tr>
-                {% endfor %}
-             </tbody>
-        </table>
+    <!-- Section Fase 2: Dirección General -->
+    <div class="inbox-section">
+        <div class="inbox-section-header">
+            <div>
+                <h2>
+                    <span class="sap-badge sap-badge-accent"><span class="sap-badge-dot"></span>Fase 2</span>
+                    Aprobación Dirección General
+                </h2>
+                <p>Requisiciones previamente validadas por Gerencia General de Marca que requieren dictamen final.</p>
+            </div>
+            <div>
+                <span class="sap-badge sap-badge-neutral">{{ solicitudes_director|length }} solicitudes</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="pendientesDirTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Puesto Solicitado</th>
+                        <th>Marca / Agencia</th>
+                        <th>Solicitante</th>
+                        <th>Aprob. Gerencia</th>
+                        <th>Sueldo Propuesto</th>
+                        <th>Motivo</th>
+                        <th style="text-align: right;">Decisión Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solicitud in solicitudes_director %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'puesto_detalle' solicitud.id %}" target="_blank" class="link-puesto" title="Ver requisición completa">
+                                {{ solicitud.titulo.nombre }}
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </td>
+                        <td><strong>{{ solicitud.marca.nombre }}</strong> - {{ solicitud.agencia }}</td>
+                        <td>{{ solicitud.solicitado_por.get_full_name|default:solicitud.solicitado_por.username }}</td>
+                        <td><span class="sap-badge sap-badge-success">{{ solicitud.fecha_aprobacion_gerente_marca|date:"d/m/Y" }}</span></td>
+                        <td><span class="sueldo-tag">${{ solicitud.sueldo_base|default:"N/A" }}</span></td>
+                        <td><span class="sap-badge sap-badge-neutral">{{ solicitud.get_motivo_requisicion_display }}</span></td>
+                        <td style="text-align: right;">
+                            <div class="action-group">
+                                <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="sap-btn sap-btn-positive" onclick="return confirm('¿Aprobar definitivamente esta vacante? Quedará disponible para asignación.');">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Aprobar (Final)
+                                </a>
+                                <button type="button" class="sap-btn sap-btn-negative" onclick="abrirModalRechazo('{{ solicitud.id }}', '{{ solicitud.titulo.nombre }}');">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    Rechazar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     {% endif %}
 
     {% if not solicitudes_director and not solicitudes_gerente_general %}
-        <p style="padding: 2em; text-align: center; color: #64748b;">No hay solicitudes pendientes de aprobación en tu bandeja.</p>
+    <div class="inbox-section" style="text-align: center; padding: 3rem 1.5rem;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--sap-positive)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.75rem;">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <h3 style="margin: 0; color: var(--sap-text);">Bandeja al Día</h3>
+        <p style="color: var(--sap-text-secondary); margin-top: 0.5rem;">No hay solicitudes pendientes de autorización asignadas a tu perfil en este momento.</p>
+    </div>
     {% endif %}
 </div>
 
-<!-- Modal para Motivo de Rechazo -->
-<div id="modalRechazo" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Declinar Requisición de Personal</h3>
-        <p id="modalPuestoTexto" style="color: #475569; font-weight: 600;"></p>
+<!-- Modal SAP Dialog para Motivo de Rechazo -->
+<div id="modalRechazo" class="sap-modal-overlay">
+    <div class="sap-modal-dialog">
+        <div class="sap-modal-header">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Declinar Requisición de Personal
+            </h3>
+            <button type="button" class="sap-btn sap-btn-ghost" onclick="cerrarModalRechazo();" style="padding: 4px 8px; font-size: 1.1rem; line-height: 1;">&times;</button>
+        </div>
         <form id="formRechazo" method="post" action="">
             {% csrf_token %}
-            <label for="motivo_rechazo" style="font-weight: 600; font-size: 0.9em; color: #334155;">Especifica el motivo del rechazo (será visible para el solicitante):</label>
-            <textarea name="motivo_rechazo" id="motivo_rechazo" placeholder="Ej: Presupuesto no autorizado para el trimestre, plantilla completa en el área, etc." required></textarea>
-            <div class="modal-buttons">
-                <button type="button" class="btn-cancel" onclick="cerrarModalRechazo();">Cancelar</button>
-                <button type="submit" class="btn-confirm-reject">Confirmar Rechazo</button>
+            <div class="sap-modal-body">
+                <p id="modalPuestoTexto" style="color: var(--sap-text); font-weight: 700; margin: 0 0 0.75rem 0; font-size: 0.95rem;"></p>
+                <label for="motivo_rechazo" style="font-weight: 600; font-size: 0.85rem; color: var(--sap-text);">
+                    Motivo formal del rechazo (será registrado en la bitácora y notificado al solicitante):
+                </label>
+                <textarea name="motivo_rechazo" id="motivo_rechazo" class="sap-textarea" placeholder="Ej: Presupuesto de plantilla no autorizado para el periodo, puesto en reestructura, etc." required></textarea>
+            </div>
+            <div class="sap-modal-footer">
+                <button type="button" class="sap-btn sap-btn-secondary" onclick="cerrarModalRechazo();">Cancelar</button>
+                <button type="submit" class="sap-btn sap-btn-negative">Confirmar Rechazo</button>
             </div>
         </form>
     </div>
@@ -146,15 +382,21 @@
 <script>
     $(document).ready(function() {
         if ($('#pendientesGteTable').length) {
-            $('#pendientesGteTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
+            $('#pendientesGteTable').DataTable({
+                "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+                "pageLength": 10
+            });
         }
         if ($('#pendientesDirTable').length) {
-            $('#pendientesDirTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
+            $('#pendientesDirTable').DataTable({
+                "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+                "pageLength": 10
+            });
         }
     });
 
     function abrirModalRechazo(puestoId, puestoNombre) {
-        $('#modalPuestoTexto').text('Puesto: ' + puestoNombre);
+        $('#modalPuestoTexto').text('Posición: ' + puestoNombre);
         $('#formRechazo').attr('action', '/solicitud/' + puestoId + '/rechazar/');
         $('#motivo_rechazo').val('');
         $('#modalRechazo').css('display', 'flex');

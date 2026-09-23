@@ -1,122 +1,102 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Suite Analítica Ejecutiva de Reclutamiento & BI | Premier Automotriz{% endblock %}
+{% block title %}Suite Analítica Ejecutiva & BI | Dashboard Ejecutivo{% endblock %}
 
 {% block style %}
 <style>
-    /* Estilos Enterprise Estilo SAP SuccessFactors / Fiori */
-    :root {
-        --sap-primary: #0f172a;
-        --sap-accent: #0284c7;
-        --sap-bg: #f8fafc;
-        --sap-card-bg: #ffffff;
-        --sap-border: #e2e8f0;
-        --sap-text: #1e293b;
-        --sap-muted: #64748b;
-        --sap-green: #10b981;
-        --sap-yellow: #f59e0b;
-        --sap-red: #ef4444;
+    /* Estilos SAP Fiori / Horizon Analytics Suite (Cero Emoticonos) */
+    .sap-analytics-container {
+        max-width: 1600px;
+        margin: 0 auto;
     }
 
-    .container { max-width: 98%; margin: 1.2em auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    
-    /* Encabezado Corporativo */
-    .sap-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    /* Header Ejecutivo SAP Object Page */
+    .sap-analytics-header {
+        background: linear-gradient(135deg, #1d2d3e 0%, #26384c 100%);
         color: #ffffff;
-        padding: 1.5em 2em;
-        border-radius: 12px;
-        margin-bottom: 1.5em;
+        padding: 1.5rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 1.2em;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        gap: 1.2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    .sap-header h1 {
-        font-size: 1.85em;
+    .sap-analytics-header h1 {
+        font-size: 1.65rem;
         font-weight: 700;
         color: #ffffff;
-        margin: 0 0 0.3em 0;
+        margin: 0 0 0.3rem 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
-    .sap-header p {
+    .sap-analytics-header p {
         margin: 0;
-        color: #94a3b8;
-        font-size: 0.95em;
+        color: #a6bbd3;
+        font-size: 0.9rem;
     }
-    .sap-header-actions {
+    .sap-analytics-actions {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
     }
 
     /* Menú Desplegable de Exportación */
     .export-dropdown { position: relative; display: inline-block; }
     .btn-export-main {
-        background-color: #059669;
-        color: white;
-        padding: 0.65em 1.2em;
-        border-radius: 8px;
+        background-color: #107e3e;
+        color: #ffffff;
+        padding: 8px 16px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 0.9em;
-        border: none;
+        font-size: 0.85rem;
+        border: 1px solid #107e3e;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease;
     }
-    .btn-export-main:hover { background-color: #047857; transform: translateY(-1px); }
+    .btn-export-main:hover { background-color: #0b612e; border-color: #0b612e; }
     .dropdown-content {
         display: none;
         position: absolute;
         right: 0;
         background-color: #ffffff;
-        min-width: 260px;
+        min-width: 270px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        border-radius: 8px;
+        border-radius: 6px;
         z-index: 1000;
         border: 1px solid var(--sap-border);
         overflow: hidden;
-        margin-top: 5px;
+        margin-top: 4px;
     }
     .dropdown-content a {
         color: var(--sap-text);
-        padding: 12px 16px;
+        padding: 11px 16px;
         text-decoration: none;
-        display: block;
-        font-size: 0.88em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
         font-weight: 500;
         border-bottom: 1px solid #f1f5f9;
-        transition: background 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease;
     }
-    .dropdown-content a:hover { background-color: #f8fafc; color: var(--sap-accent); }
+    .dropdown-content a:hover { background-color: #f8fafc; color: var(--sap-primary); }
     .export-dropdown:hover .dropdown-content { display: block; }
 
-    .btn-volver-portal {
-        background-color: #334155;
-        color: #f8fafc;
-        text-decoration: none;
-        padding: 0.65em 1.2em;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.9em;
-        transition: background 0.2s ease;
-    }
-    .btn-volver-portal:hover { background-color: #475569; }
-
-    /* Barra de Navegación por Pestañas SAP Fiori */
-    .sap-tabs-nav {
+    /* Barra de Navegación por Pestañas SAP IconTabBar */
+    .sap-icontabbar {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         border-bottom: 2px solid var(--sap-border);
-        margin-bottom: 1.5em;
+        margin-bottom: 1.5rem;
         overflow-x: auto;
         padding-bottom: 2px;
     }
@@ -124,156 +104,124 @@
         background: none;
         border: none;
         padding: 12px 18px;
-        font-size: 0.95em;
+        font-size: 0.9rem;
         font-weight: 600;
         color: var(--sap-muted);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        border-radius: 8px 8px 0 0;
-        position: relative;
-        transition: all 0.2s ease;
+        border-radius: 6px 6px 0 0;
+        transition: all 0.15s ease;
         white-space: nowrap;
     }
     .sap-tab-btn:hover {
         color: var(--sap-text);
-        background-color: #f1f5f9;
+        background-color: #f1f3f5;
     }
     .sap-tab-btn.active {
-        color: #0284c7;
+        color: var(--sap-primary);
         background-color: #ffffff;
-        border-bottom: 3px solid #0284c7;
+        border-bottom: 3px solid var(--sap-primary);
     }
     .sap-tab-btn .tab-count {
         background-color: #e2e8f0;
         color: #334155;
-        font-size: 0.78em;
+        font-size: 0.75rem;
         padding: 2px 7px;
-        border-radius: 12px;
+        border-radius: 10px;
         font-weight: 700;
     }
     .sap-tab-btn.active .tab-count {
-        background-color: #e0f2fe;
-        color: #0369a1;
+        background-color: #e8f3ff;
+        color: var(--sap-primary);
     }
 
-    /* Contenido de Pestañas */
-    .sap-tab-pane { display: none; animation: fadeIn 0.25s ease-in-out; }
+    /* Paneles de Contenido */
+    .sap-tab-pane { display: none; animation: fadeIn 0.2s ease-in-out; }
     .sap-tab-pane.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Panel de Filtros Corporativos */
     .filter-panel {
         background: #ffffff;
-        padding: 1.2em 1.5em;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        margin-bottom: 1.5em;
+        padding: 1.25rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        margin-bottom: 1.5rem;
         border: 1px solid var(--sap-border);
     }
     .filter-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 1em;
+        gap: 1rem;
         align-items: flex-end;
     }
     .filter-group label {
         display: block;
-        font-size: 0.78em;
+        font-size: 0.75rem;
         font-weight: 700;
-        color: #475569;
+        color: var(--sap-muted);
         margin-bottom: 4px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    .filter-group select, .filter-group input {
-        width: 100%;
-        padding: 7px 10px;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        font-family: inherit;
-        font-size: 0.88em;
-        box-sizing: border-box;
-        background-color: #ffffff;
-    }
     .filter-buttons { display: flex; gap: 8px; }
-    .btn-filter {
-        background-color: #0284c7;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.88em;
-        cursor: pointer;
-        transition: background 0.15s ease;
-    }
-    .btn-filter:hover { background-color: #0369a1; }
-    .btn-clear {
-        background-color: #f1f5f9;
-        color: #475569;
-        border: 1px solid #cbd5e1;
-        padding: 8px 14px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.88em;
-    }
 
     /* Tarjetas de KPIs Ejecutivos */
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1.2em;
-        margin-bottom: 1.8em;
+        gap: 1.2rem;
+        margin-bottom: 1.8rem;
     }
     .kpi-card {
         background-color: #ffffff;
-        border-radius: 10px;
-        padding: 1.2em 1.4em;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border-radius: 8px;
+        padding: 1.2rem 1.4rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         border: 1px solid var(--sap-border);
-        border-left: 5px solid #0284c7;
+        border-left: 4px solid var(--sap-primary);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
-    .kpi-card.kpi-red { border-left-color: #ef4444; }
-    .kpi-card.kpi-yellow { border-left-color: #f59e0b; }
-    .kpi-card.kpi-green { border-left-color: #10b981; }
-    .kpi-card.kpi-purple { border-left-color: #8b5cf6; }
+    .kpi-card.kpi-red { border-left-color: var(--sap-error-dot); }
+    .kpi-card.kpi-yellow { border-left-color: var(--sap-warning-dot); }
+    .kpi-card.kpi-green { border-left-color: var(--sap-success-dot); }
+    .kpi-card.kpi-purple { border-left-color: #6366f1; }
     .kpi-card.kpi-slate { border-left-color: #475569; }
     .kpi-card h4 {
-        margin: 0 0 0.4em 0;
-        font-size: 0.8em;
-        color: #64748b;
+        margin: 0 0 0.4rem 0;
+        font-size: 0.78rem;
+        color: var(--sap-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         font-weight: 700;
     }
     .kpi-card .number {
-        font-size: 2.1em;
+        font-size: 2rem;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--sap-text);
         line-height: 1.1;
+        font-variant-numeric: tabular-nums;
     }
     .kpi-card .subtext {
-        font-size: 0.8em;
-        color: #64748b;
+        font-size: 0.78rem;
+        color: var(--sap-muted);
         margin-top: 6px;
     }
     .progress-bar-container {
         width: 100%;
-        background-color: #e2e8f0;
-        border-radius: 4px;
-        height: 6px;
+        background-color: #e5e8ec;
+        border-radius: 3px;
+        height: 5px;
         margin-top: 8px;
         overflow: hidden;
     }
     .progress-bar-fill {
         height: 100%;
-        border-radius: 4px;
+        border-radius: 3px;
         transition: width 0.4s ease;
     }
 
@@ -281,239 +229,133 @@
     .charts-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-        gap: 1.5em;
-        margin-bottom: 2em;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
     }
     .chart-container {
         background: #ffffff;
-        padding: 1.5em;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         border: 1px solid var(--sap-border);
     }
     .chart-container h3 {
         margin-top: 0;
-        font-size: 1.05em;
+        font-size: 1rem;
         font-weight: 700;
-        color: #1e293b;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 0.6em;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        color: var(--sap-text);
+        border-bottom: 1px solid var(--sap-border-subtle);
+        padding-bottom: 0.6rem;
     }
 
-    /* Tablas Corporativas Enterprise */
+    /* Contenedor de Tablas */
     .table-container {
         background: #ffffff;
-        padding: 1.6em;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         border: 1px solid var(--sap-border);
-        margin-bottom: 2em;
+        margin-bottom: 2rem;
     }
     .table-header-desc {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.2em;
+        margin-bottom: 1.2rem;
         flex-wrap: wrap;
-        gap: 1em;
+        gap: 1rem;
     }
     .table-header-desc h3 {
         margin: 0;
-        color: #0f172a;
-        font-size: 1.25em;
+        color: var(--sap-text);
+        font-size: 1.15rem;
         font-weight: 700;
     }
     .table-header-desc p {
-        margin: 0.3em 0 0;
-        color: #64748b;
-        font-size: 0.88em;
+        margin: 0.3rem 0 0;
+        color: var(--sap-muted);
+        font-size: 0.85rem;
     }
 
-    table.sap-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.88em;
-    }
-    table.sap-table thead th {
-        background-color: #0f172a;
-        color: #ffffff;
-        font-weight: 600;
-        padding: 10px 12px;
-        text-align: left;
-        white-space: nowrap;
-    }
-    table.sap-table tbody td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #e2e8f0;
-        vertical-align: middle;
-        color: #1e293b;
-    }
-    table.sap-table tbody tr:hover { background-color: #f8fafc; }
-
-    /* Semáforos y Badges */
-    .sla-pill {
-        padding: 4px 9px;
-        border-radius: 4px;
-        font-weight: 700;
-        font-size: 0.82em;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        white-space: nowrap;
-    }
-    .sla-pill.red { background-color: #fee2e2; color: #991b1b; }
-    .sla-pill.yellow { background-color: #fef3c7; color: #92400e; }
-    .sla-pill.green { background-color: #dcfce7; color: #166534; }
-    .sla-pill.gray { background-color: #f1f5f9; color: #475569; }
-
-    .capacity-badge {
-        padding: 4px 9px;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 0.8em;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        white-space: nowrap;
-    }
-    .capacity-badge.baja { background-color: #dcfce7; color: #166534; }
-    .capacity-badge.equilibrada { background-color: #e0f2fe; color: #0369a1; }
-    .capacity-badge.sobrecarga { background-color: #fee2e2; color: #991b1b; }
-
-    .etapa-badge {
-        font-weight: 600;
-        font-size: 0.82em;
-        color: #0f172a;
-        display: inline-block;
-        background-color: #f1f5f9;
-        padding: 3px 8px;
-        border-radius: 4px;
-        border: 1px solid #cbd5e1;
-    }
-
-    .btn-action-drill {
-        background-color: #f0fdf4;
-        color: #166534;
-        border: 1px solid #bbf7d0;
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 0.82em;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        transition: all 0.15s ease;
-    }
-    .btn-action-drill:hover { background-color: #dcfce7; transform: translateY(-1px); }
-
-    .btn-action-blue {
-        background-color: #eff6ff;
-        color: #1d4ed8;
-        border: 1px solid #bfdbfe;
-        padding: 5px 10px;
-        border-radius: 6px;
-        font-size: 0.82em;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        transition: all 0.15s ease;
-    }
-    .btn-action-blue:hover { background-color: #dbeafe; transform: translateY(-1px); }
-
-    /* Alerta Temprana */
+    /* Alerta Ejecutiva */
     .alert-panel {
-        background-color: #fffbeb;
-        border: 1px solid #fef3c7;
-        border-left: 5px solid #f59e0b;
-        border-radius: 8px;
-        padding: 1.2em 1.5em;
-        margin-bottom: 2em;
-    }
-    .alert-panel h4 { margin: 0 0 0.5em 0; color: #92400e; font-size: 1.05em; display: flex; align-items: center; gap: 8px; }
-    .alert-panel p { margin: 0; color: #78350f; font-size: 0.9em; }
-
-    /* Paginación */
-    .pagination-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 1.5em;
-        padding-top: 1em;
-        border-top: 1px solid var(--sap-border);
-        flex-wrap: wrap;
-        gap: 1em;
-    }
-    .pagination-links { display: flex; gap: 5px; flex-wrap: wrap; }
-    .pagination-links a, .pagination-links span {
-        padding: 6px 12px;
-        border: 1px solid #cbd5e1;
+        background-color: #fff4e5;
+        border: 1px solid #feddb0;
+        border-left: 4px solid #b25900;
         border-radius: 6px;
-        text-decoration: none;
-        color: #1e293b;
-        font-size: 0.88em;
+        padding: 1.1rem 1.4rem;
+        margin-bottom: 1.8rem;
     }
-    .pagination-links .current { background-color: #0284c7; color: white; border-color: #0284c7; font-weight: 600; }
-    .pagination-links .disabled { color: #94a3b8; pointer-events: none; background-color: #f8fafc; }
+    .alert-panel h4 {
+        margin: 0 0 0.4rem 0;
+        color: #b25900;
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+    .alert-panel p {
+        margin: 0;
+        color: #7a3e00;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="sap-analytics-container">
     <!-- ENCABEZADO SAP ENTERPRISE -->
-    <div class="sap-header">
+    <div class="sap-analytics-header">
         <div>
-            <h1>📊 Suite Analítica Ejecutiva & BI | Dashboard Ejecutivo</h1>
+            <h1>Suite Analítica Ejecutiva & BI | Dashboard Ejecutivo</h1>
             <p>Monitoreo 360° en tiempo real del embudo de talento, Acuerdos de Nivel de Servicio (SLAs) y rendimiento por Centro de Trabajo y Usuario.</p>
         </div>
-        <div class="sap-header-actions">
-            <!-- Menú Desplegable de Exportación Multicriterio -->
+        <div class="sap-analytics-actions">
+            <!-- Menú Desplegable de Exportación Multicriterio (Sin Emojis) -->
             <div class="export-dropdown">
                 <button type="button" class="btn-export-main">
-                    📥 Exportar a Excel (CSV) ▼
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    Exportar a Excel (CSV)
+                    <span style="font-size: 0.7em; margin-left: 4px;">&blacktriangledown;</span>
                 </button>
                 <div class="dropdown-content">
                     <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_master">
-                        📑 Sábana Maestra de Vacantes (Completa)
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                        Sábana Maestra de Requisiciones
                     </a>
                     <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias">
-                        🏢 Matriz Consolidada por Agencia
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+                        Matriz Consolidada por Agencia
                     </a>
                     <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras">
-                        👥 Monitor de Desempeño por Asesora
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 3s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        Monitor de Rendimiento por Asesora
                     </a>
                     <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes">
-                        👔 Seguimiento a Jefes Solicitantes
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Seguimiento a Jefes Solicitantes
                     </a>
                 </div>
             </div>
-            <a href="{% url 'dashboard' %}" class="btn-volver-portal">← Portal Principal</a>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">Volver al Portal</a>
         </div>
     </div>
 
-    <!-- PANEL DE FILTROS CORPORATIVOS (Persistentes entre vistas) -->
+    <!-- PANEL DE FILTROS CORPORATIVOS -->
     <div class="filter-panel">
         <form method="get" id="filterForm">
             <input type="hidden" name="tab" id="activeTabInput" value="{{ active_tab }}">
             <div class="filter-grid">
                 <div class="filter-group">
                     <label>Fecha Desde</label>
-                    <input type="date" name="fecha_desde" value="{{ filtros_aplicados.fecha_desde }}">
+                    <input type="date" name="fecha_desde" class="sap-input" value="{{ filtros_aplicados.fecha_desde }}">
                 </div>
                 <div class="filter-group">
                     <label>Fecha Hasta</label>
-                    <input type="date" name="fecha_hasta" value="{{ filtros_aplicados.fecha_hasta }}">
+                    <input type="date" name="fecha_hasta" class="sap-input" value="{{ filtros_aplicados.fecha_hasta }}">
                 </div>
                 <div class="filter-group">
                     <label>Marca</label>
-                    <select name="marca" id="filtroMarca">
+                    <select name="marca" id="filtroMarca" class="sap-select">
                         <option value="">Todas las Marcas</option>
                         {% for m in marcas_disponibles %}
                         <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>
@@ -522,7 +364,7 @@
                 </div>
                 <div class="filter-group">
                     <label>Agencia</label>
-                    <select name="agencia" id="filtroAgencia">
+                    <select name="agencia" id="filtroAgencia" class="sap-select">
                         <option value="">Todas las Agencias</option>
                         {% for ag in agencias_disponibles %}
                         <option value="{{ ag }}" {% if filtros_aplicados.agencia == ag %}selected{% endif %}>{{ ag }}</option>
@@ -531,7 +373,7 @@
                 </div>
                 <div class="filter-group">
                     <label>Ciudad</label>
-                    <select name="ciudad">
+                    <select name="ciudad" class="sap-select">
                         <option value="">Todas las Ciudades</option>
                         {% for c in ciudades_disponibles %}
                         <option value="{{ c.codigo }}" {% if filtros_aplicados.ciudad == c.codigo %}selected{% endif %}>{{ c.nombre }}</option>
@@ -540,7 +382,7 @@
                 </div>
                 <div class="filter-group">
                     <label>Asesora Asignada</label>
-                    <select name="asesora" id="filtroAsesora">
+                    <select name="asesora" id="filtroAsesora" class="sap-select">
                         <option value="">Todas las Asesoras</option>
                         {% for as in asesoras_disponibles %}
                         <option value="{{ as.id }}" {% if filtros_aplicados.asesora == as.id|stringformat:"s" %}selected{% endif %}>{{ as.get_full_name|default:as.username }}</option>
@@ -549,17 +391,17 @@
                 </div>
                 <div class="filter-group">
                     <label>Estatus SLA</label>
-                    <select name="sla">
+                    <select name="sla" class="sap-select">
                         <option value="">Todos los Estados</option>
-                        <option value="EN_TIEMPO" {% if filtros_aplicados.sla == 'EN_TIEMPO' %}selected{% endif %}>🟢 En Tiempo</option>
-                        <option value="POR_VENCER" {% if filtros_aplicados.sla == 'POR_VENCER' %}selected{% endif %}>🟡 Por Vencer (≤3 días)</option>
-                        <option value="VENCIDA" {% if filtros_aplicados.sla == 'VENCIDA' %}selected{% endif %}>🔴 Vencida</option>
-                        <option value="CUBIERTA" {% if filtros_aplicados.sla == 'CUBIERTA' %}selected{% endif %}>⚪ Cubierta</option>
+                        <option value="EN_TIEMPO" {% if filtros_aplicados.sla == 'EN_TIEMPO' %}selected{% endif %}>En Tiempo</option>
+                        <option value="POR_VENCER" {% if filtros_aplicados.sla == 'POR_VENCER' %}selected{% endif %}>Por Vencer (&le; 3 días)</option>
+                        <option value="VENCIDA" {% if filtros_aplicados.sla == 'VENCIDA' %}selected{% endif %}>Vencida</option>
+                        <option value="CUBIERTA" {% if filtros_aplicados.sla == 'CUBIERTA' %}selected{% endif %}>Cubierta</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label>Etapa Operativa</label>
-                    <select name="etapa">
+                    <select name="etapa" class="sap-select">
                         <option value="">Todas las Etapas</option>
                         {% for et in etapas_disponibles %}
                         <option value="{{ et }}" {% if filtros_aplicados.etapa == et %}selected{% endif %}>{{ et }}</option>
@@ -567,29 +409,34 @@
                     </select>
                 </div>
                 <div class="filter-buttons">
-                    <button type="submit" class="btn-filter">Aplicar Filtros</button>
-                    <a href="{% url 'vista_reportes' %}" class="btn-clear">Limpiar</a>
+                    <button type="submit" class="sap-btn sap-btn-primary">Filtrar</button>
+                    <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary">Limpiar</a>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN POR PESTAÑAS (SAP FIORI COCKPIT) -->
-    <div class="sap-tabs-nav">
+    <!-- NAVEGACIÓN POR PESTAÑAS (SAP FIORI ICON TAB BAR - CERO EMOJIS) -->
+    <div class="sap-icontabbar">
         <button type="button" class="sap-tab-btn {% if active_tab == 'cockpit' %}active{% endif %}" onclick="cambiarPestana('cockpit')">
-            📊 Cockpit Ejecutivo 360°
+            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            Cockpit Ejecutivo 360°
         </button>
         <button type="button" class="sap-tab-btn {% if active_tab == 'agencias' %}active{% endif %}" onclick="cambiarPestana('agencias')">
-            🏢 Matriz por Agencia <span class="tab-count">{{ agencias_scorecard|length }}</span>
+            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+            Matriz por Agencia <span class="tab-count">{{ agencias_scorecard|length }}</span>
         </button>
         <button type="button" class="sap-tab-btn {% if active_tab == 'asesoras' %}active{% endif %}" onclick="cambiarPestana('asesoras')">
-            👥 Monitor por Asesora <span class="tab-count">{{ asesoras_scorecard|length }}</span>
+            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 3s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            Monitor por Asesora <span class="tab-count">{{ asesoras_scorecard|length }}</span>
         </button>
         <button type="button" class="sap-tab-btn {% if active_tab == 'solicitantes' %}active{% endif %}" onclick="cambiarPestana('solicitantes')">
-            👔 Solicitantes y Jefes <span class="tab-count">{{ solicitantes_scorecard|length }}</span>
+            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Solicitantes y Jefes <span class="tab-count">{{ solicitantes_scorecard|length }}</span>
         </button>
         <button type="button" class="sap-tab-btn {% if active_tab == 'sabana' %}active{% endif %}" onclick="cambiarPestana('sabana')">
-            📋 Sábana Maestra de Vacantes <span class="tab-count">{{ total_vacantes }}</span>
+            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg>
+            Sábana Maestra de Requisiciones <span class="tab-count">{{ total_vacantes }}</span>
         </button>
     </div>
 
@@ -604,64 +451,64 @@
                 <div class="number">{{ total_activas }}</div>
                 <div class="subtext">De un total de {{ total_vacantes }} requisiciones</div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {% if total_vacantes > 0 %}{{ total_activas|floatformat:0 }}{% else %}0{% endif %}%; background-color: #0284c7;"></div>
+                    <div class="progress-bar-fill" style="width: {% if total_vacantes > 0 %}{{ total_activas|floatformat:0 }}{% else %}0{% endif %}%; background-color: var(--sap-primary);"></div>
                 </div>
             </div>
 
             <div class="kpi-card kpi-green">
                 <h4>Cumplimiento Global SLA</h4>
-                <div class="number" style="color: #10b981;">{{ cumplimiento_sla }}%</div>
-                <div class="subtext">{{ en_tiempo_count }} vacantes en tiempo meta</div>
+                <div class="number" style="color: var(--sap-success-dot);">{{ cumplimiento_sla }}%</div>
+                <div class="subtext">{{ en_tiempo_count }} vacantes dentro de meta</div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {{ cumplimiento_sla }}%; background-color: #10b981;"></div>
+                    <div class="progress-bar-fill" style="width: {{ cumplimiento_sla }}%; background-color: var(--sap-success-dot);"></div>
                 </div>
             </div>
 
             <div class="kpi-card kpi-red">
-                <h4>Vacantes Vencidas (🔴)</h4>
-                <div class="number" style="color: #ef4444;">{{ vencidas_count }}</div>
+                <h4>Vacantes Vencidas</h4>
+                <div class="number" style="color: var(--sap-error-dot);">{{ vencidas_count }}</div>
                 <div class="subtext">Criticidad: {{ indice_criticidad }}% de vacantes activas</div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {{ indice_criticidad }}%; background-color: #ef4444;"></div>
+                    <div class="progress-bar-fill" style="width: {{ indice_criticidad }}%; background-color: var(--sap-error-dot);"></div>
                 </div>
             </div>
 
             <div class="kpi-card kpi-yellow">
-                <h4>Por Vencer (🟡 ≤ 3 días)</h4>
-                <div class="number" style="color: #f59e0b;">{{ por_vencer_count }}</div>
+                <h4>Por Vencer (&le; 3 días)</h4>
+                <div class="number" style="color: var(--sap-warning-dot);">{{ por_vencer_count }}</div>
                 <div class="subtext">Riesgo inminente de incumplimiento SLA</div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: 100%; background-color: #f59e0b;"></div>
+                    <div class="progress-bar-fill" style="width: 100%; background-color: var(--sap-warning-dot);"></div>
                 </div>
             </div>
 
             <div class="kpi-card kpi-purple">
                 <h4>Plazas Cubiertas</h4>
-                <div class="number" style="color: #8b5cf6;">{{ total_plazas_cubiertas }} <span style="font-size: 0.5em; color: #64748b;">/ {{ total_plazas_solicitadas }}</span></div>
+                <div class="number" style="color: #6366f1;">{{ total_plazas_cubiertas }} <span style="font-size: 0.5em; color: var(--sap-muted);">/ {{ total_plazas_solicitadas }}</span></div>
                 <div class="subtext">Efectividad de cobertura: {{ tasa_efectividad_plazas }}%</div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {{ tasa_efectividad_plazas }}%; background-color: #8b5cf6;"></div>
+                    <div class="progress-bar-fill" style="width: {{ tasa_efectividad_plazas }}%; background-color: #6366f1;"></div>
                 </div>
             </div>
 
             <div class="kpi-card kpi-slate">
                 <h4>Tiempo Medio de Cobertura</h4>
-                <div class="number" style="color: #334155;">{{ promedio_dias_cobertura }} <span style="font-size: 0.5em; color: #64748b;">días</span></div>
+                <div class="number" style="color: #334155;">{{ promedio_dias_cobertura }} <span style="font-size: 0.5em; color: var(--sap-muted);">días</span></div>
                 <div class="subtext">Promedio general de permanencia activa</div>
             </div>
 
             <div class="kpi-card {% if candidatos_esperando_jefe > 0 %}kpi-yellow{% else %}kpi-green{% endif %}">
                 <h4>En Espera de Jefe Operativo</h4>
-                <div class="number" style="color: {% if candidatos_esperando_jefe > 0 %}#d97706{% else %}#10b981{% endif %};">{{ candidatos_esperando_jefe }}</div>
-                <div class="subtext">Candidatos esperando evaluación técnica</div>
+                <div class="number" style="color: {% if candidatos_esperando_jefe > 0 %}var(--sap-warning-dot){% else %}var(--sap-success-dot){% endif %};">{{ candidatos_esperando_jefe }}</div>
+                <div class="subtext">Candidatos en entrevista técnica</div>
             </div>
         </div>
 
         {% if vencidas_count > 0 %}
         <!-- Alerta Ejecutiva de Vacantes Vencidas -->
         <div class="alert-panel">
-            <h4>⚠️ Atención Requerida por la Dirección ({{ vencidas_count }} Vacantes Vencidas)</h4>
-            <p>Existen requisiciones fuera de tiempo de servicio. Consulta la pestaña <strong>"🏢 Matriz por Agencia"</strong> o <strong>"👥 Monitor por Asesora"</strong> para identificar centros de trabajo y analistas con saturación operativa.</p>
+            <h4>Atención Requerida por la Dirección ({{ vencidas_count }} Requisiciones Fuera de Meta)</h4>
+            <p>Se detectaron vacantes con excedente sobre el SLA acordado. Consulta la pestaña <strong>"Matriz por Agencia"</strong> o <strong>"Monitor por Asesora"</strong> para identificar las cargas de trabajo comprometidas.</p>
         </div>
         {% endif %}
 
@@ -672,7 +519,7 @@
                 <canvas id="chartEmbudo" height="230"></canvas>
             </div>
             <div class="chart-container">
-                <h3>Cumplimiento SLA por Agencia (Top Agencias)</h3>
+                <h3>Cumplimiento SLA por Agencia</h3>
                 <canvas id="chartAgencias" height="230"></canvas>
             </div>
             <div class="chart-container" style="grid-column: 1 / -1;">
@@ -689,18 +536,18 @@
         <div class="table-container">
             <div class="table-header-desc">
                 <div>
-                    <h3>🏢 Matriz de Seguimiento y Cumplimiento por Agencia</h3>
+                    <h3>Matriz de Seguimiento y Cumplimiento por Agencia</h3>
                     <p>Monitoreo consolidado de requisiciones, porcentaje de cumplimiento SLA y plazas por cada centro de trabajo.</p>
                 </div>
                 <div>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias" class="btn-action-drill">
-                        📥 Exportar Matriz Agencias (CSV)
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Exportar Matriz Agencias (CSV)
                     </a>
                 </div>
             </div>
 
             <div style="overflow-x: auto;">
-                <table id="tablaAgencias" class="sap-table display" style="width: 100%;">
+                <table id="tablaAgencias" class="dataTable display" style="width: 100%;">
                     <thead>
                         <tr>
                             <th>Marca</th>
@@ -708,7 +555,7 @@
                             <th>Ciudad</th>
                             <th style="text-align: center;">Total Vacantes</th>
                             <th style="text-align: center;">Activas</th>
-                            <th>Semáforo SLA (🟢 / 🟡 / 🔴)</th>
+                            <th>Semáforo SLA</th>
                             <th style="text-align: center;">Plazas (Cub / Sol)</th>
                             <th>Cumplimiento SLA</th>
                             <th style="text-align: center;">Días Promedio</th>
@@ -720,43 +567,45 @@
                         {% for ag in agencias_scorecard %}
                         <tr>
                             <td><strong>{{ ag.marca }}</strong></td>
-                            <td><span style="font-weight: 700; color: #0f172a;">{{ ag.agencia }}</span></td>
+                            <td><span style="font-weight: 600; color: var(--sap-text);">{{ ag.agencia }}</span></td>
                             <td>{{ ag.ciudad }}</td>
                             <td style="text-align: center;"><strong>{{ ag.total_vacantes }}</strong></td>
                             <td style="text-align: center;">
                                 {% if ag.activas > 0 %}
-                                    <span style="background-color: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 10px; font-weight: 700;">{{ ag.activas }}</span>
+                                    <span class="sap-badge sap-badge-info">{{ ag.activas }}</span>
                                 {% else %}
-                                    <span style="color: #94a3b8;">0</span>
+                                    <span style="color: var(--sap-muted);">0</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span title="En Tiempo" style="color: #10b981; font-weight: 700;">🟢 {{ ag.en_tiempo }}</span> &nbsp;
-                                <span title="Por Vencer" style="color: #f59e0b; font-weight: 700;">🟡 {{ ag.por_vencer }}</span> &nbsp;
-                                <span title="Vencidas" style="color: #ef4444; font-weight: 700;">🔴 {{ ag.vencidas }}</span>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <span class="sap-badge sap-badge-success" title="En Tiempo"><span class="sap-badge-dot"></span>{{ ag.en_tiempo }}</span>
+                                    <span class="sap-badge sap-badge-warning" title="Por Vencer"><span class="sap-badge-dot"></span>{{ ag.por_vencer }}</span>
+                                    <span class="sap-badge sap-badge-error" title="Vencidas"><span class="sap-badge-dot"></span>{{ ag.vencidas }}</span>
+                                </div>
                             </td>
                             <td style="text-align: center;"><strong>{{ ag.plazas_cubiertas }}</strong> / {{ ag.plazas_solicitadas }}</td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <strong style="color: {% if ag.cumplimiento_sla >= 80 %}#10b981{% elif ag.cumplimiento_sla >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+                                    <strong style="color: {% if ag.cumplimiento_sla >= 80 %}var(--sap-success-text){% elif ag.cumplimiento_sla >= 50 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">
                                         {{ ag.cumplimiento_sla }}%
                                     </strong>
                                     <div class="progress-bar-container" style="width: 60px; margin: 0;">
-                                        <div class="progress-bar-fill" style="width: {{ ag.cumplimiento_sla }}%; background-color: {% if ag.cumplimiento_sla >= 80 %}#10b981{% elif ag.cumplimiento_sla >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                                        <div class="progress-bar-fill" style="width: {{ ag.cumplimiento_sla }}%; background-color: {% if ag.cumplimiento_sla >= 80 %}var(--sap-success-dot){% elif ag.cumplimiento_sla >= 50 %}var(--sap-warning-dot){% else %}var(--sap-error-dot){% endif %};"></div>
                                     </div>
                                 </div>
                             </td>
                             <td style="text-align: center;">{{ ag.promedio_dias }}d</td>
                             <td style="text-align: center;">{{ ag.tasa_cobertura }}%</td>
                             <td>
-                                <button type="button" class="btn-action-drill" onclick="filtrarPorAgencia('{{ ag.agencia|escapejs }}')">
-                                    🔍 Ver Vacantes
+                                <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="filtrarPorAgencia('{{ ag.agencia|escapejs }}')">
+                                    Ver Vacantes
                                 </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="11" style="text-align: center; padding: 2em; color: #64748b;">No hay agencias con registros para los filtros seleccionados.</td>
+                            <td colspan="11" style="text-align: center; padding: 2em; color: var(--sap-muted);">No hay agencias con registros para los filtros seleccionados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -772,25 +621,25 @@
         <div class="table-container">
             <div class="table-header-desc">
                 <div>
-                    <h3>👥 Monitor de Productividad y Balance de Carga por Asesora</h3>
+                    <h3>Monitor de Productividad y Balance de Carga por Asesora</h3>
                     <p>Seguimiento individual a cada especialista de reclutamiento: capacidad de carga, efectividad y cumplimiento de acuerdos.</p>
                 </div>
                 <div>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras" class="btn-action-drill">
-                        📥 Exportar Monitor Asesoras (CSV)
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Exportar Monitor Asesoras (CSV)
                     </a>
                 </div>
             </div>
 
             <div style="overflow-x: auto;">
-                <table id="tablaAsesoras" class="sap-table display" style="width: 100%;">
+                <table id="tablaAsesoras" class="dataTable display" style="width: 100%;">
                     <thead>
                         <tr>
                             <th>Asesora / Reclutadora</th>
-                            <th>Nivel de Carga</th>
+                            <th>Capacidad Operativa</th>
                             <th style="text-align: center;">Total Asignadas</th>
                             <th style="text-align: center;">Activas</th>
-                            <th>Semáforo SLA (🟢 / 🟡 / 🔴)</th>
+                            <th>Semáforo SLA</th>
                             <th style="text-align: center;">Cubiertas</th>
                             <th style="text-align: center;">Plazas (Cub / Sol)</th>
                             <th>Cumplimiento SLA</th>
@@ -805,55 +654,55 @@
                         <tr>
                             <td>
                                 <strong>{{ as_item.nombre }}</strong>
-                                {% if as_item.email %}<small style="display: block; color: #64748b;">{{ as_item.email }}</small>{% endif %}
+                                {% if as_item.email %}<small style="display: block; color: var(--sap-muted);">{{ as_item.email }}</small>{% endif %}
                             </td>
                             <td>
                                 {% if as_item.nivel_carga == 'BAJA' %}
-                                    <span class="capacity-badge baja">● Disponible (≤3)</span>
+                                    <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Disponible (&le; 3)</span>
                                 {% elif as_item.nivel_carga == 'EQUILIBRADA' %}
-                                    <span class="capacity-badge equilibrada">● Equilibrada (4-7)</span>
+                                    <span class="sap-badge sap-badge-info"><span class="sap-badge-dot"></span>Equilibrada (4-7)</span>
                                 {% else %}
-                                    <span class="capacity-badge sobrecarga">● Sobrecarga (8+)</span>
+                                    <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Sobrecarga (8+)</span>
                                 {% endif %}
                             </td>
                             <td style="text-align: center;"><strong>{{ as_item.total_asignadas }}</strong></td>
                             <td style="text-align: center;">
-                                <span style="background-color: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px; font-weight: 700;">{{ as_item.activas }}</span>
+                                <span class="sap-badge sap-badge-info">{{ as_item.activas }}</span>
                             </td>
                             <td>
-                                <span title="En Tiempo" style="color: #10b981; font-weight: 700;">🟢 {{ as_item.en_tiempo }}</span> &nbsp;
-                                <span title="Por Vencer" style="color: #f59e0b; font-weight: 700;">🟡 {{ as_item.por_vencer }}</span> &nbsp;
-                                <span title="Vencidas" style="color: #ef4444; font-weight: 700;">🔴 {{ as_item.vencidas }}</span>
-                            </td>
-                            <td style="text-align: center; color: #10b981; font-weight: 700;">{{ as_item.cubiertas }}</td>
-                            <td style="text-align: center;"><strong>{{ as_item.plazas_cubiertas }}</strong> / {{ as_item.plazas_solicitadas }}</td>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <strong style="color: {% if as_item.cumplimiento_sla >= 80 %}#10b981{% elif as_item.cumplimiento_sla >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
-                                        {{ as_item.cumplimiento_sla }}%
-                                    </strong>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <span class="sap-badge sap-badge-success" title="En Tiempo"><span class="sap-badge-dot"></span>{{ as_item.en_tiempo }}</span>
+                                    <span class="sap-badge sap-badge-warning" title="Por Vencer"><span class="sap-badge-dot"></span>{{ as_item.por_vencer }}</span>
+                                    <span class="sap-badge sap-badge-error" title="Vencidas"><span class="sap-badge-dot"></span>{{ as_item.vencidas }}</span>
                                 </div>
                             </td>
+                            <td style="text-align: center; color: var(--sap-success-text); font-weight: 700;">{{ as_item.cubiertas }}</td>
+                            <td style="text-align: center;"><strong>{{ as_item.plazas_cubiertas }}</strong> / {{ as_item.plazas_solicitadas }}</td>
                             <td>
-                                <strong style="color: #0284c7;">{{ as_item.efectividad }}%</strong>
+                                <strong style="color: {% if as_item.cumplimiento_sla >= 80 %}var(--sap-success-text){% elif as_item.cumplimiento_sla >= 50 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">
+                                    {{ as_item.cumplimiento_sla }}%
+                                </strong>
+                            </td>
+                            <td>
+                                <strong style="color: var(--sap-primary);">{{ as_item.efectividad }}%</strong>
                             </td>
                             <td style="text-align: center;">{{ as_item.promedio_dias }}d</td>
                             <td style="text-align: center;">
-                                <span style="background-color: #f1f5f9; padding: 2px 7px; border-radius: 6px; font-weight: 600;">{{ as_item.candidatos_proceso_total }}</span>
+                                <span style="background-color: #f1f3f5; padding: 2px 7px; border-radius: 4px; font-weight: 600;">{{ as_item.candidatos_proceso_total }}</span>
                             </td>
                             <td>
                                 {% if as_item.asesora_id > 0 %}
-                                <button type="button" class="btn-action-blue" onclick="filtrarPorAsesora('{{ as_item.asesora_id }}')">
-                                    📂 Ver Cartera
+                                <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="filtrarPorAsesora('{{ as_item.asesora_id }}')">
+                                    Ver Cartera
                                 </button>
                                 {% else %}
-                                <span style="color: #94a3b8; font-style: italic;">Sin asignar</span>
+                                <span style="color: var(--sap-muted); font-style: italic;">Sin asignar</span>
                                 {% endif %}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="12" style="text-align: center; padding: 2em; color: #64748b;">No hay asesoras registradas con vacantes para los filtros actuales.</td>
+                            <td colspan="12" style="text-align: center; padding: 2em; color: var(--sap-muted);">No hay asesoras registradas con vacantes para los filtros actuales.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -869,18 +718,18 @@
         <div class="table-container">
             <div class="table-header-desc">
                 <div>
-                    <h3>👔 Seguimiento a Solicitantes y Cuellos de Botella en Jefaturas</h3>
-                    <p>Mapeo de requisiciones por gerente operativo y monitoreo estricto de tiempos de respuesta en entrevistas con jefe.</p>
+                    <h3>Seguimiento a Solicitantes y Cuellos de Botella en Jefaturas</h3>
+                    <p>Mapeo de requisiciones por gerente operativo y monitoreo de tiempos de respuesta en entrevistas con jefe.</p>
                 </div>
                 <div>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes" class="btn-action-drill">
-                        📥 Exportar Solicitantes (CSV)
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Exportar Solicitantes (CSV)
                     </a>
                 </div>
             </div>
 
             <div style="overflow-x: auto;">
-                <table id="tablaSolicitantes" class="sap-table display" style="width: 100%;">
+                <table id="tablaSolicitantes" class="dataTable display" style="width: 100%;">
                     <thead>
                         <tr>
                             <th>Jefe / Solicitante</th>
@@ -888,7 +737,7 @@
                             <th>Agencias Vinculadas</th>
                             <th style="text-align: center;">Total Requisiciones</th>
                             <th style="text-align: center;">Vacantes Activas</th>
-                            <th style="text-align: center;">Esperando Entrevista con Jefe (⚠️ Cuello de Botella)</th>
+                            <th style="text-align: center;">Esperando Entrevista con Jefe (Cuello de Botella)</th>
                             <th style="text-align: center;">Vacantes Cubiertas</th>
                             <th style="text-align: center;">Antigüedad Media</th>
                         </tr>
@@ -898,26 +747,28 @@
                         <tr>
                             <td><strong>{{ s.nombre }}</strong></td>
                             <td>{{ s.puesto_jefe }}</td>
-                            <td><small style="color: #475569;">{{ s.agencias_str }}</small></td>
+                            <td><small style="color: var(--sap-muted);">{{ s.agencias_str }}</small></td>
                             <td style="text-align: center;"><strong>{{ s.total_requisiciones }}</strong></td>
                             <td style="text-align: center;">
-                                <span style="background-color: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 700;">{{ s.activas }}</span>
+                                <span class="sap-badge sap-badge-info">{{ s.activas }}</span>
                             </td>
                             <td style="text-align: center;">
                                 {% if s.pendientes_entrevista_jefe > 0 %}
-                                    <span style="background-color: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 8px; font-weight: 700; border: 1px solid #fde68a;">
-                                        ⚠️ {{ s.pendientes_entrevista_jefe }} pendiente(s)
+                                    <span class="sap-badge sap-badge-warning">
+                                        <span class="sap-badge-dot"></span>{{ s.pendientes_entrevista_jefe }} pendiente(s)
                                     </span>
                                 {% else %}
-                                    <span style="color: #10b981; font-weight: 600;">✓ Al día (0)</span>
+                                    <span class="sap-badge sap-badge-success">
+                                        <span class="sap-badge-dot"></span>Al día (0)
+                                    </span>
                                 {% endif %}
                             </td>
-                            <td style="text-align: center; color: #10b981; font-weight: 700;">{{ s.cubiertas }}</td>
+                            <td style="text-align: center; color: var(--sap-success-text); font-weight: 700;">{{ s.cubiertas }}</td>
                             <td style="text-align: center;">{{ s.promedio_dias }}d</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 2em; color: #64748b;">No hay solicitantes con requisiciones en el periodo seleccionado.</td>
+                            <td colspan="8" style="text-align: center; padding: 2em; color: var(--sap-muted);">No hay solicitantes con requisiciones en el periodo seleccionado.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -933,20 +784,20 @@
         <div class="table-container">
             <div class="table-header-desc">
                 <div>
-                    <h3>📋 Sábana Maestra de Requisiciones y Candidatos</h3>
+                    <h3>Sábana Maestra de Requisiciones y Candidatos</h3>
                     <p>Trazabilidad individual con detalle de etapa operativa, semáforo SLA y postulación más avanzada.</p>
                 </div>
-                <div style="background: #f8fafc; padding: 0.6em 1em; border-radius: 8px; border: 1px solid var(--sap-border);">
-                    <span style="color: #64748b; font-size: 0.85em;">Mostrando</span>
-                    <strong style="color: #0f172a; font-size: 1.05em; margin: 0 0.2em;">{{ puestos.start_index }}-{{ puestos.end_index }}</strong>
-                    <span style="color: #64748b; font-size: 0.85em;">de</span>
-                    <strong style="color: #0f172a; font-size: 1.05em; margin: 0 0.2em;">{{ paginator.count }}</strong>
-                    <span style="color: #64748b; font-size: 0.85em;">vacantes</span>
+                <div style="background: #f8fafc; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--sap-border);">
+                    <span style="color: var(--sap-muted); font-size: 0.82rem;">Mostrando</span>
+                    <strong style="color: var(--sap-text); font-size: 0.95rem; margin: 0 0.2rem;">{{ puestos.start_index }}-{{ puestos.end_index }}</strong>
+                    <span style="color: var(--sap-muted); font-size: 0.82rem;">de</span>
+                    <strong style="color: var(--sap-text); font-size: 0.95rem; margin: 0 0.2rem;">{{ paginator.count }}</strong>
+                    <span style="color: var(--sap-muted); font-size: 0.82rem;">vacantes</span>
                 </div>
             </div>
 
             <div style="overflow-x: auto;">
-                <table id="puestosReportTable" class="sap-table display" style="width:100%">
+                <table id="puestosReportTable" class="dataTable display" style="width:100%">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -966,24 +817,24 @@
                         <tr>
                             <td><strong>#{{ puesto.id }}</strong></td>
                             <td>
-                                <a href="{% url 'puesto_detalle' puesto.id %}" target="_blank" style="font-weight: 700; color: #0284c7; text-decoration: none;">
+                                <a href="{% url 'puesto_detalle' puesto.id %}" target="_blank" style="font-weight: 600; color: var(--sap-primary); text-decoration: none;">
                                     {{ puesto.titulo.nombre|default:"N/A" }}
                                 </a>
-                                <small style="display: block; color: #64748b; margin-top: 2px;">Req: {{ puesto.fecha_solicitud|date:"d/m/Y" }}</small>
+                                <small style="display: block; color: var(--sap-muted); margin-top: 2px;">Req: {{ puesto.fecha_solicitud|date:"d/m/Y" }}</small>
                             </td>
                             <td>
                                 <strong>{{ puesto.marca.nombre }}</strong>
-                                <small style="display: block; color: #64748b; margin-top: 2px;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
+                                <small style="display: block; color: var(--sap-muted); margin-top: 2px;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
                             </td>
                             <td>
                                 {% if puesto.asesora_encargada %}
-                                    <span style="font-weight: 600;">{{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username }}</span>
+                                    <span style="font-weight: 500;">{{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username }}</span>
                                 {% else %}
-                                    <span style="color:#94a3b8; font-style: italic;">Sin Asignar</span>
+                                    <span style="color: var(--sap-muted); font-style: italic;">Sin Asignar</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="etapa-badge">{{ puesto.etapa_operativa }}</span>
+                                <span class="sap-badge sap-badge-neutral">{{ puesto.etapa_operativa }}</span>
                             </td>
                             <td style="text-align: center;">
                                 <strong>{{ puesto.plazas_cubiertas }}</strong> / {{ puesto.cantidad_vacantes }}
@@ -991,33 +842,33 @@
                             <td>
                                 {% if puesto.esta_abierto %}
                                     {% if puesto.estatus_sla == 'VENCIDA' %}
-                                        <span class="sla-pill red">🔴 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Vencida)</span>
+                                        <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Vencida ({{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d)</span>
                                     {% elif puesto.estatus_sla == 'POR_VENCER' %}
-                                        <span class="sla-pill yellow">🟡 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Por Vencer)</span>
+                                        <span class="sap-badge sap-badge-warning"><span class="sap-badge-dot"></span>Por Vencer ({{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d)</span>
                                     {% else %}
-                                        <span class="sla-pill green">🟢 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (En Tiempo)</span>
+                                        <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>En Tiempo ({{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d)</span>
                                     {% endif %}
                                 {% else %}
-                                    <span class="sla-pill gray">⚪ Cerrada ({{ puesto.dias_transcurridos }}d)</span>
+                                    <span class="sap-badge sap-badge-neutral">Cerrada ({{ puesto.dias_transcurridos }}d)</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% with cand=puesto.candidato_mas_avanzado %}
                                     {% if cand %}
-                                        <a href="{% url 'candidato_detalle' cand.id %}" target="_blank" style="font-weight: 600; color: #0284c7; text-decoration: underline;">
+                                        <a href="{% url 'candidato_detalle' cand.id %}" target="_blank" style="font-weight: 600; color: var(--sap-primary); text-decoration: underline;">
                                             {{ cand.nombre_completo }}
                                         </a>
                                     {% else %}
-                                        <span style="color: #94a3b8; font-style: italic;">Sin postulantes</span>
+                                        <span style="color: var(--sap-muted); font-style: italic;">Sin postulantes</span>
                                     {% endif %}
                                 {% endwith %}
                             </td>
-                            <td style="max-width: 220px; font-size: 0.85em; color: #475569;" title="{{ puesto.ultima_observacion }}">
+                            <td style="max-width: 220px; font-size: 0.82rem; color: #475569;" title="{{ puesto.ultima_observacion }}">
                                 {{ puesto.ultima_observacion|truncatechars:65 }}
                             </td>
                             <td>
-                                <a href="{% url 'historial_puesto' puesto.id %}" class="btn-action-blue">
-                                    📜 Historial
+                                <a href="{% url 'historial_puesto' puesto.id %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                                    Historial
                                 </a>
                             </td>
                         </tr>
@@ -1028,25 +879,25 @@
 
             <!-- Paginación -->
             {% if paginator.num_pages > 1 %}
-            <div class="pagination-container">
-                <div style="font-size: 0.88em; color: #64748b;">
-                    <span>Página <strong>{{ puestos.number }}</strong> de <strong>{{ paginator.num_pages }}</strong> ({{ paginator.count }} vacantes en total)</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--sap-border); flex-wrap: wrap; gap: 1rem;">
+                <div style="font-size: 0.85rem; color: var(--sap-muted);">
+                    Página <strong>{{ puestos.number }}</strong> de <strong>{{ paginator.num_pages }}</strong> ({{ paginator.count }} vacantes totales)
                 </div>
-                <div class="pagination-links">
+                <div style="display: flex; gap: 4px;">
                     {% if puestos.has_previous %}
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.previous_page_number }}">« Anterior</a>
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.previous_page_number }}" class="sap-btn sap-btn-secondary sap-btn-sm">&laquo; Anterior</a>
                     {% endif %}
 
                     {% for page_num in paginator.page_range %}
                         {% if page_num == puestos.number %}
-                            <span class="current">{{ page_num }}</span>
+                            <span class="sap-btn sap-btn-primary sap-btn-sm">{{ page_num }}</span>
                         {% else %}
-                            <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
+                            <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_num }}" class="sap-btn sap-btn-secondary sap-btn-sm">{{ page_num }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if puestos.has_next %}
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.next_page_number }}">Siguiente »</a>
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.next_page_number }}" class="sap-btn sap-btn-secondary sap-btn-sm">Siguiente &raquo;</a>
                     {% endif %}
                 </div>
             </div>
@@ -1058,20 +909,15 @@
 
 {% block scripts %}
 <script>
-// Cambio de Pestañas SAP Fiori
+// Cambio de Pestañas SAP Fiori IconTabBar
 function cambiarPestana(tabId) {
-    // Desactivar todos los botones y paneles
     $('.sap-tab-btn').removeClass('active');
     $('.sap-tab-pane').removeClass('active');
 
-    // Activar seleccionado
     $(`button[onclick="cambiarPestana('${tabId}')"]`).addClass('active');
     $(`#pane-${tabId}`).addClass('active');
 
-    // Sincronizar input oculto de tab
     $('#activeTabInput').val(tabId);
-
-    // Actualizar hash en URL sin recargar
     history.replaceState(null, null, `?tab=${tabId}`);
 }
 
@@ -1089,14 +935,12 @@ function filtrarPorAsesora(asesoraId) {
 }
 
 $(document).ready(function() {
-    // Revisar parámetro de URL si existe para activar pestaña
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     if (tabParam && ['cockpit', 'agencias', 'asesoras', 'solicitantes', 'sabana'].includes(tabParam)) {
         cambiarPestana(tabParam);
     }
 
-    // Inicializar DataTables con localización en Español para todas las vistas
     const dtConfig = {
         "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
         "ordering": true,
@@ -1106,17 +950,10 @@ $(document).ready(function() {
         "info": true
     };
 
-    if ($('#tablaAgencias').length) {
-        $('#tablaAgencias').DataTable(dtConfig);
-    }
-    if ($('#tablaAsesoras').length) {
-        $('#tablaAsesoras').DataTable(dtConfig);
-    }
-    if ($('#tablaSolicitantes').length) {
-        $('#tablaSolicitantes').DataTable(dtConfig);
-    }
+    if ($('#tablaAgencias').length) { $('#tablaAgencias').DataTable(dtConfig); }
+    if ($('#tablaAsesoras').length) { $('#tablaAsesoras').DataTable(dtConfig); }
+    if ($('#tablaSolicitantes').length) { $('#tablaSolicitantes').DataTable(dtConfig); }
     if ($('#puestosReportTable').length) {
-        // La sábana maestra maneja paginación nativa de Django
         $('#puestosReportTable').DataTable({
             "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
             "ordering": true,
@@ -1138,11 +975,11 @@ $(document).ready(function() {
                 label: 'Vacantes en Etapa',
                 data: embudoData,
                 backgroundColor: [
-                    '#94a3b8', '#38bdf8', '#818cf8',
-                    '#f59e0b', '#ec4899', '#f97316',
-                    '#10b981', '#64748b'
+                    '#59697a', '#0070f2', '#6366f1',
+                    '#b25900', '#0a6ed1', '#d97706',
+                    '#107e3e', '#1d2d3e'
                 ],
-                borderRadius: 4
+                borderRadius: 3
             }]
         },
         options: {
@@ -1155,7 +992,7 @@ $(document).ready(function() {
         }
     });
 
-    // 2. Gráfico SLA por Agencia (Stacked)
+    // 2. Gráfico SLA por Agencia (Stacked - Sin Emojis)
     const agenciasLabels = JSON.parse('{{ chart_agencias_labels_json|safe }}');
     const agenciasEnTiempo = JSON.parse('{{ chart_agencias_en_tiempo_json|safe }}');
     const agenciasVencidas = JSON.parse('{{ chart_agencias_vencidas_json|safe }}');
@@ -1166,16 +1003,16 @@ $(document).ready(function() {
             labels: agenciasLabels,
             datasets: [
                 {
-                    label: 'En Tiempo (🟢)',
+                    label: 'En Tiempo',
                     data: agenciasEnTiempo,
-                    backgroundColor: '#10b981',
-                    borderRadius: 4
+                    backgroundColor: '#107e3e',
+                    borderRadius: 3
                 },
                 {
-                    label: 'Vencidas (🔴)',
+                    label: 'Vencidas',
                     data: agenciasVencidas,
-                    backgroundColor: '#ef4444',
-                    borderRadius: 4
+                    backgroundColor: '#bb0000',
+                    borderRadius: 3
                 }
             ]
         },
@@ -1199,16 +1036,16 @@ $(document).ready(function() {
             labels: asesorasLabels,
             datasets: [
                 {
-                    label: 'Vacantes Activas a su Cargo',
+                    label: 'Vacantes Activas en Cartera',
                     data: asesorasActivas,
-                    backgroundColor: '#0284c7',
-                    borderRadius: 4
+                    backgroundColor: '#0070f2',
+                    borderRadius: 3
                 },
                 {
-                    label: 'Vacantes Cubiertas / Concluidas',
+                    label: 'Vacantes Cubiertas / Cerradas',
                     data: asesorasCubiertas,
-                    backgroundColor: '#94a3b8',
-                    borderRadius: 4
+                    backgroundColor: '#59697a',
+                    borderRadius: 3
                 }
             ]
         },

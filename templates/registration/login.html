@@ -3,141 +3,245 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Iniciar Sesión - Portal de Reclutamiento</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Portal de Reclutamiento & Capital Humano | Premier Automotriz</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=72:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f4f7f6;
-            display: grid;
-            place-items: center;
-            height: 100vh;
-            margin: 0;
+        :root {
+            --sap-primary: #0070f2;
+            --sap-primary-hover: #0056b3;
+            --sap-shell-bg: #1d2d3e;
+            --sap-canvas-bg: #f3f5f8;
+            --sap-text: #1d2d3e;
+            --sap-text-secondary: #556b82;
+            --sap-border: #d9e1e8;
+            --sap-radius: 8px;
+            --sap-negative: #b00;
         }
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            padding: 2em;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        /* --- ESTILOS NUEVOS PARA EL LOGO --- */
-        .logo-container {
-            text-align: center;
-            margin-bottom: 1.5em;
-        }
-        .logo-container img {
-            max-width: 250px; /* Ajusta el tamaño del logo como prefieras */
-            height: auto;
-        }
-        /* ---------------------------------- */
-
-        .login-container h1 {
-            color: #2c3e50;
-            margin-bottom: 1em;
-        }
-        .login-container form p {
-            text-align: left;
-            margin-bottom: 1em;
-        }
-        .login-container label {
-            display: block;
-            margin-bottom: 0.5em;
-            font-weight: 600;
-            color: #34495e;
-        }
-        .login-container input[type="text"],
-        .login-container input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        * {
             box-sizing: border-box;
         }
-        .login-container .errorlist {
-            list-style-type: none;
+        body {
+            font-family: '72', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--sap-canvas-bg);
+            margin: 0;
             padding: 0;
-            margin: 1em 0;
-            color: #e74c3c;
-            font-weight: 600;
-            font-size: 0.9em;
-            text-align: left;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        .login-container button {
+        .login-topbar {
+            background-color: var(--sap-shell-bg);
+            height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .login-topbar span {
+            color: #8da4be;
+            font-weight: 400;
+            margin-left: 0.5rem;
+        }
+        .login-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+        .login-card {
             width: 100%;
-            padding: 12px;
+            max-width: 420px;
+            background: #ffffff;
+            border: 1px solid var(--sap-border);
+            border-radius: var(--sap-radius);
+            box-shadow: 0 10px 30px rgba(29, 45, 62, 0.08);
+            padding: 2.25rem;
+            text-align: center;
+        }
+        .brand-logo-container {
+            margin-bottom: 1.5rem;
+        }
+        .brand-logo-container img {
+            max-width: 220px;
+            height: auto;
+        }
+        .login-heading {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--sap-text);
+            margin: 0 0 0.35rem 0;
+        }
+        .login-subheading {
+            font-size: 0.85rem;
+            color: var(--sap-text-secondary);
+            margin: 0 0 1.75rem 0;
+        }
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: var(--sap-text);
+            margin-bottom: 0.4rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid var(--sap-border);
+            border-radius: var(--sap-radius);
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--sap-text);
+            background: #ffffff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--sap-primary);
+            box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
+        }
+        .errorlist {
+            list-style: none;
+            padding: 0.6rem 0.85rem;
+            margin: 0 0 1rem 0;
+            background: #ffebeb;
+            border: 1px solid #f5b7b1;
+            border-radius: var(--sap-radius);
+            color: var(--sap-negative);
+            font-size: 0.825rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        .login-submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--sap-primary);
+            color: #ffffff;
             border: none;
-            border-radius: 5px;
-            background-color: #3498db;
-            color: white;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1em;
+            border-radius: var(--sap-radius);
+            font-family: inherit;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.15s;
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .login-container button:hover {
-            background-color: #2980b9;
+        .login-submit-btn:hover {
+            background-color: var(--sap-primary-hover);
         }
-        .forgot-password {
-            display: block;
-            margin-top: 1.5em;
-            font-size: 0.9em;
-            color: #555;
+        .forgot-link {
+            display: inline-block;
+            margin-top: 1.25rem;
+            font-size: 0.825rem;
+            color: var(--sap-primary);
+            text-decoration: none;
+            font-weight: 500;
         }
-        .candidate-signup {
-            margin-top: 2em;
-            padding-top: 1.5em;
-            border-top: 1px solid #ecf0f1;
+        .forgot-link:hover {
+            text-decoration: underline;
         }
-        .candidate-signup p {
-            margin: 0 0 0.5em 0;
-            color: #7f8c8d;
+        .candidate-box {
+            margin-top: 1.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--sap-border);
+            font-size: 0.825rem;
+            color: var(--sap-text-secondary);
         }
-        .candidate-signup a {
+        .candidate-box a {
+            display: inline-block;
+            margin-top: 0.4rem;
+            color: var(--sap-primary);
             font-weight: 600;
-            color: #27ae60;
             text-decoration: none;
         }
-        .candidate-signup a:hover {
+        .candidate-box a:hover {
             text-decoration: underline;
+        }
+        .login-footer {
+            background-color: #ffffff;
+            border-top: 1px solid var(--sap-border);
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--sap-text-secondary);
         }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
+    <header class="login-topbar">
+        Premier Automotriz <span>| Sistema de Reclutamiento & Gestión de Talento</span>
+    </header>
 
-        <div class="logo-container">
-            <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier Automotriz">
+    <main class="login-wrapper">
+        <div class="login-card">
+            <div class="brand-logo-container">
+                <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier Automotriz">
+            </div>
+
+            <h1 class="login-heading">Autenticación de Usuario</h1>
+            <p class="login-subheading">Ingresa tus credenciales institucionales para acceder</p>
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <ul class="errorlist">
+                    <li>Usuario o contraseña incorrectos. Por favor, verifica tus datos.</li>
+                </ul>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_username">Usuario:</label>
+                    <input type="text" name="username" autofocus="" autocapitalize="none" autocomplete="username" maxlength="150" required="" id="id_username" placeholder="Nombre de usuario">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">Contraseña:</label>
+                    <input type="password" name="password" autocomplete="current-password" required="" id="id_password" placeholder="Contraseña">
+                </div>
+
+                <button type="submit" class="login-submit-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    Iniciar Sesión
+                </button>
+            </form>
+
+            <div>
+                <a href="{% url 'recuperar_clave_info' %}" class="forgot-link">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <div class="candidate-box">
+                <div>¿Eres un prospecto buscando empleo?</div>
+                <a href="{% url 'registro_candidato' %}">
+                    Regístrate en nuestro Repositorio de Talento &rarr;
+                </a>
+            </div>
         </div>
-        <h1>Iniciar Sesión</h1>
-        <p>Portal de Reclutamiento</p>
+    </main>
 
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Entrar</button>
-        </form>
-
-        <a href="{% url 'recuperar_clave_info' %}" class="forgot-password">¿Olvidaste tu contraseña?</a>
-
-        <div class="candidate-signup">
-            <p>¿Eres un candidato nuevo?</p>
-            <a href="{% url 'registro_candidato' %}">Regístrate aquí en nuestra bolsa de trabajo</a>
-        </div>
-    </div>
-{% block scripts %}{% endblock %}
-
-    <footer class="footer">
-        <p>Copyright © {% now "Y" %} Premier Automotriz. Todos los derechos reservados.</p>
+    <footer class="login-footer">
+        Premier Automotriz &bull; Módulo de Atracción & Talento &copy; {% now "Y" %}. Todos los derechos reservados.
     </footer>
-    </body>
-</html>
+
 </body>
 </html>

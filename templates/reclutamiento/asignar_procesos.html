@@ -1,77 +1,138 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <title>Asignar Procesos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <style>
-        /* Puedes copiar los estilos de tus otras plantillas aquí */
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        h1 { color: #2c3e50; text-align: center; }
-        table { width: 100%; }
-        .boton-asignar { background-color: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
-        .boton-asignar:hover { background-color: #229954; }
-        select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Asignar Nuevas Postulaciones</h1>
-        <p>Selecciona una asesora para cada proceso y haz clic en "Asignar".</p>
-        <table id="procesosTable" class="display">
-            <thead>
-                <tr>
-                    <th>Candidato</th>
-                    <th>Puesto Aplicado</th>
-                    <th>Fecha de Postulación</th>
-                    <th style="width: 250px;">Asignar a</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for proceso in procesos %}
-                <tr>
-                    <td>{{ proceso.candidato.nombre_completo }}</td>
-                    <td>{{ proceso.puesto.titulo }}</td>
-                    <td>{{ proceso.candidato.fecha_registro|date:"d/m/Y" }}</td>
-                    <td>
-                        <form action="{% url 'vista_asignar_procesos' %}" method="post" style="display: flex; align-items: center; gap: 10px;">
-                            {% csrf_token %}
-                            <input type="hidden" name="proceso_id" value="{{ proceso.id }}">
-                            <select name="asesora_id" required>
-                                <option value="">-- Elige asesora --</option>
-                                {% for asesora in asesoras %}
-                                <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="boton-asignar">Asignar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Asignar Nuevas Postulaciones - SAP Fiori{% endblock %}
+
+{% block style %}
+<style>
+    .assign-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .assign-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .assign-title p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .assign-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+    }
+    .action-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .action-form select {
+        padding: 0.4rem 0.6rem;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        font-size: 0.85rem;
+        background: #ffffff;
+        color: var(--sap-text);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sap-container">
+    <div class="assign-header-strip">
+        <div class="assign-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                Asignar Nuevas Postulaciones de Bolsa
+            </h1>
+            <p>Selecciona una asesora de reclutamiento responsable para cada prospecto postulado a vacante.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver al Launchpad
+            </a>
+        </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#procesosTable').DataTable({
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                }
-            });
-        });
-    </script>
-{% block scripts %}{% endblock %}
+    <div class="assign-card">
+        <div class="table-responsive">
+            <table id="procesosTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Candidato</th>
+                        <th>Puesto Aplicado</th>
+                        <th>Fecha de Postulación</th>
+                        <th style="width: 280px; text-align: right;">Asignar a Asesora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proceso in procesos %}
+                    <tr>
+                        <td><strong>{{ proceso.candidato.nombre_completo }}</strong></td>
+                        <td>{{ proceso.puesto.titulo.nombre|default:"N/A" }}</td>
+                        <td>{{ proceso.candidato.fecha_registro|date:"d/m/Y" }}</td>
+                        <td style="text-align: right;">
+                            <form action="{% url 'vista_asignar_procesos' %}" method="post" class="action-form" style="justify-content: flex-end;">
+                                {% csrf_token %}
+                                <input type="hidden" name="proceso_id" value="{{ proceso.id }}">
+                                <select name="asesora_id" required>
+                                    <option value="">-- Elige asesora --</option>
+                                    {% for asesora in asesoras %}
+                                    <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="sap-btn sap-btn-positive" style="padding: 4px 10px; font-size: 0.8rem;">
+                                    Asignar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--sap-text-secondary);">
+                            No hay nuevas postulaciones pendientes de asignación.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    <footer class="footer">
-        <p>Copyright © {% now "Y" %} Premier Automotriz. Todos los derechos reservados.</p>
-    </footer>
-    </body>
-</html>
-</body>
-</html>
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#procesosTable').DataTable({
+            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" }
+        });
+    });
+</script>
+{% endblock %}

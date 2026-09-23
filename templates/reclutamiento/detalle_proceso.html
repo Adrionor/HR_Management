@@ -1,120 +1,401 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Gestión de Proceso - {{ proceso.candidato.nombre_completo }}{% endblock %}
+{% block title %}Gestión de Proceso: {{ proceso.candidato.nombre_completo }} - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 1200px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1, h2, h3, h4 { color: #2c3e50; }
-    h1 { font-size: 1.8em; }
-    h2, h3 { margin-top: 0; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
-    h3 { margin-top: 2em; }
-    h4 { color: #3498db; margin-bottom: 0.5em; margin-top: 1.5em; }
-    .grid-detalle { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; align-items: flex-start; }
-    @media (max-width: 900px) { .grid-detalle { grid-template-columns: 1fr; } }
-    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .form-group { margin-bottom: 1.5em; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 0.5em; }
-    .form-group select, .form-group textarea, .form-group input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-size: 1em; box-sizing: border-box; }
-    .form-group textarea { resize: vertical; min-height: 100px; }
-    .boton { width: 100%; color: white; border: none; padding: 12px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; text-align: center; }
-    .boton-actualizar { background-color: #3498db; }
-    .boton-transferir { background-color: #e67e22; }
-    .boton-add-pub { background-color: #27ae60; margin-top: 1em; }
-    .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
-    .messages .success { padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; }
-    .history-list { list-style-type: none; padding: 0; margin-top: 1em; max-height: 400px; overflow-y: auto; }
-    .history-list li { border-left: 3px solid #3498db; padding: 10px 15px; margin-bottom: 10px; background-color: #f8f9fa; }
-    .history-list .date { font-size: 0.8em; color: #7f8c8d; }
-    .publication-table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-bottom: 1.5em; }
-    .publication-table th, .publication-table td { padding: 8px; border-bottom: 1px solid #ecf0f1; text-align: left;}
-    .publication-table thead th { background-color: #ecf0f1; font-weight: 600; }
-    .error-message { color: #e74c3c; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
+    .sap-workbench-header {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .sap-workbench-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .sap-workbench-title p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .workbench-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    @media (max-width: 992px) {
+        .workbench-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .sap-panel {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .sap-panel-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        border-bottom: 2px solid var(--sap-border);
+        padding-bottom: 0.6rem;
+        margin: 0 0 1.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .candidate-facts {
+        display: flex;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--sap-border);
+    }
+    .candidate-fact-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    .fact-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--sap-text-secondary);
+    }
+    .fact-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--sap-text);
+    }
+    
+    /* SAP Feed / Timeline */
+    .sap-feed-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: relative;
+    }
+    .sap-feed-list::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: 11px;
+        width: 2px;
+        background: var(--sap-border);
+    }
+    .sap-feed-item {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1.25rem;
+    }
+    .sap-feed-item:last-child {
+        margin-bottom: 0;
+    }
+    .sap-feed-marker {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid var(--sap-primary);
+    }
+    .sap-feed-time {
+        font-size: 0.775rem;
+        color: var(--sap-text-secondary);
+        margin-bottom: 0.25rem;
+    }
+    .sap-feed-action {
+        font-weight: 600;
+        color: var(--sap-text);
+        font-size: 0.875rem;
+    }
+    .sap-feed-details {
+        margin-top: 0.4rem;
+        background: #f8fafc;
+        border: 1px solid var(--sap-border);
+        border-radius: 4px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.825rem;
+        color: var(--sap-text-secondary);
+    }
+    
+    .sap-form-group {
+        margin-bottom: 1.25rem;
+    }
+    .sap-form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--sap-text);
+        margin-bottom: 0.4rem;
+    }
+    .sap-form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius);
+        font-family: inherit;
+        font-size: 0.875rem;
+        color: var(--sap-text);
+        background: #ffffff;
+    }
+    .sap-form-control:focus {
+        outline: none;
+        border-color: var(--sap-primary);
+        box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
+    }
+    textarea.sap-form-control {
+        min-height: 90px;
+        resize: vertical;
+    }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h1>Gestión de Proceso</h1>
+<div class="sap-container">
+    <!-- Header -->
+    <div class="sap-workbench-header">
+        <div class="sap-workbench-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                Gestión de Proceso de Reclutamiento
+            </h1>
+            <p>Control operativo del candidato, estatus del embudo y seguimiento de publicaciones de vacante.</p>
+        </div>
+        <div>
+            <a href="{% url 'mis_procesos' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Mis Procesos
+            </a>
+        </div>
     </div>
 
-    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
+    <div class="workbench-grid">
+        <!-- Columna Izquierda: Información de Candidato y Publicaciones -->
+        <div>
+            <!-- Expediente Candidato Panel -->
+            <div class="sap-panel">
+                <h2 class="sap-panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Ficha del Candidato
+                </h2>
+                
+                <div class="candidate-facts">
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">Nombre Completo</span>
+                        <span class="fact-value">{{ proceso.candidato.nombre_completo }}</span>
+                    </div>
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">Correo Electrónico</span>
+                        <span class="fact-value"><a href="mailto:{{ proceso.candidato.email }}" style="color: var(--sap-primary); text-decoration: none;">{{ proceso.candidato.email }}</a></span>
+                    </div>
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">Teléfono Móvil</span>
+                        <span class="fact-value">{{ proceso.candidato.telefono|default:"No registrado" }}</span>
+                    </div>
+                    {% if proceso.candidato.cv %}
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">Curriculum Vitae</span>
+                        <span class="fact-value">
+                            <a href="{{ proceso.candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-secondary" style="padding: 3px 8px; font-size: 0.8rem;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                Ver CV Adjunto
+                            </a>
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
 
-    <div class="grid-detalle">
-        <div class="card">
-            <h2>{{ proceso.candidato.nombre_completo }}</h2>
-            <p><strong>Contacto:</strong> {{ proceso.candidato.email }} | {{ proceso.candidato.telefono|default:"N/A" }}</p>
-            {% if proceso.candidato.cv %}<p><strong>CV:</strong> <a href="{{ proceso.candidato.cv.url }}" target="_blank">Ver Documento Adjunto</a></p>{% endif %}
+                <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius); padding: 1rem;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--sap-text-secondary); margin-bottom: 0.25rem;">Vacante de Postulación</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--sap-text); margin-bottom: 0.35rem;">
+                        {{ proceso.puesto.titulo.nombre }}
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--sap-text-secondary);">
+                        <strong>Marca:</strong> {{ proceso.puesto.marca.nombre }} &nbsp;|&nbsp; 
+                        <strong>Agencia:</strong> {{ proceso.puesto.agencia }} &nbsp;|&nbsp; 
+                        <strong>Ciudad:</strong> {{ proceso.puesto.get_ciudad_display }}
+                    </div>
+                </div>
+            </div>
 
-            <h3 style="margin-top: 2em;">Detalles de la Vacante</h3>
-            <h4>{{ proceso.puesto.titulo.nombre }}</h4>
-            <p><strong>Agencia:</strong> {{ proceso.puesto.agencia }} | <strong>Ciudad:</strong> {{ proceso.puesto.get_ciudad_display }}</p>
+            <!-- Publicaciones Panel -->
+            <div class="sap-panel">
+                <h2 class="sap-panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    Publicaciones y Fuentes de Atracción
+                </h2>
 
-            <h3 style="margin-top: 2em;">Publicaciones de la Vacante</h3>
-            <table class="publication-table">
-                <thead><tr><th>Plataforma</th><th>Enlace</th><th>Inversión (MXN)</th></tr></thead>
-                <tbody>
-                    {% for pub in publicaciones %}
-                    <tr>
-                        <td>{{ pub.get_plataforma_display }}</td>
-                        <td><a href="{{ pub.enlace }}" target="_blank" rel="noopener noreferrer">Ver Post</a></td>
-                        <td>${{ pub.monto_inversion|default:"0.00" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="3" style="text-align: center; color: #7f8c8d;">Aún no se han registrado publicaciones.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <div class="table-responsive" style="margin-bottom: 1.25rem;">
+                    <table class="sap-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Plataforma</th>
+                                <th>Enlace</th>
+                                <th>Inversión (MXN)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pub in publicaciones %}
+                            <tr>
+                                <td><span class="sap-badge sap-badge-neutral">{{ pub.get_plataforma_display }}</span></td>
+                                <td>
+                                    <a href="{{ pub.enlace }}" target="_blank" rel="noopener noreferrer" style="color: var(--sap-primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        Ver Publicación
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                        </svg>
+                                    </a>
+                                </td>
+                                <td><strong>${{ pub.monto_inversion|default:"0.00" }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--sap-text-secondary); padding: 1.25rem;">
+                                    No se han registrado fuentes de publicación adicionales para este puesto.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-            <h4 style="margin-top: 1em;">Añadir Nueva Publicación</h4>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_publication">
-                {% if form_publicacion.non_field_errors %}<div class="error-message">{{ form_publicacion.non_field_errors }}</div>{% endif %}
-                <div class="form-group">{{ form_publicacion.plataforma.label_tag }}{{ form_publicacion.plataforma }}{{ form_publicacion.plataforma.errors }}</div>
-                <div class="form-group">{{ form_publicacion.enlace.label_tag }}{{ form_publicacion.enlace }}{{ form_publicacion.enlace.errors }}</div>
-                <div class="form-group">{{ form_publicacion.monto_inversion.label_tag }}{{ form_publicacion.monto_inversion }}{{ form_publicacion.monto_inversion.errors }}</div>
-                <button type="submit" class="boton boton-add-pub">Añadir Publicación</button>
-            </form>
+                <!-- Formulario Añadir Publicación -->
+                <div style="background: #fbfcfd; border: 1px solid var(--sap-border); border-radius: var(--sap-radius); padding: 1rem;">
+                    <h3 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; font-weight: 700; color: var(--sap-text);">Registrar Nueva Publicación</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_publication">
+                        {% if form_publicacion.non_field_errors %}
+                            <div class="sap-badge sap-badge-error" style="margin-bottom: 0.75rem; width: 100%; box-sizing: border-box;">{{ form_publicacion.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="sap-form-group">
+                            <label for="{{ form_publicacion.plataforma.id_for_label }}">Canal / Plataforma:</label>
+                            {{ form_publicacion.plataforma }}
+                        </div>
+                        <div class="sap-form-group">
+                            <label for="{{ form_publicacion.enlace.id_for_label }}">Enlace URL del Post:</label>
+                            {{ form_publicacion.enlace }}
+                        </div>
+                        <div class="sap-form-group">
+                            <label for="{{ form_publicacion.monto_inversion.id_for_label }}">Presupuesto Invertido (MXN):</label>
+                            {{ form_publicacion.monto_inversion }}
+                        </div>
+                        <button type="submit" class="sap-btn sap-btn-secondary" style="width: 100%;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Guardar Publicación
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
 
+        <!-- Columna Derecha: Actualización y Registro de Actividad -->
         <div>
-            <div class="card">
-                <h2>Actualizar Proceso</h2>
+            <!-- Formulario Actualizar Estatus -->
+            <div class="sap-panel">
+                <h2 class="sap-panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    Actualizar Estatus de Selección
+                </h2>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="actualizar_estatus">
-                    <div class="form-group">
-                        <label for="estatus_proceso">Estatus del Proceso:</label>
-                        <select name="estatus_proceso" id="estatus_proceso">
+                    <div class="sap-form-group">
+                        <label for="estatus_proceso">Fase Actual del Proceso:</label>
+                        <select name="estatus_proceso" id="estatus_proceso" class="sap-form-control">
                             {% for value, text in proceso.Estatus.choices %}
                             <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>{{ text }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="retroalimentacion">Notas / Retroalimentación:</label>
-                        <textarea name="retroalimentacion" id="retroalimentacion">{{ proceso.retroalimentacion }}</textarea>
+                    <div class="sap-form-group">
+                        <label for="retroalimentacion">Bitácora de Observaciones / Feedback:</label>
+                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-form-control" placeholder="Escribe el resultado de la entrevista, evaluación psicométrica o referencias...">{{ proceso.retroalimentacion }}</textarea>
                     </div>
-                    <button type="submit" class="boton boton-actualizar">Actualizar Proceso</button>
+                    <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Guardar Cambio de Estatus
+                    </button>
                 </form>
             </div>
 
+            <!-- Transferencia Condicional -->
             {% if proceso.asesora_asignada == user and proceso.estatus_proceso == 'REF' %}
-            <div class="card" style="margin-top: 2em; border-top: 4px solid #e67e22;">
-                <h2>Transferir Proceso</h2>
-                <p>El candidato ha completado la fase inicial. Transfiere este proceso para continuar.</p>
+            <div class="sap-panel" style="border-left: 4px solid var(--sap-warning);">
+                <h2 class="sap-panel-title" style="color: var(--sap-warning-text);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 3 21 3 21 8"></polyline>
+                        <line x1="4" y1="20" x2="21" y2="3"></line>
+                        <polyline points="21 16 21 21 16 21"></polyline>
+                        <line x1="15" y1="15" x2="21" y2="21"></line>
+                        <line x1="4" y1="4" x2="9" y2="9"></line>
+                    </svg>
+                    Transferencia de Proceso
+                </h2>
+                <p style="font-size: 0.85rem; color: var(--sap-text-secondary); margin-top: 0;">
+                    El candidato ha concluido la fase de referencias. Transfiere la responsabilidad operativa a la asesora de la plaza correspondiente.
+                </p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="transferir_proceso">
-                    <div class="form-group">
-                        <label for="nueva_asesora_id">Selecciona la nueva asesora encargada:</label>
-                        <select name="nueva_asesora_id" id="nueva_asesora_id" required>
-                            <option value="">-- Elige asesora --</option>
+                    <div class="sap-form-group">
+                        <label for="nueva_asesora_id">Seleccionar Nueva Asesora Encargada:</label>
+                        <select name="nueva_asesora_id" id="nueva_asesora_id" class="sap-form-control" required>
+                            <option value="">-- Elige asesora receptora --</option>
                             {% for asesora in asesoras_disponibles %}
                                 {% if asesora != user %}
                                 <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
@@ -122,22 +403,38 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button type="submit" class="boton boton-transferir">Confirmar y Transferir</button>
+                    <button type="submit" class="sap-btn sap-btn-warning" style="width: 100%;">
+                        Confirmar Transferencia
+                    </button>
                 </form>
             </div>
             {% endif %}
 
-            <div class="card" style="margin-top: 2em;">
-                <h2>Historial de Actividad del Proceso</h2>
-                <ul class="history-list">
+            <!-- Historial de Actividad (SAP Feed) -->
+            <div class="sap-panel">
+                <h2 class="sap-panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 14 14"></polyline>
+                    </svg>
+                    Bitácora de Trazabilidad
+                </h2>
+                <ul class="sap-feed-list">
                     {% for registro in proceso.registros_de_actividad %}
-                        <li>
-                            <div class="date">{{ registro.fecha_hora|date:"d/m/Y, P" }} - por {{ registro.usuario.username }}</div>
-                            <div class="accion">{{ registro.accion }}</div>
-                            {% if registro.detalles %}<div class="detalles-nota">{{ registro.detalles|linebreaksbr }}</div>{% endif %}
-                        </li>
+                    <li class="sap-feed-item">
+                        <span class="sap-feed-marker"></span>
+                        <div class="sap-feed-time">
+                            {{ registro.fecha_hora|date:"d/m/Y, H:i" }} &bull; <strong>{{ registro.usuario.username }}</strong>
+                        </div>
+                        <div class="sap-feed-action">{{ registro.accion }}</div>
+                        {% if registro.detalles %}
+                        <div class="sap-feed-details">{{ registro.detalles|linebreaksbr }}</div>
+                        {% endif %}
+                    </li>
                     {% empty %}
-                        <li>No hay acciones registradas para este proceso.</li>
+                    <li style="color: var(--sap-text-secondary); font-size: 0.85rem; padding: 0.5rem 0;">
+                        No existen eventos históricos registrados para este proceso.
+                    </li>
                     {% endfor %}
                 </ul>
             </div>

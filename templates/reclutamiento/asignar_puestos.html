@@ -1,80 +1,149 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Asignar Vacantes{% endblock %}
+{% block title %}Asignar Vacantes Autorizadas - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 95%; } /* Hacemos el contenedor más ancho */
-    #asignarTable thead th { background-color: #34495e; color: #ffffff; }
-    .action-form { display: flex; align-items: center; gap: 10px; }
-    .action-form select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
-    .action-form button { background-color: #8e44ad; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+    .assign-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .assign-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .assign-title p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .assign-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+    }
+    .action-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .action-form select {
+        padding: 0.4rem 0.6rem;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        font-size: 0.85rem;
+        background: #ffffff;
+        color: var(--sap-text);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h1>Asignar Vacantes Autorizadas</h1>
-        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+<div class="sap-container">
+    <div class="assign-header-strip">
+        <div class="assign-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                Asignación de Requisiciones Autorizadas
+            </h1>
+            <p>Distribuye las vacantes aprobadas entre las asesoras de atracción para dar inicio al reclutamiento.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver al Launchpad
+            </a>
+        </div>
     </div>
-    <p>Revisa las requisiciones autorizadas y asígnalas a una asesora para que inicie el proceso de reclutamiento.</p>
-    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
 
-    <table id="asignarTable" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th>Puesto (Vacante)</th>
-                <th>Área</th>
-                <th>Jefe Inmediato</th>
-                <th>Motivo</th>
-                <th>Exp. Mín.</th>
-                <th>Sueldo Base</th>
-                <th>Justificación</th>
-                <th style="width: 280px;">Asignar A</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for puesto in puestos %}
-            <tr>
-                <td>
-                    <a href="{% url 'puesto_detalle' puesto.id %}" style="font-weight: 600;">{{ puesto.titulo.nombre }}</a>
-                    <small style="display: block; color: #7f8c8d;">{{ puesto.marca.nombre }} - {{ puesto.get_ciudad_display }}</small>
-                </td>
-                <td>{{ puesto.get_area_display }}</td>
-                <td>{{ puesto.nombre_jefe_inmediato }}</td>
-                <td>{{ puesto.get_motivo_requisicion_display }}</td>
-                <td style="text-align: center;">{{ puesto.experiencia_minima|default:"N/A" }}</td>
-                <td style="white-space: nowrap;">${{ puesto.sueldo_base|default:"N/A" }}</td>
-                <td>
-                    {% if puesto.archivo_justificacion %}
-                        <a href="{{ puesto.archivo_justificacion.url }}" target="_blank">Ver Adjunto</a>
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </td>
-                <td>
-                    <form action="{% url 'vista_asignar_puestos' %}" method="POST" class="action-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="puesto_id" value="{{ puesto.id }}">
-                        <select name="asesora_id" required>
-                            <option value="">-- Elige asesora --</option>
-                            {% for asesora in asesoras %}
-                                <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit">Asignar</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" style="text-align:center; padding:20px;">No hay vacantes autorizadas pendientes de asignación.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="assign-card">
+        <div class="table-responsive">
+            <table id="asignarTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Puesto Solicitado</th>
+                        <th>Área</th>
+                        <th>Jefe Directo</th>
+                        <th>Motivo</th>
+                        <th>Exp. Mín.</th>
+                        <th>Sueldo Base</th>
+                        <th>Documento</th>
+                        <th style="width: 280px; text-align: right;">Asignar Responsable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for puesto in puestos %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'puesto_detalle' puesto.id %}" style="font-weight: 700; color: var(--sap-primary); text-decoration: none;">{{ puesto.titulo.nombre }}</a>
+                            <div style="font-size: 0.775rem; color: var(--sap-text-secondary); margin-top: 2px;">
+                                <strong>{{ puesto.marca.nombre }}</strong> &bull; {{ puesto.get_ciudad_display }}
+                            </div>
+                        </td>
+                        <td><span class="sap-badge sap-badge-neutral">{{ puesto.get_area_display }}</span></td>
+                        <td>{{ puesto.nombre_jefe_inmediato }}</td>
+                        <td><span class="sap-badge sap-badge-neutral">{{ puesto.get_motivo_requisicion_display }}</span></td>
+                        <td style="text-align: center;">{{ puesto.experiencia_minima|default:"0" }} años</td>
+                        <td style="font-weight: 700; font-family: var(--sap-font-code);">${{ puesto.sueldo_base|default:"N/A" }}</td>
+                        <td>
+                            {% if puesto.archivo_justificacion %}
+                                <a href="{{ puesto.archivo_justificacion.url }}" target="_blank" style="color: var(--sap-primary); font-weight: 600; font-size: 0.85rem; text-decoration: none;">
+                                    Ver Adjunto
+                                </a>
+                            {% else %}
+                                <span style="color: var(--sap-text-secondary); font-size: 0.85rem;">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <form action="{% url 'vista_asignar_puestos' %}" method="POST" class="action-form" style="justify-content: flex-end;">
+                                {% csrf_token %}
+                                <input type="hidden" name="puesto_id" value="{{ puesto.id }}">
+                                <select name="asesora_id" required>
+                                    <option value="">-- Elige asesora --</option>
+                                    {% for asesora in asesoras %}
+                                        <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="sap-btn sap-btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">
+                                    Asignar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding: 2.5rem; color: var(--sap-text-secondary);">
+                            No hay vacantes autorizadas pendientes de asignación en este momento.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

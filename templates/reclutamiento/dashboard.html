@@ -1,68 +1,304 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Dashboard de Reclutamiento{% endblock %}
+{% block title %}Launchpad de Reclutamiento & Gestión de Talento{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 1400px; margin: 2em auto; padding: 0 2em; }
-    .welcome-message { margin-bottom: 2em; }
-    h2 { color: #2c3e50; }
+    /* Estilos SAP Fiori Launchpad */
+    .sap-launchpad-container {
+        max-width: 1440px;
+        margin: 0 auto;
+    }
 
-    .dashboard-layout {
+    /* Encabezado Fiori Hero / Object Header */
+    .sap-fiori-header {
+        background: linear-gradient(135deg, #1d2d3e 0%, #2b3d52 100%);
+        color: #ffffff;
+        padding: 1.8rem 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        box-shadow: 0 4px 12px rgba(29, 45, 62, 0.12);
+    }
+    .sap-fiori-header h2 {
+        margin: 0 0 0.4rem 0;
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #ffffff;
+    }
+    .sap-fiori-header p {
+        margin: 0;
+        color: #a6bbd3;
+        font-size: 0.95rem;
+    }
+    .sap-header-badge-role {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+
+    /* Distribución de Paneles: Tiles + Feed */
+    .sap-launchpad-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 2.5em;
+        grid-template-columns: 2.2fr 1fr;
+        gap: 2rem;
         align-items: flex-start;
     }
-    @media (max-width: 1000px) {
-        .dashboard-layout { grid-template-columns: 1fr; }
+    @media (max-width: 1100px) {
+        .sap-launchpad-grid { grid-template-columns: 1fr; }
     }
 
-    .dashboard-menu { display: flex; flex-direction: column; gap: 1rem; }
-    .menu-item { display: flex; align-items: center; padding: 1rem 1.5rem; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; }
-    .menu-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .menu-item__icon { font-size: 1.8rem; margin-right: 1.5rem; width: 40px; text-align: center; }
-    .menu-item__text { flex-grow: 1; }
-    .menu-item__text h4 { margin: 0 0 0.2rem 0; color: #34495e; font-size: 1.1em; }
-    .menu-item__text p { margin: 0; font-size: 0.9em; color: #7f8c8d; }
-    .menu-item__stat { font-size: 1.2em; font-weight: 700; color: #3498db; margin-left: 1rem; background-color: #eaf2f8; padding: 5px 10px; border-radius: 15px; }
-    .menu-item__arrow { font-size: 1.5rem; color: #bdc3c7; margin-left: 1rem; }
+    /* Grupos de Tiles */
+    .sap-tile-group {
+        margin-bottom: 2rem;
+    }
+    .sap-tile-group-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #59697a;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 0.9rem;
+        padding-left: 2px;
+        border-left: 3px solid #0070f2;
+        padding-left: 8px;
+    }
 
-    .announcements-panel { background-color: #ffffff; border-radius: 10px; padding: 2em; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .announcements-panel h3 { margin-top: 0; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
-    .announcement-item { border-bottom: 1px solid #ecf0f1; padding: 1.5em 0; }
-    .announcement-item:last-child { border-bottom: none; }
-    .announcement-item h5 { margin: 0 0 0.5em 0; font-size: 1.1em; color: #2c3e50; }
-    .announcement-item p { margin: 0 0 0.5em 0; line-height: 1.6; }
-    .announcement-item .meta { font-size: 0.8em; color: #95a5a6; }
+    /* Cuadrícula de Tiles */
+    .sap-tiles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.2rem;
+    }
+
+    /* Fiori Tile Individual */
+    .sap-tile {
+        background-color: #ffffff;
+        border: 1px solid #d9dde3;
+        border-radius: 8px;
+        padding: 1.25rem;
+        text-decoration: none;
+        color: #1d2d3e;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 150px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        position: relative;
+    }
+    .sap-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        border-color: #0070f2;
+    }
+    .sap-tile-featured {
+        border-left: 4px solid #0070f2;
+    }
+
+    .sap-tile-icon-box {
+        width: 38px;
+        height: 38px;
+        border-radius: 6px;
+        background-color: #f0f4f8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.8rem;
+        color: #0070f2;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .sap-tile:hover .sap-tile-icon-box {
+        background-color: #e8f3ff;
+        color: #0057b8;
+    }
+    .sap-tile-svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+    }
+
+    .sap-tile-content { flex-grow: 1; }
+    .sap-tile-title {
+        margin: 0 0 0.3rem 0;
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: #1d2d3e;
+        line-height: 1.3;
+    }
+    .sap-tile-desc {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #59697a;
+        line-height: 1.4;
+    }
+
+    .sap-tile-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid #f1f3f5;
+    }
+    .sap-tile-action-text {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #0070f2;
+    }
+    .sap-tile-arrow {
+        font-size: 1.1rem;
+        color: #a6bbd3;
+        transition: transform 0.15s ease, color 0.15s ease;
+    }
+    .sap-tile:hover .sap-tile-arrow {
+        transform: translateX(3px);
+        color: #0070f2;
+    }
+
+    .sap-tile-badge-warning {
+        background-color: #fff4e5;
+        color: #b25900;
+        border: 1px solid #feddb0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+    .sap-tile-badge-success {
+        background-color: #e7f6ec;
+        color: #107e3e;
+        border: 1px solid #bfe7ce;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    /* Panel de Avisos Generales (SAP Feed Style) */
+    .sap-feed-panel {
+        background-color: #ffffff;
+        border: 1px solid #d9dde3;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        padding: 1.5rem;
+    }
+    .sap-feed-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #f1f3f5;
+        padding-bottom: 0.8rem;
+        margin-bottom: 1.2rem;
+    }
+    .sap-feed-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1d2d3e;
+    }
+    .sap-feed-count {
+        background-color: #f1f3f5;
+        color: #59697a;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    .sap-feed-item {
+        border-bottom: 1px solid #f1f3f5;
+        padding: 1.1rem 0;
+    }
+    .sap-feed-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .sap-feed-item h5 {
+        margin: 0 0 0.4rem 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1d2d3e;
+    }
+    .sap-feed-item p {
+        margin: 0 0 0.5rem 0;
+        color: #495057;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+    .sap-feed-meta {
+        font-size: 0.75rem;
+        color: #8c9ba5;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
-    <div class="welcome-message">
-        <h2>Bienvenido a tu Dashboard, {{ user.get_full_name|default:user.username }}</h2>
-        <p>Desde aquí puedes acceder a tus tareas y ver los últimos avisos.</p>
+<div class="sap-launchpad-container">
+    <!-- Header Hero Fiori -->
+    <div class="sap-fiori-header">
+        <div>
+            <h2>Bienvenido, {{ user.get_full_name|default:user.username }}</h2>
+            <p>Plataforma Centralizada de Atracción, Selección y Analítica de Talento &bull; Premier Automotriz</p>
+        </div>
+        <div>
+            <span class="sap-header-badge-role">
+                {% if user.is_superuser %}
+                    Administrador Corporativo
+                {% elif 'Gerentes de Capital Humano' in user_groups %}
+                    Gerencia de Capital Humano
+                {% elif 'Gerente General de Marca' in user_groups %}
+                    Gerencia General de Marca
+                {% elif 'Gerentes Operativos' in user_groups %}
+                    Gerente Operativo Solicitante
+                {% elif 'Asesoras' in user_groups %}
+                    Especialista de Atracción de Talento
+                {% else %}
+                    Usuario Corporativo
+                {% endif %}
+            </span>
+        </div>
     </div>
 
-    <div class="dashboard-layout">
-        <div class="dashboard-menu">
+    <!-- Layout Principal -->
+    <div class="sap-launchpad-grid">
+        <!-- Columna de Tiles Fiori -->
+        <div class="sap-tiles-section">
             {% include 'reclutamiento/partials/dashboard_cards.html' %}
         </div>
-        <div class="announcements-panel">
-            <h3>Avisos Generales</h3>
+
+        <!-- Columna de Avisos Corporativos (SAP Feed) -->
+        <div class="sap-feed-panel">
+            <div class="sap-feed-header">
+                <h3>Comunicaciones Internas</h3>
+                <span class="sap-feed-count">{{ avisos|length }}</span>
+            </div>
             {% for aviso in avisos %}
-                <div class="announcement-item">
+                <div class="sap-feed-item">
                     <h5>{{ aviso.titulo }}</h5>
                     <p>{{ aviso.contenido|linebreaksbr }}</p>
-                    <div class="meta">
-                        Publicado por {{ aviso.creado_por.username }} el {{ aviso.fecha_creacion|date:"d/m/Y" }}
+                    <div class="sap-feed-meta">
+                        <span>Autor: {{ aviso.creado_por.get_full_name|default:aviso.creado_por.username }}</span>
+                        <span>&bull;</span>
+                        <span>{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</span>
                     </div>
                 </div>
             {% empty %}
-                <p>No hay avisos recientes.</p>
+                <div style="text-align: center; padding: 2rem 1rem; color: #8c9ba5; font-size: 0.88rem;">
+                    No hay avisos ni comunicados vigentes en este momento.
+                </div>
             {% endfor %}
         </div>
     </div>

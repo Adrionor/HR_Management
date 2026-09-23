@@ -1,83 +1,151 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Supervisión de Procesos{% endblock %}
+{% block title %}Supervisión y Reasignación de Procesos - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 1400px; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; }
-    .header h1 { color: #2c3e50; margin: 0; }
-    .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-
-    #procesosTable thead th { background-color: #34495e; color: #ffffff; }
-    #procesosTable tbody tr:hover { background-color: #ecf0f1 !important; }
-    .boton-reasignar { background-color: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9em; font-weight: 600; }
-    .boton-reasignar:hover { background-color: #d35400; }
-    .boton-ver-detalle { text-decoration: none; background-color: #16a085; color: white; padding: 6px 12px; border-radius: 5px; font-weight: 600; font-size: 0.9em; }
-    select { padding: 6px 10px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; }
-
-    .messages { list-style-type: none; padding: 0; margin-bottom: 1em; }
-    .messages .success { padding: 15px; margin-bottom: 1em; border-radius: 5px; border: 1px solid #c3e6cb; background-color: #d4edda; color: #155724; }
+    .supervision-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .supervision-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .supervision-title p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .supervision-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+    }
+    .reassign-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .reassign-select {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius);
+        font-size: 0.85rem;
+        background: #ffffff;
+        color: var(--sap-text);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h1>Supervisión y Reasignación de Procesos</h1>
-        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+<div class="sap-container">
+    <div class="supervision-header-strip">
+        <div class="supervision-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Supervisión y Rebalanceo Operativo de Procesos
+            </h1>
+            <p>Monitorea la carga activa de las asesoras de atracción de talento y reasigna expedientes para agilizar el SLA.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver al Launchpad
+            </a>
+        </div>
     </div>
-    <p>Supervisa todos los procesos activos y reasígnalos a una asesora diferente para balancear la carga de trabajo.</p>
 
-    {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
-
-    <table id="procesosTable" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th>Candidato</th>
-                <th>Puesto</th>
-                <th>Estatus Actual</th>
-                <th>Asesora Actual</th>
-                <th style="width: 320px;">Reasignar a</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for proceso in procesos %}
-            <tr>
-                <td><strong>{{ proceso.candidato.nombre_completo }}</strong></td>
-                <td>{{ proceso.puesto.titulo.nombre|default:"N/A" }}</td>
-                <td><span style="font-weight: 600; color: #2980b9;">{{ proceso.get_estatus_proceso_display }}</span></td>
-                <td>
-                    {% if proceso.asesora_asignada %}
-                        {{ proceso.asesora_asignada.get_full_name|default:proceso.asesora_asignada.username }}
-                    {% else %}
-                        <span style="color:#e74c3c; font-weight: bold;">SIN ASIGNAR</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <form action="{% url 'vista_supervisar_procesos' %}" method="post" style="display: flex; align-items: center; gap: 8px;">
-                        {% csrf_token %}
-                        <input type="hidden" name="proceso_id" value="{{ proceso.id }}">
-                        <select name="nueva_asesora_id" required>
-                            <option value="">-- Seleccionar asesora --</option>
-                            {% for asesora in asesoras %}
-                            <option value="{{ asesora.id }}" {% if proceso.asesora_asignada == asesora %}selected{% endif %}>
-                                {{ asesora.get_full_name|default:asesora.username }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="boton-reasignar">Reasignar</button>
-                    </form>
-                </td>
-                <td>
-                    <a href="{% url 'detalle_proceso' proceso.id %}" class="boton-ver-detalle">Ver Detalle</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="supervision-card">
+        <div class="table-responsive">
+            <table id="procesosTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Candidato</th>
+                        <th>Puesto Solicitado</th>
+                        <th>Estatus Actual</th>
+                        <th>Asesora Responsable</th>
+                        <th>Reasignar Titular</th>
+                        <th style="text-align: right;">Expediente</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proceso in procesos %}
+                    <tr>
+                        <td><strong>{{ proceso.candidato.nombre_completo }}</strong></td>
+                        <td>{{ proceso.puesto.titulo.nombre|default:"N/A" }}</td>
+                        <td>
+                            <span class="sap-badge sap-badge-accent">
+                                <span class="sap-badge-dot"></span>
+                                {{ proceso.get_estatus_proceso_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if proceso.asesora_asignada %}
+                                <span class="sap-badge sap-badge-neutral">{{ proceso.asesora_asignada.get_full_name|default:proceso.asesora_asignada.username }}</span>
+                            {% else %}
+                                <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Sin Asignar</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="{% url 'vista_supervisar_procesos' %}" method="post" class="reassign-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="proceso_id" value="{{ proceso.id }}">
+                                <select name="nueva_asesora_id" class="reassign-select" required>
+                                    <option value="">-- Seleccionar asesora --</option>
+                                    {% for asesora in asesoras %}
+                                    <option value="{{ asesora.id }}" {% if proceso.asesora_asignada == asesora %}selected{% endif %}>
+                                        {{ asesora.get_full_name|default:asesora.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="sap-btn sap-btn-warning" style="padding: 4px 10px; font-size: 0.8rem;">
+                                    Reasignar
+                                </button>
+                            </form>
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{% url 'detalle_proceso' proceso.id %}" class="sap-btn sap-btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">
+                                Ver Detalle
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--sap-text-secondary);">
+                            No existen procesos de selección activos para supervisión.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

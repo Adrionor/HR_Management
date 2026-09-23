@@ -1,61 +1,204 @@
 {% extends "reclutamiento/base_interno.html" %}
-{% block title %}Perfil de Puesto: {{ puesto.titulo.nombre }}{% endblock %}
+{% load static %}
+
+{% block title %}Perfil de Puesto: {{ puesto.titulo.nombre }} - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    /* Estilo para ocultar los campos condicionales por defecto */
-    .campo-condicional { display: none; margin-left: 2em; padding-left: 1em; border-left: 3px solid #f1c40f; }
+    .profile-form-header {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .profile-form-title h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .profile-form-title p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .profile-form-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.75rem;
+    }
+    .sap-form-group {
+        margin-bottom: 1.5rem;
+    }
+    .sap-form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--sap-text);
+        margin-bottom: 0.4rem;
+    }
+    .sap-form-group input[type="text"],
+    .sap-form-group select,
+    .sap-form-group textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius);
+        font-family: inherit;
+        font-size: 0.875rem;
+        color: var(--sap-text);
+        background: #ffffff;
+    }
+    .sap-form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .sap-form-group input:focus,
+    .sap-form-group select:focus,
+    .sap-form-group textarea:focus {
+        outline: none;
+        border-color: var(--sap-primary);
+        box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
+    }
+    .campo-condicional {
+        display: none;
+        margin-left: 1.5rem;
+        padding-left: 1rem;
+        border-left: 3px solid var(--sap-warning);
+        margin-top: 0.75rem;
+    }
+    .help-text {
+        font-size: 0.8rem;
+        color: var(--sap-text-secondary);
+        margin-top: 0.25rem;
+        display: block;
+    }
+    .radio-group ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.35rem 0 0 0;
+        display: flex;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+    }
+    .radio-group li label {
+        font-weight: normal;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="header"><h1>Perfil Detallado para: {{ puesto.titulo.nombre }}</h1></div>
-    <p>Define los requerimientos específicos para esta vacante después de tu sesión con el gerente solicitante.</p>
-
-    <form method="post" class="form-layout">
-        {% csrf_token %}
-        <div class="form-group">{{ form.rango_edad.label_tag }}{{ form.rango_edad }}</div>
-
-        <div class="form-group">
-            {{ form.preferencia_sexo.label_tag }}
-            <div class="radio-group">{{ form.preferencia_sexo }}</div>
+<div class="sap-container" style="max-width: 900px;">
+    <div class="profile-form-header">
+        <div class="profile-form-title">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Definición de Perfil de Puesto
+            </h1>
+            <p>Posición: <strong>{{ puesto.titulo.nombre }}</strong> &bull; {{ puesto.marca.nombre }} - {{ puesto.agencia }}</p>
         </div>
-        <div class="form-group campo-condicional" id="motivo_sexo_wrapper">
-            {{ form.motivo_preferencia_sexo.label_tag }}
-            <div class="radio-group">{{ form.motivo_preferencia_sexo }}</div>
+        <div>
+            <a href="{% url 'mis_vacantes' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver a Mis Vacantes
+            </a>
         </div>
+    </div>
 
-        <div class="form-group">{{ form.area_experiencia_enfoque.label_tag }}{{ form.area_experiencia_enfoque }}</div>
+    <div class="profile-form-card">
+        <p style="font-size: 0.875rem; color: var(--sap-text-secondary); margin-top: 0; margin-bottom: 1.5rem;">
+            Registra los criterios específicos de compatibilidad levantados durante la sesión con el gerente solicitante.
+        </p>
 
-        <div class="form-group">
-            {{ form.importancia_apariencia.label_tag }}
-            <div class="radio-group">{{ form.importancia_apariencia }}</div>
-        </div>
-        <div class="form-group campo-condicional" id="justificacion_apariencia_wrapper">
-            {{ form.justificacion_apariencia.label_tag }}
-            <small class="help-text">Ej: Se encarga de presentaciones públicas, atención directa a clientes VIP, etc.</small>
-            {{ form.justificacion_apariencia }}
-        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="sap-form-group">
+                {{ form.rango_edad.label_tag }}
+                {{ form.rango_edad }}
+            </div>
 
-        <div class="form-group">{{ form.feedback_anterior.label_tag }}{{ form.feedback_anterior }}</div>
+            <div class="sap-form-group">
+                {{ form.preferencia_sexo.label_tag }}
+                <div class="radio-group">{{ form.preferencia_sexo }}</div>
+            </div>
+            <div class="sap-form-group campo-condicional" id="motivo_sexo_wrapper">
+                {{ form.motivo_preferencia_sexo.label_tag }}
+                <div class="radio-group">{{ form.motivo_preferencia_sexo }}</div>
+            </div>
 
-        <div class="form-group">
-            {{ form.requiere_licencia.label_tag }}
-            <div class="radio-group">{{ form.requiere_licencia }}</div>
-        </div>
+            <div class="sap-form-group">
+                {{ form.area_experiencia_enfoque.label_tag }}
+                {{ form.area_experiencia_enfoque }}
+            </div>
 
-        <div class="form-group">{{ form.comentarios_adicionales.label_tag }}{{ form.comentarios_adicionales }}</div>
+            <div class="sap-form-group">
+                {{ form.importancia_apariencia.label_tag }}
+                <div class="radio-group">{{ form.importancia_apariencia }}</div>
+            </div>
+            <div class="sap-form-group campo-condicional" id="justificacion_apariencia_wrapper">
+                {{ form.justificacion_apariencia.label_tag }}
+                <small class="help-text">Ej: Puesto de atención directa a clientes VIP, imagen institucional de recepción, etc.</small>
+                {{ form.justificacion_apariencia }}
+            </div>
 
-        <button type="submit" class="boton-guardar">Guardar Perfil</button>
-    </form>
+            <div class="sap-form-group">
+                {{ form.feedback_anterior.label_tag }}
+                {{ form.feedback_anterior }}
+            </div>
+
+            <div class="sap-form-group">
+                {{ form.requiere_licencia.label_tag }}
+                <div class="radio-group">{{ form.requiere_licencia }}</div>
+            </div>
+
+            <div class="sap-form-group">
+                {{ form.comentarios_adicionales.label_tag }}
+                {{ form.comentarios_adicionales }}
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--sap-border);">
+                <a href="{% url 'mis_vacantes' %}" class="sap-btn sap-btn-secondary">Cancelar</a>
+                <button type="submit" class="sap-btn sap-btn-primary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Guardar Perfil de Puesto
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    // Lógica para el campo de preferencia de sexo
     const sexoSelect = $('input[name="preferencia_sexo"]');
     const motivoSexoWrapper = $('#motivo_sexo_wrapper');
     function toggleMotivoSexo() {
@@ -69,7 +212,6 @@ $(document).ready(function() {
     toggleMotivoSexo();
     sexoSelect.on('change', toggleMotivoSexo);
 
-    // Lógica para el campo de importancia de apariencia
     const aparienciaSelect = $('input[name="importancia_apariencia"]');
     const justificacionWrapper = $('#justificacion_apariencia_wrapper');
     function toggleJustificacion() {

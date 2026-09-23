@@ -1,99 +1,172 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Bolsa de Trabajo (Consulta){% endblock %}
+{% block title %}Bolsa de Trabajo (Consulta de Talento) - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 95%; margin: 2em auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1 { color: #2c3e50; }
-
-    #candidatosTable thead th { background-color: #34495e; color: #ffffff; white-space: nowrap; }
-    #candidatosTable thead tr.filters th { padding: 8px; background-color: #f1f2f6; }
-    #candidatosTable thead tr.filters input { width: 100%; padding: 6px; box-sizing: border-box; }
-    #candidatosTable tbody tr:hover { background-color: #ecf0f1 !important; }
-
-    .boton-ver-historial { text-decoration: none; background-color: #7f8c8d; color: white; padding: 8px 12px; border-radius: 5px; font-size: 0.9em; }
+    .talent-header-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+    }
+    .talent-title-group h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .talent-title-group p {
+        margin: 0.3rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+    }
+    .talent-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+    }
+    .filter-input {
+        width: 100%;
+        padding: 0.4rem 0.5rem;
+        box-sizing: border-box;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius);
+        font-size: 0.8rem;
+    }
+    .filter-input:focus {
+        border-color: var(--sap-primary);
+        outline: none;
+    }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
-    <div class="header"><h1>Bolsa de Trabajo - Candidatos Disponibles</h1></div>
-    <p>Esta es la bolsa de trabajo general de solo consulta. Para iniciar un proceso y asignar un candidato, primero selecciona una vacante desde la página <a href="{% url 'mis_vacantes' %}">"Mis Vacantes Asignadas"</a>.</p>
+<div class="sap-container">
+    <div class="talent-header-strip">
+        <div class="talent-title-group">
+            <h1>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                    <path d="M2 12h20"></path>
+                </svg>
+                Bolsa de Trabajo y Talento (Modo Consulta)
+            </h1>
+            <p>Repositorio central de prospectos registrados. Vista de solo lectura para consulta de antecedentes y perfiles.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver al Launchpad
+            </a>
+        </div>
+    </div>
 
-    <table id="candidatosTable" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th>Candidato</th>
-                <th>Colaborador Actual</th> <th>Teléfono</th>
-                <th>Nivel Educativo</th>
-                <th>Experiencia (años)</th>
-                <th>Último Puesto</th>
-                <th>Puesto de Interés</th>
-                <th>CV</th>
-                <th>Historial</th>
-            </tr>
-            <tr class="filters">
-                <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for candidato in candidatos %}
-            <tr class="data-row">
-                <td>
-                    <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank">{{ candidato.nombre_completo }}</a>
-                    {% if candidato.alerta == 'NO_APROBADO' %}<span title="No aprobó psicometría..." style="cursor:help; color:#c0392b;"> 🛑</span>
-                    {% elif candidato.alerta == 'EN_BOLSA' %}<span title="Proceso previo. Ver historial." style="cursor:help; color:#3498db;"> ℹ️</span>
-                    {% endif %}
-                </td>
-                <td style="text-align: center;">
-                    {% if candidato.es_colaborador_actual %}
-                        <span style="color: #27ae60; font-weight: bold;" title="Este candidato es un colaborador interno.">Sí ✅</span>
-                    {% else %}
-                        No
-                    {% endif %}
-                </td>
-                <td>{{ candidato.telefono|default_if_none:"" }}</td>
-                <td>{{ candidato.get_nivel_educativo_display|default_if_none:"" }}</td>
-                <td>{{ candidato.años_de_experiencia|default_if_none:"" }}</td>
-                <td>{{ candidato.ultimo_puesto|default_if_none:"" }}</td>
-                <td>
-                    {% if candidato.puesto_de_interes %}
-                        {{ candidato.puesto_de_interes.titulo.nombre }}
-                    {% else %}
-                        <span style="font-style: italic;">{{ candidato.interes_custom|default:"General" }}</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if candidato.cv %}<a href="{{ candidato.cv.url }}" target="_blank">Ver CV</a>
-                    {% else %}No adjunto{% endif %}
-                </td>
-                <td>
-                    {% if candidato.alerta %}
-                        <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="boton-ver-historial">Ver</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="10" style="text-align: center; padding: 20px;">No hay candidatos disponibles en la bolsa de trabajo.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="talent-card">
+        <div class="table-responsive">
+            <table id="candidatosTable" class="display sap-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Candidato</th>
+                        <th>Origen</th>
+                        <th>Teléfono</th>
+                        <th>Nivel Educativo</th>
+                        <th>Experiencia</th>
+                        <th>Último Puesto</th>
+                        <th>Puesto Interés</th>
+                        <th>CV</th>
+                        <th style="text-align: right;">Historial</th>
+                    </tr>
+                    <tr class="filters">
+                        <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidato in candidatos %}
+                    <tr class="data-row">
+                        <td>
+                            <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank" style="font-weight: 700; color: var(--sap-primary); text-decoration: none;">
+                                {{ candidato.nombre_completo }}
+                            </a>
+                            {% if candidato.alerta == 'NO_APROBADO' %}
+                                <span class="sap-badge sap-badge-error" style="margin-left: 4px; font-size: 0.7rem;"><span class="sap-badge-dot"></span>No Aprobado</span>
+                            {% elif candidato.alerta == 'EN_BOLSA' %}
+                                <span class="sap-badge sap-badge-neutral" style="margin-left: 4px; font-size: 0.7rem;"><span class="sap-badge-dot"></span>En Bolsa</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidato.es_colaborador_actual %}
+                                <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Interno</span>
+                            {% else %}
+                                <span style="color: var(--sap-text-secondary); font-size: 0.85rem;">Externo</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ candidato.telefono|default_if_none:"N/A" }}</td>
+                        <td>{{ candidato.get_nivel_educativo_display|default_if_none:"N/A" }}</td>
+                        <td style="text-align: center;">{{ candidato.años_de_experiencia|default_if_none:"0" }} años</td>
+                        <td>{{ candidato.ultimo_puesto|default_if_none:"N/A" }}</td>
+                        <td>
+                            {% if candidato.puesto_de_interes %}
+                                {{ candidato.puesto_de_interes.titulo.nombre }}
+                            {% else %}
+                                <span style="font-style: italic; color: var(--sap-text-secondary);">{{ candidato.interes_custom|default:"General" }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidato.cv %}
+                                <a href="{{ candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-ghost" style="padding: 2px 6px; font-size: 0.8rem;">
+                                    Ver CV
+                                </a>
+                            {% else %}
+                                <span style="color: var(--sap-text-secondary); font-size: 0.8rem;">Sin CV</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            {% if candidato.alerta %}
+                                <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="sap-btn sap-btn-secondary" style="padding: 3px 8px; font-size: 0.8rem;">
+                                    Consultar
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2.5rem; color: var(--sap-text-secondary);">
+                            No hay candidatos disponibles en el repositorio.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    // El script para los filtros se adapta a la nueva columna
     $('#candidatosTable thead tr:eq(0) th').each(function(i) {
-        var title = $(this).text();
-        // No ponemos filtro en las columnas que no lo necesitan
-        if (title && title !== 'CV' && title !== 'Historial' && title !== 'Colaborador Actual') {
-            $(this).closest('table').find('thead tr.filters th').eq(i).html('<input type="text" placeholder="Buscar ' + title + '" />');
+        var title = $(this).text().trim();
+        if (title && title !== 'CV' && title !== 'Historial' && title !== 'Origen') {
+            $(this).closest('table').find('thead tr.filters th').eq(i).html('<input type="text" class="filter-input" placeholder="Buscar ' + title + '" />');
         }
     });
 

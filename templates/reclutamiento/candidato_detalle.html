@@ -1,103 +1,185 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Perfil de Candidato: {{ candidato.nombre_completo }}{% endblock %}
+{% block title %}Expediente de Candidato: {{ candidato.nombre_completo }} - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 900px; }
-    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1 { color: #2c3e50; font-size: 1.8em; }
-    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-    .profile-grid {
+    .candidate-profile-header {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .profile-title-group h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .profile-title-group p {
+        margin: 0.35rem 0 0 0;
+        font-size: 0.875rem;
+        color: var(--sap-text-secondary);
+    }
+    .candidate-profile-card {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+    .sap-kv-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5em 2.5em;
-        margin-top: 2em;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem 2rem;
     }
-    .detail-item {
-        padding-bottom: 1em;
-        border-bottom: 1px solid #ecf0f1;
+    .sap-kv-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
     }
-    .detail-item .label {
+    .sap-kv-label {
+        font-size: 0.775rem;
         font-weight: 600;
-        color: #3498db;
-        display: block;
-        font-size: 0.9em;
-        margin-bottom: 0.3em;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sap-text-secondary);
     }
-    .detail-item .value {
-        font-size: 1.1em;
-        color: #34495e;
+    .sap-kv-value {
+        font-size: 0.95rem;
+        color: var(--sap-text);
+        font-weight: 500;
     }
-    .cv-link-container { margin-top: 2em; text-align: center; }
-    .cv-link { display: inline-block; background-color: #27ae60; color: white; padding: 0.8em 2em; border-radius: 5px; text-decoration: none; font-weight: 600; }
+    .sap-kv-full {
+        grid-column: 1 / -1;
+    }
+    .cv-action-box {
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--sap-border);
+        display: flex;
+        justify-content: center;
+    }
 </style>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="header">
-            <h1>Perfil de Candidato</h1>
+<div class="sap-container" style="max-width: 980px;">
+    <!-- Profile Header -->
+    <div class="candidate-profile-header">
+        <div class="profile-title-group">
+            <div style="margin-bottom: 0.35rem;">
+                <span class="sap-badge sap-badge-accent">Expediente de Candidato</span>
+                {% if candidato.es_colaborador_actual %}
+                    <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Colaborador Interno</span>
+                {% else %}
+                    <span class="sap-badge sap-badge-neutral">Candidato Externo</span>
+                {% endif %}
+            </div>
+            <h1>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                {{ candidato.nombre_completo }}
+            </h1>
+            <p>ID Registro #{{ candidato.id }} &bull; Registrado en bolsa el {{ candidato.fecha_registro|date:"d/m/Y" }}</p>
+        </div>
+        <div>
+            <a href="javascript:history.back();" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="candidate-profile-card">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--sap-text); border-bottom: 2px solid var(--sap-border); padding-bottom: 0.6rem; margin: 0 0 1.25rem 0;">
+            Datos Personales y de Contacto
+        </h2>
+        <div class="sap-kv-grid">
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Correo Electrónico</span>
+                <span class="sap-kv-value"><a href="mailto:{{ candidato.email }}" style="color: var(--sap-primary); text-decoration: none;">{{ candidato.email }}</a></span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Teléfono Móvil</span>
+                <span class="sap-kv-value">{{ candidato.telefono|default:"No proporcionado" }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">RFC</span>
+                <span class="sap-kv-value">{{ candidato.rfc|default:"No proporcionado" }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Fecha de Nacimiento</span>
+                <span class="sap-kv-value">{{ candidato.fecha_nacimiento|date:"d F, Y"|default:"No proporcionada" }}</span>
+            </div>
         </div>
 
-        <h2>{{ candidato.nombre_completo }}</h2>
-
-        <div class="profile-grid">
-            <div class="detail-item">
-                <span class="label">Correo Electrónico</span>
-                <span class="value">{{ candidato.email }}</span>
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--sap-text); border-bottom: 2px solid var(--sap-border); padding-bottom: 0.6rem; margin: 2rem 0 1.25rem 0;">
+            Perfil Profesional y Trayectoria
+        </h2>
+        <div class="sap-kv-grid">
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Puesto de Interés Inicial</span>
+                <span class="sap-kv-value">{{ candidato.puesto_de_interes.titulo.nombre|default:"General / Futuras Oportunidades" }}</span>
             </div>
-            <div class="detail-item">
-                <span class="label">Teléfono de Contacto</span>
-                <span class="value">{{ candidato.telefono|default:"No proporcionado" }}</span>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Nivel de Estudios</span>
+                <span class="sap-kv-value">{{ candidato.get_nivel_educativo_display|default:"No especificado" }}</span>
             </div>
-            <div class="detail-item">
-                <span class="label">RFC</span>
-                <span class="value">{{ candidato.rfc|default:"No proporcionado" }}</span>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Años de Experiencia</span>
+                <span class="sap-kv-value">{{ candidato.años_de_experiencia|default:"0" }} años</span>
             </div>
-            <div class="detail-item">
-                <span class="label">Fecha de Nacimiento</span>
-                <span class="value">{{ candidato.fecha_nacimiento|date:"d F, Y"|default:"No proporcionada" }}</span>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Expectativa Salarial Bruta</span>
+                <span class="sap-kv-value">${{ candidato.expectativa_salarial|default:"No proporcionada" }}</span>
             </div>
-            <div class="detail-item">
-                <span class="label">Puesto de Interés Inicial</span>
-                <span class="value">{{ candidato.puesto_de_interes.titulo.nombre|default:"General / Futuras Oportunidades" }}</span>
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Último Cargo y Empleador</span>
+                <span class="sap-kv-value">{{ candidato.ultimo_puesto|default:"N/A" }} en <strong>{{ candidato.ultima_empresa|default:"N/A" }}</strong></span>
             </div>
-            <div class="detail-item">
-                <span class="label">Máximo Nivel Educativo</span>
-                <span class="value">{{ candidato.get_nivel_educativo_display|default:"No proporcionado" }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="label">Años de Experiencia</span>
-                <span class="value">{{ candidato.años_de_experiencia }} años</span>
-            </div>
-            <div class="detail-item">
-                <span class="label">Expectativa Salarial (Bruta)</span>
-                <span class="value">${{ candidato.expectativa_salarial|default:"No proporcionada" }}</span>
-            </div>
-            <div class="detail-item" style="grid-column: 1 / -1;">
-                <span class="label">Último Puesto y Empresa</span>
-                <span class="value">{{ candidato.ultimo_puesto|default:"N/A" }} en {{ candidato.ultima_empresa|default:"N/A" }}</span>
-            </div>
-            <div class="detail-item" style="grid-column: 1 / -1;">
-                <span class="label">Habilidades Principales</span>
-                <span class="value">{{ candidato.habilidades|linebreaksbr|default:"No proporcionadas" }}</span>
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Habilidades y Competencias Principales</span>
+                <span class="sap-kv-value" style="line-height: 1.6;">{{ candidato.habilidades|linebreaksbr|default:"No especificadas" }}</span>
             </div>
             {% if candidato.es_colaborador_actual %}
-            <div class="detail-item" style="grid-column: 1 / -1;">
-                <span class="label">Razón de Búsqueda (como colaborador interno)</span>
-                <span class="value">{{ candidato.get_motivo_busqueda_display|default:"No proporcionada" }}</span>
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Motivación de Búsqueda Interna</span>
+                <span class="sap-kv-value">{{ candidato.get_motivo_busqueda_display|default:"No especificada" }}</span>
             </div>
             {% endif %}
         </div>
 
         {% if candidato.cv %}
-        <div class="cv-link-container">
-            <a href="{{ candidato.cv.url }}" target="_blank" class="cv-link">Ver CV Adjunto</a>
+        <div class="cv-action-box">
+            <a href="{{ candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Descargar / Consultar Currículum Vitae (PDF)
+            </a>
         </div>
         {% endif %}
     </div>

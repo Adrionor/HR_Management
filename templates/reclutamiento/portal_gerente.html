@@ -5,71 +5,143 @@
 
 {% block style %}
 <style>
-    .container { max-width: 1200px; margin: 2em auto; padding: 0 1.5em; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2em; }
-    h1, h2, h3 { color: #2c3e50; }
-    h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 1.5em; }
-    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
+    .sap-page-container { max-width: 1300px; margin: 0 auto; }
+    
+    .sap-page-header {
+        background-color: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: 8px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .sap-page-header h1 {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: var(--sap-text);
+    }
+    .sap-page-header p {
+        margin: 0;
+        color: var(--sap-muted);
+        font-size: 0.88rem;
+    }
 
-    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2em; }
+    /* Tarjetas de Evaluación de Entrevistas */
+    .sap-interview-card {
+        background: #ffffff;
+        border: 1px solid #feddb0;
+        border-left: 4px solid var(--sap-warning-dot);
+        border-radius: 8px;
+        padding: 1.4rem;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .sap-interview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 1rem;
+    }
+    .sap-interview-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0 0 0.2rem 0;
+    }
+    .sap-interview-sub {
+        color: var(--sap-warning-text);
+        font-weight: 600;
+        font-size: 0.88rem;
+    }
+    .sap-candidate-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 0.82rem;
+        color: var(--sap-muted);
+        flex-wrap: wrap;
+        margin-top: 6px;
+    }
 
-    .form-section { border: 1px solid #e2e8f0; padding: 1.5em 2em; border-radius: 8px; margin-bottom: 2em; background-color: #f8fafc; }
-    .form-section legend { font-weight: 600; font-size: 1.15em; color: #34495e; padding: 0 0.6em; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5em; }
-    .form-group { margin-bottom: 1em; }
-    .form-group label { display: block; margin-bottom: 0.4em; font-weight: 600; font-size: 0.9em; color: #475569; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 0.95em; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
-    .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; display: block; }
-    .file-upload-wrapper input[type="file"] { display: none; }
-    .boton-file { display: inline-block; padding: 10px 16px; background-color: #3498db; color: white; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9em; }
-    #file-chosen-justificacion { margin-left: 10px; font-style: italic; color: #64748b; font-size: 0.9em; }
-    .boton-submit { background-color: #2ecc71; color: white; border: none; padding: 12px 28px; font-size: 1.05em; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 1em; transition: background-color 0.2s; }
-    .boton-submit:hover { background-color: #27ae60; }
+    .sap-eval-box {
+        background-color: #f8fafc;
+        border: 1px solid var(--sap-border-subtle);
+        border-radius: 6px;
+        padding: 1.2rem;
+        margin-top: 0.8rem;
+    }
 
-    /* Estilos para evaluación de candidatos */
-    .interview-card { border-left: 5px solid #f39c12; background: #fffdfa; padding: 1.5em; border-radius: 8px; margin-bottom: 1.2em; border-top: 1px solid #fed7aa; border-right: 1px solid #fed7aa; border-bottom: 1px solid #fed7aa; display: flex; flex-direction: column; gap: 1em; }
-    .interview-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
-    .interview-candidate-name { font-size: 1.2em; font-weight: 700; color: #2c3e50; margin: 0; }
-    .interview-vacancy { color: #d97706; font-weight: 600; font-size: 0.95em; }
-    .candidate-meta { display: flex; gap: 15px; font-size: 0.88em; color: #64748b; flex-wrap: wrap; }
-    .interview-actions { background-color: #fff; padding: 1.2em; border-radius: 6px; border: 1px solid #f1f5f9; }
-    .eval-form { display: grid; grid-template-columns: 1fr; gap: 1em; }
-    .eval-buttons { display: flex; gap: 10px; }
-    .btn-eval-approve { background-color: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 5px; font-weight: 600; cursor: pointer; }
-    .btn-eval-approve:hover { background-color: #059669; }
-    .btn-eval-reject { background-color: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 5px; font-weight: 600; cursor: pointer; }
-    .btn-eval-reject:hover { background-color: #dc2626; }
+    /* Formularios Fiori */
+    .sap-fieldset {
+        border: 1px solid var(--sap-border);
+        border-radius: 6px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        background-color: #ffffff;
+    }
+    .sap-fieldset legend {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--sap-text);
+        padding: 0 0.5rem;
+    }
+    .sap-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.2rem;
+    }
+    .sap-help-text {
+        font-size: 0.78rem;
+        color: var(--sap-muted);
+        margin-top: 3px;
+        display: block;
+    }
 
-    /* Badges de estado */
-    .badge-status { padding: 4px 10px; border-radius: 20px; font-size: 0.82em; font-weight: 600; display: inline-block; }
-    .badge-pending { background-color: #fef3c7; color: #92400e; }
-    .badge-authorized { background-color: #d1fae5; color: #065f46; }
-    .badge-rejected { background-color: #fee2e2; color: #991b1b; }
-    .badge-motivo { font-size: 0.82em; color: #b91c1c; background-color: #fff1f2; padding: 4px 8px; border-radius: 4px; display: block; margin-top: 4px; border-left: 3px solid #e11d48; }
+    .sap-file-btn {
+        display: inline-block;
+        padding: 7px 14px;
+        background-color: #ffffff;
+        color: var(--sap-text);
+        border: 1px solid var(--sap-border);
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.15s ease;
+    }
+    .sap-file-btn:hover { background-color: #f1f3f5; border-color: #b9bec5; }
 
-    .sla-badge { font-weight: 700; font-size: 0.85em; padding: 3px 8px; border-radius: 4px; }
-    .sla-green { background-color: #dcfce7; color: #166534; }
-    .sla-yellow { background-color: #fef9c3; color: #854d0e; }
-    .sla-red { background-color: #fee2e2; color: #991b1b; }
-
-    .messages { list-style-type: none; padding: 0; margin-bottom: 1.5em; }
-    .messages li { padding: 12px 18px; margin-bottom: 0.8em; border-radius: 6px; font-weight: 500; }
-    .messages .success { background-color: #dcfce7; color: #15803d; border-left: 4px solid #16a34a; }
-    .messages .info { background-color: #e0f2fe; color: #0369a1; border-left: 4px solid #0284c7; }
-    .messages .warning { background-color: #fef3c7; color: #b45309; border-left: 4px solid #d97706; }
-    .messages .error { background-color: #fee2e2; color: #b91c1c; border-left: 4px solid #dc2626; }
+    /* Mensajes Django */
+    .messages { list-style: none; padding: 0; margin-bottom: 1.5rem; }
+    .messages li {
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        margin-bottom: 0.6rem;
+    }
+    .messages .success { background-color: var(--sap-success-bg); color: var(--sap-success-text); border-left: 4px solid var(--sap-success-dot); }
+    .messages .info { background-color: var(--sap-info-bg); color: var(--sap-info-text); border-left: 4px solid var(--sap-info-dot); }
+    .messages .warning { background-color: var(--sap-warning-bg); color: var(--sap-warning-text); border-left: 4px solid var(--sap-warning-dot); }
+    .messages .error { background-color: var(--sap-error-bg); color: var(--sap-error-text); border-left: 4px solid var(--sap-error-dot); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="header">
+<div class="sap-page-container">
+    <div class="sap-page-header">
         <div>
             <h1>Portal del Gerente Operativo</h1>
-            <p style="margin: 0; color: #64748b;">Administra tus solicitudes de vacantes y evalúa candidatos listos para entrevista.</p>
+            <p>Administración y seguimiento de requisiciones de personal y evaluación técnica de candidatos.</p>
         </div>
-        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
+        <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">Volver al Portal</a>
     </div>
 
     {% if messages %}
@@ -80,226 +152,247 @@
     </ul>
     {% endif %}
 
-    <!-- SECCIÓN 1: CANDIDATOS POR ENTREVISTAR (SI TIENE CANDIDATOS EN ENT_JF) -->
+    <!-- SECCIÓN 1: EVALUACIÓN DIRECTA DE ENTREVISTAS (CERO EMOJIS) -->
     {% if candidatos_entrevista %}
-    <div class="card" style="border-top: 4px solid #f39c12;">
-        <h2>👤 Candidatos Pendientes de tu Entrevista ({{ candidatos_entrevista.count }})</h2>
-        <p style="color: #64748b; margin-bottom: 1.5em;">Los siguientes candidatos han superado los filtros iniciales de reclutamiento (Psicometría, Integridad, Referencias) y están listos para tu entrevista. Revisa su perfil y registra tu decisión.</p>
-
-        {% for proc in candidatos_entrevista %}
-        <div class="interview-card">
-            <div class="interview-header">
-                <div>
-                    <h3 class="interview-candidate-name">{{ proc.candidato.nombre_completo }}</h3>
-                    <div class="interview-vacancy">Vacante: {{ proc.puesto.titulo.nombre }} ({{ proc.puesto.marca.nombre }} - {{ proc.puesto.get_ciudad_display }})</div>
-                </div>
-                <div class="candidate-meta">
-                    <span>📧 {{ proc.candidato.email }}</span>
-                    <span>📞 {{ proc.candidato.telefono|default:"N/A" }}</span>
-                    {% if proc.candidato.cv %}
-                        <a href="{{ proc.candidato.cv.url }}" target="_blank" style="color: #2563eb; font-weight: 600; text-decoration: underline;">📄 Ver CV Adjunto</a>
-                    {% endif %}
-                    <span style="color: #6b7280;">Enviado por: {{ proc.asesora_asignada.get_full_name|default:proc.asesora_asignada.username }}</span>
-                </div>
+    <div class="sap-card" style="border-top: 3px solid var(--sap-warning-dot);">
+        <div class="sap-card-header">
+            <div>
+                <h3 class="sap-card-title">Candidatos Pendientes de Evaluación ({{ candidatos_entrevista.count }})</h3>
+                <small style="color: var(--sap-muted);">Postulantes que superaron los filtros iniciales de RH y esperan tu dictamen técnico.</small>
             </div>
-
-            <div class="interview-actions">
-                <form method="post" class="eval-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="evaluar_candidato">
-                    <input type="hidden" name="proceso_id" value="{{ proc.id }}">
-
-                    <div>
-                        <label style="font-weight: 600; font-size: 0.9em; color: #374151; display: block; margin-bottom: 4px;">Retroalimentación y Observaciones de la Entrevista:</label>
-                        <textarea name="retroalimentacion_jefe" placeholder="Describe brevemente tus impresiones: fortalezas, debilidades, ajuste al puesto y condiciones acordadas..." rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit;" required></textarea>
-                    </div>
-
-                    <div class="eval-buttons">
-                        <button type="submit" name="decision" value="APROBAR" class="btn-eval-approve">
-                            ✅ Aprobar Candidato (Pasa a Exámenes Médicos)
-                        </button>
-                        <button type="submit" name="decision" value="DESCARTAR" class="btn-eval-reject" onclick="return confirm('¿Confirmas que deseas descartar a este candidato? Retornará a la Bolsa de Trabajo.');">
-                            ❌ Descartar Candidato
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <span class="sap-badge sap-badge-warning">
+                <span class="sap-badge-dot"></span>Acción Requerida
+            </span>
         </div>
-        {% endfor %}
+        <div class="sap-card-body">
+            {% for proc in candidatos_entrevista %}
+            <div class="sap-interview-card">
+                <div class="sap-interview-header">
+                    <div>
+                        <div class="sap-interview-title">{{ proc.candidato.nombre_completo }}</div>
+                        <div class="sap-interview-sub">Puesto: {{ proc.puesto.titulo.nombre }} &bull; {{ proc.puesto.marca.nombre }} ({{ proc.puesto.get_ciudad_display }})</div>
+                    </div>
+                    <div class="sap-candidate-meta">
+                        <span>Email: {{ proc.candidato.email }}</span>
+                        <span>Teléfono: {{ proc.candidato.telefono|default:"N/A" }}</span>
+                        {% if proc.candidato.cv %}
+                            <a href="{{ proc.candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm">
+                                Descargar CV Adjunto
+                            </a>
+                        {% endif %}
+                        <span>Enviado por: {{ proc.asesora_asignada.get_full_name|default:proc.asesora_asignada.username }}</span>
+                    </div>
+                </div>
+
+                <div class="sap-eval-box">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="evaluar_candidato">
+                        <input type="hidden" name="proceso_id" value="{{ proc.id }}">
+
+                        <div class="sap-form-group">
+                            <label class="sap-label">Retroalimentación y Dictamen de la Entrevista:</label>
+                            <textarea name="retroalimentacion_jefe" class="sap-textarea" placeholder="Escribe tus observaciones: competencias técnicas, ajuste al puesto y condiciones acordadas..." rows="3" required></textarea>
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <button type="submit" name="decision" value="APROBAR" class="sap-btn sap-btn-positive">
+                                Aprobar Candidato (Pasar a Médicos)
+                            </button>
+                            <button type="submit" name="decision" value="DESCARTAR" class="sap-btn sap-btn-negative" onclick="return confirm('¿Confirmas que deseas descartar a este candidato? Retornará a la Bolsa de Trabajo.');">
+                                Descartar Candidato
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
-    <!-- SECCIÓN 2: HISTORIAL Y ESTATUS DE MIS SOLICITUDES -->
-    <div class="card">
-        <h2>📋 Historial y Estatus de Mis Vacantes</h2>
-        <p style="color: #64748b;">Monitorea el progreso de todas tus requisiciones de personal, tiempo transcurrido y plazas cubiertas.</p>
-
-        <table id="solicitudesTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Puesto</th>
-                    <th>Fecha Solicitud</th>
-                    <th>Estatus / Autorización</th>
-                    <th>Etapa Operativa</th>
-                    <th>Plazas</th>
-                    <th>SLA / Días</th>
-                    <th>Asesora</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sol in solicitudes %}
-                <tr>
-                    <td>
-                        <a href="{% url 'puesto_detalle' sol.id %}" style="font-weight: 700; color: #1e40af; text-decoration: none;">
-                            {{ sol.titulo.nombre }}
-                        </a>
-                        <small style="display: block; color: #64748b;">{{ sol.marca.nombre }} - {{ sol.get_ciudad_display }}</small>
-                    </td>
-                    <td>{{ sol.fecha_solicitud|date:"d/m/Y" }}</td>
-                    <td>
-                        {% if sol.estatus_autorizacion == 'AUTORIZADO' %}
-                            <span class="badge-status badge-authorized">✅ Autorizado</span>
-                        {% elif sol.estatus_autorizacion == 'RECHAZADO' %}
-                            <span class="badge-status badge-rejected">❌ Rechazado</span>
-                            {% if sol.motivo_rechazo %}
-                                <div class="badge-motivo"><strong>Motivo:</strong> {{ sol.motivo_rechazo }}</div>
-                            {% endif %}
-                        {% else %}
-                            <span class="badge-status badge-pending">⏳ {{ sol.get_estatus_autorizacion_display }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span style="font-weight: 600; color: #334155;">{{ sol.etapa_operativa }}</span>
-                    </td>
-                    <td style="text-align: center;">
-                        <strong>{{ sol.plazas_cubiertas }}</strong> / {{ sol.cantidad_vacantes }}
-                    </td>
-                    <td>
-                        {% if sol.esta_abierto %}
-                            {% if sol.estatus_sla == 'VENCIDA' %}
-                                <span class="sla-badge sla-red">🔴 {{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d (Vencida)</span>
-                            {% elif sol.estatus_sla == 'POR_VENCER' %}
-                                <span class="sla-badge sla-yellow">🟡 {{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d (Por vencer)</span>
-                            {% else %}
-                                <span class="sla-badge sla-green">🟢 {{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d (En tiempo)</span>
-                            {% endif %}
-                        {% else %}
-                            <span style="color: #64748b; font-size: 0.85em;">Concluida en {{ sol.dias_transcurridos }}d</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if sol.asesora_encargada %}
-                            {{ sol.asesora_encargada.get_full_name|default:sol.asesora_encargada.username }}
-                        {% else %}
-                            <span style="color:#94a3b8;">Por asignar</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2em; color: #64748b;">No has registrado solicitudes de vacantes aún.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- SECCIÓN 2: HISTORIAL Y ESTATUS DE MIS VACANTES -->
+    <div class="sap-card">
+        <div class="sap-card-header">
+            <div>
+                <h3 class="sap-card-title">Historial y Estatus de Mis Requisiciones</h3>
+                <small style="color: var(--sap-muted);">Seguimiento al cumplimiento de SLAs, plazas cubiertas y etapa operativa de cada vacante solicitada.</small>
+            </div>
+        </div>
+        <div class="sap-card-body" style="padding: 0;">
+            <div style="overflow-x: auto; padding: 1rem;">
+                <table id="solicitudesTable" class="dataTable display" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Puesto</th>
+                            <th>Fecha Solicitud</th>
+                            <th>Autorización</th>
+                            <th>Etapa Operativa</th>
+                            <th style="text-align: center;">Plazas</th>
+                            <th>SLA (Transcurrido / Meta)</th>
+                            <th>Asesora Asignada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sol in solicitudes %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'puesto_detalle' sol.id %}" style="font-weight: 600; color: var(--sap-primary); text-decoration: none;">
+                                    {{ sol.titulo.nombre }}
+                                </a>
+                                <small style="display: block; color: var(--sap-muted);">{{ sol.marca.nombre }} - {{ sol.get_ciudad_display }}</small>
+                            </td>
+                            <td>{{ sol.fecha_solicitud|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if sol.estatus_autorizacion == 'AUTORIZADO' %}
+                                    <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Autorizado</span>
+                                {% elif sol.estatus_autorizacion == 'RECHAZADO' %}
+                                    <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Rechazado</span>
+                                    {% if sol.motivo_rechazo %}
+                                        <div style="font-size: 0.78rem; color: #bb0000; margin-top: 3px;"><strong>Motivo:</strong> {{ sol.motivo_rechazo }}</div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="sap-badge sap-badge-warning"><span class="sap-badge-dot"></span>{{ sol.get_estatus_autorizacion_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="sap-badge sap-badge-neutral">{{ sol.etapa_operativa }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>{{ sol.plazas_cubiertas }}</strong> / {{ sol.cantidad_vacantes }}
+                            </td>
+                            <td>
+                                {% if sol.esta_abierto %}
+                                    {% if sol.estatus_sla == 'VENCIDA' %}
+                                        <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Vencida ({{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d)</span>
+                                    {% elif sol.estatus_sla == 'POR_VENCER' %}
+                                        <span class="sap-badge sap-badge-warning"><span class="sap-badge-dot"></span>Por Vencer ({{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d)</span>
+                                    {% else %}
+                                        <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>En Tiempo ({{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d)</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="sap-badge sap-badge-neutral">Concluida ({{ sol.dias_transcurridos }}d)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sol.asesora_encargada %}
+                                    {{ sol.asesora_encargada.get_full_name|default:sol.asesora_encargada.username }}
+                                {% else %}
+                                    <span style="color: var(--sap-muted); font-style: italic;">Por asignar</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2em; color: var(--sap-muted);">No has registrado solicitudes de vacantes aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- SECCIÓN 3: SOLICITAR NUEVA VACANTE -->
-    <div class="card">
-        <h2>✍️ Solicitar Nueva Vacante (Requisición de Personal)</h2>
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {% if form.errors %}
-                <div style="background-color: #fee2e2; border: 1px solid #f87171; color: #b91c1c; padding: 12px; border-radius: 6px; margin-bottom: 1.5em;">
-                    <strong>Por favor corrige los siguientes campos:</strong>
-                    <ul style="margin: 6px 0 0 1.2em; padding: 0;">
-                        {% for field in form %}
-                            {% for error in field.errors %}
-                                <li>{{ field.label }}: {{ error }}</li>
+    <div class="sap-card">
+        <div class="sap-card-header">
+            <h3 class="sap-card-title">Nueva Requisición de Personal</h3>
+        </div>
+        <div class="sap-card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div style="background-color: var(--sap-error-bg); border: 1px solid var(--sap-error-border); color: var(--sap-error-text); padding: 12px; border-radius: 6px; margin-bottom: 1.5rem;">
+                        <strong>Por favor revisa y corrige los campos requeridos:</strong>
+                        <ul style="margin: 6px 0 0 1.2rem; padding: 0;">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
                             {% endfor %}
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-
-            <fieldset class="form-section">
-                <legend>Información General de la Requisición</legend>
-                <div class="form-grid">
-                    <div class="form-group">{{ form.marca.label_tag }}{{ form.marca }}</div>
-                    <div class="form-group">{{ form.agencia.label_tag }}{{ form.agencia }}</div>
-                    <div class="form-group">{{ form.titulo.label_tag }}{{ form.titulo }}</div>
-                    <div class="form-group">{{ form.ciudad.label_tag }}{{ form.ciudad }}</div>
-                    <div class="form-group">{{ form.area.label_tag }}{{ form.area }}</div>
-                    <div class="form-group">{{ form.cantidad_vacantes.label_tag }}{{ form.cantidad_vacantes }}</div>
-                    <div class="form-group">{{ form.nombre_jefe_inmediato.label_tag }}{{ form.nombre_jefe_inmediato }}</div>
-                    <div class="form-group">{{ form.puesto_jefe_inmediato.label_tag }}{{ form.puesto_jefe_inmediato }}</div>
-                </div>
-            </fieldset>
-
-            <fieldset class="form-section">
-                <legend>Justificación del Requerimiento</legend>
-                <div class="form-group">{{ form.motivo_requisicion.label_tag }}{{ form.motivo_requisicion }}</div>
-
-                <div class="form-group" id="reemplaza_a_wrapper" style="display: none;">
-                    {{ form.reemplaza_a.label_tag }}
-                    {{ form.reemplaza_a }}
-                </div>
-                <div class="form-group">{{ form.objetivo_puesto.label_tag }}{{ form.objetivo_puesto }}</div>
-                <div class="form-group">
-                    {{ form.funciones_puesto.label_tag }}
-                    <small class="help-text">{{ form.funciones_puesto.help_text }}</small>
-                    {{ form.funciones_puesto }}
-                </div>
-                <div class="form-group">{{ form.indicador_puesto.label_tag }}{{ form.indicador_puesto }}</div>
-            </fieldset>
-
-            <fieldset class="form-section">
-                <legend>Requisitos del Perfil y Condiciones Laborales</legend>
-                <div class="form-grid">
-                    <div class="form-group">{{ form.experiencia_minima.label_tag }}{{ form.experiencia_minima }}</div>
-                    <div class="form-group">{{ form.carrera_sugerida.label_tag }}{{ form.carrera_sugerida }}</div>
-                    <div class="form-group">{{ form.horario.label_tag }}{{ form.horario }}</div>
-                    <div class="form-group">{{ form.sueldo_base.label_tag }}{{ form.sueldo_base }}</div>
-                </div>
-                <div class="form-group">
-                    {{ form.herramientas_puesto.label_tag }}
-                    <small class="help-text">{{ form.herramientas_puesto.help_text }}</small>
-                    {{ form.herramientas_puesto }}
-                </div>
-                <div class="form-group">
-                    {{ form.conocimientos_tecnicos.label_tag }}
-                    <small class="help-text">{{ form.conocimientos_tecnicos.help_text }}</small>
-                    {{ form.conocimientos_tecnicos }}
-                </div>
-                <div class="form-group">{{ form.esquema_comisiones.label_tag }}{{ form.esquema_comisiones }}</div>
-            </fieldset>
-
-            <fieldset class="form-section">
-                <legend>Documento de Justificación (Opcional)</legend>
-                <div class="form-group">
-                    <label for="{{ form.archivo_justificacion.id_for_label }}">{{ form.archivo_justificacion.label }}</label>
-                    <small class="help-text">{{ form.archivo_justificacion.help_text }}</small>
-                    <div class="file-upload-wrapper" style="margin-top: 8px;">
-                        <label for="{{ form.archivo_justificacion.id_for_label }}" class="boton-file">📁 Seleccionar Archivo</label>
-                        <span id="file-chosen-justificacion">Ningún archivo seleccionado</span>
-                        {{ form.archivo_justificacion }}
+                        </ul>
                     </div>
-                </div>
-            </fieldset>
+                {% endif %}
 
-            {% if user.is_superuser %}
-            <fieldset class="form-section" style="border-color: #f87171;">
-                <legend style="color: #dc2626;">Opciones de Administrador</legend>
-                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                    {{ form.es_confidencial }}
-                    <label for="{{ form.es_confidencial.id_for_label }}" style="margin: 0; font-weight: 600;">¿Es una vacante confidencial?</label>
-                </div>
-                <small class="help-text">Al marcar esta opción, la vacante se autoriza de forma inmediata y no aparecerá en la bolsa pública.</small>
-            </fieldset>
-            {% endif %}
+                <fieldset class="sap-fieldset">
+                    <legend>Información General de la Requisición</legend>
+                    <div class="sap-form-grid">
+                        <div class="sap-form-group">{{ form.marca.label_tag }}{{ form.marca }}</div>
+                        <div class="sap-form-group">{{ form.agencia.label_tag }}{{ form.agencia }}</div>
+                        <div class="sap-form-group">{{ form.titulo.label_tag }}{{ form.titulo }}</div>
+                        <div class="sap-form-group">{{ form.ciudad.label_tag }}{{ form.ciudad }}</div>
+                        <div class="sap-form-group">{{ form.area.label_tag }}{{ form.area }}</div>
+                        <div class="sap-form-group">{{ form.cantidad_vacantes.label_tag }}{{ form.cantidad_vacantes }}</div>
+                        <div class="sap-form-group">{{ form.nombre_jefe_inmediato.label_tag }}{{ form.nombre_jefe_inmediato }}</div>
+                        <div class="sap-form-group">{{ form.puesto_jefe_inmediato.label_tag }}{{ form.puesto_jefe_inmediato }}</div>
+                    </div>
+                </fieldset>
 
-            <button type="submit" class="boton-submit">🚀 Enviar Solicitud de Requisición</button>
-        </form>
+                <fieldset class="sap-fieldset">
+                    <legend>Justificación del Requerimiento</legend>
+                    <div class="sap-form-group">{{ form.motivo_requisicion.label_tag }}{{ form.motivo_requisicion }}</div>
+
+                    <div class="sap-form-group" id="reemplaza_a_wrapper" style="display: none;">
+                        {{ form.reemplaza_a.label_tag }}
+                        {{ form.reemplaza_a }}
+                    </div>
+                    <div class="sap-form-group">{{ form.objetivo_puesto.label_tag }}{{ form.objetivo_puesto }}</div>
+                    <div class="sap-form-group">
+                        {{ form.funciones_puesto.label_tag }}
+                        <small class="sap-help-text">{{ form.funciones_puesto.help_text }}</small>
+                        {{ form.funciones_puesto }}
+                    </div>
+                    <div class="sap-form-group">{{ form.indicador_puesto.label_tag }}{{ form.indicador_puesto }}</div>
+                </fieldset>
+
+                <fieldset class="sap-fieldset">
+                    <legend>Requisitos del Perfil y Condiciones Laborales</legend>
+                    <div class="sap-form-grid">
+                        <div class="sap-form-group">{{ form.experiencia_minima.label_tag }}{{ form.experiencia_minima }}</div>
+                        <div class="sap-form-group">{{ form.carrera_sugerida.label_tag }}{{ form.carrera_sugerida }}</div>
+                        <div class="sap-form-group">{{ form.horario.label_tag }}{{ form.horario }}</div>
+                        <div class="sap-form-group">{{ form.sueldo_base.label_tag }}{{ form.sueldo_base }}</div>
+                    </div>
+                    <div class="sap-form-group">
+                        {{ form.herramientas_puesto.label_tag }}
+                        <small class="sap-help-text">{{ form.herramientas_puesto.help_text }}</small>
+                        {{ form.herramientas_puesto }}
+                    </div>
+                    <div class="sap-form-group">
+                        {{ form.conocimientos_tecnicos.label_tag }}
+                        <small class="sap-help-text">{{ form.conocimientos_tecnicos.help_text }}</small>
+                        {{ form.conocimientos_tecnicos }}
+                    </div>
+                    <div class="sap-form-group">{{ form.esquema_comisiones.label_tag }}{{ form.esquema_comisiones }}</div>
+                </fieldset>
+
+                <fieldset class="sap-fieldset">
+                    <legend>Documento de Justificación (Opcional)</legend>
+                    <div class="sap-form-group">
+                        <label for="{{ form.archivo_justificacion.id_for_label }}">{{ form.archivo_justificacion.label }}</label>
+                        <small class="sap-help-text">{{ form.archivo_justificacion.help_text }}</small>
+                        <div style="margin-top: 8px;">
+                            <label for="{{ form.archivo_justificacion.id_for_label }}" class="sap-file-btn">Seleccionar Archivo</label>
+                            <span id="file-chosen-justificacion" style="margin-left: 10px; color: var(--sap-muted); font-size: 0.85rem;">Ningún archivo seleccionado</span>
+                            <div style="display: none;">{{ form.archivo_justificacion }}</div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {% if user.is_superuser %}
+                <fieldset class="sap-fieldset" style="border-color: var(--sap-error-border);">
+                    <legend style="color: var(--sap-error-text);">Opciones de Administrador</legend>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {{ form.es_confidencial }}
+                        <label for="{{ form.es_confidencial.id_for_label }}" style="margin: 0; font-weight: 600;">¿Es una vacante confidencial?</label>
+                    </div>
+                    <small class="sap-help-text">Al marcar esta opción, la vacante se autoriza automáticamente y no aparecerá en la bolsa pública.</small>
+                </fieldset>
+                {% endif %}
+
+                <button type="submit" class="sap-btn sap-btn-primary" style="padding: 10px 24px;">Enviar Requisición para Aprobación</button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

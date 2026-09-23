@@ -1,59 +1,265 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Detalle de Requisición: {{ puesto.titulo.nombre }}{% endblock %}
+{% block title %}Expediente de Vacante: {{ puesto.titulo.nombre }} - SAP Fiori{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 900px; }
-    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-    h1 { color: #2c3e50; font-size: 1.8em; }
-    h3 { color: #16a085; margin-top: 2em; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; }
-    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em 2.5em; }
-    .detail-item { padding-bottom: 1em; }
-    .detail-item .label { font-weight: 600; color: #7f8c8d; display: block; font-size: 0.9em; margin-bottom: 0.3em; }
-    .detail-item .value { font-size: 1.1em; color: #34495e; white-space: pre-wrap; }
-    .full-width { grid-column: 1 / -1; }
+    .sap-object-header {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .sap-object-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .sap-object-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        color: var(--sap-text-secondary);
+        font-size: 0.875rem;
+    }
+    .sap-object-section {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        border: 1px solid var(--sap-border);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .sap-section-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        border-bottom: 2px solid var(--sap-border);
+        padding-bottom: 0.6rem;
+        margin: 0 0 1.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .sap-kv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.25rem 2rem;
+    }
+    .sap-kv-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .sap-kv-label {
+        font-size: 0.775rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sap-text-secondary);
+    }
+    .sap-kv-value {
+        font-size: 0.95rem;
+        color: var(--sap-text);
+        font-weight: 500;
+    }
+    .sap-kv-full {
+        grid-column: 1 / -1;
+    }
+    .sap-doc-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #f0f7ff;
+        color: var(--sap-primary);
+        border: 1px solid #cce3ff;
+        padding: 0.4rem 0.8rem;
+        border-radius: var(--sap-radius);
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    .sap-doc-link:hover {
+        background: #e0effe;
+        color: var(--sap-primary-hover);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="header">
-            <h1>Ficha de Requisición</h1>
-            <a href="{% url 'mis_vacantes' %}" class="boton-volver">← Volver a Mis Vacantes</a>
+<div class="sap-container" style="max-width: 1050px;">
+    <!-- Object Header -->
+    <div class="sap-object-header">
+        <div>
+            <div style="margin-bottom: 0.35rem;">
+                <span class="sap-badge sap-badge-accent">Expediente de Vacante</span>
+                <span class="sap-badge sap-badge-neutral">ID #{{ puesto.id }}</span>
+            </div>
+            <h1 class="sap-object-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                {{ puesto.titulo.nombre }}
+            </h1>
+            <div class="sap-object-meta">
+                <span><strong>Marca:</strong> {{ puesto.marca.nombre }}</span>
+                <span>•</span>
+                <span><strong>Agencia:</strong> {{ puesto.agencia }}</span>
+                <span>•</span>
+                <span><strong>Plaza:</strong> {{ puesto.get_ciudad_display }}</span>
+            </div>
         </div>
-        
-        <h3>Información General</h3>
-        <div class="detail-grid">
-            <div class="detail-item"><span class="label">Título del Puesto</span><span class="value">{{ puesto.titulo.nombre }}</span></div>
-            <div class="detail-item"><span class="label">Marca</span><span class="value">{{ puesto.marca.nombre }}</span></div>
-            <div class="detail-item"><span class="label">Agencia</span><span class="value">{{ puesto.agencia }}</span></div>
-            <div class="detail-item"><span class="label">Ciudad</span><span class="value">{{ puesto.get_ciudad_display }}</span></div>
-            <div class="detail-item"><span class="label">Área</span><span class="value">{{ puesto.get_area_display }}</span></div>
-            <div class="detail-item"><span class="label">Jefe Inmediato</span><span class="value">{{ puesto.nombre_jefe_inmediato }} ({{ puesto.puesto_jefe_inmediato }})</span></div>
+        <div>
+            <a href="javascript:history.back();" class="sap-btn sap-btn-secondary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
         </div>
+    </div>
 
-        <h3>Justificación y Funciones</h3>
-        <div class="detail-grid">
-            <div class="detail-item"><span class="label">Motivo de Requisición</span><span class="value">{{ puesto.get_motivo_requisicion_display }}</span></div>
-            {% if puesto.reemplaza_a %}<div class="detail-item"><span class="label">Reemplaza a</span><span class="value">{{ puesto.reemplaza_a }}</span></div>{% endif %}
-            <div class="detail-item full-width"><span class="label">Objetivo del Puesto</span><span class="value">{{ puesto.objetivo_puesto|linebreaks }}</span></div>
-            <div class="detail-item full-width"><span class="label">Funciones Principales</span><span class="value">{{ puesto.funciones_puesto|linebreaks }}</span></div>
+    <!-- Section 1: General Info -->
+    <div class="sap-object-section">
+        <h2 class="sap-section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Estructura Organizacional
+        </h2>
+        <div class="sap-kv-grid">
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Puesto Solicitado</span>
+                <span class="sap-kv-value">{{ puesto.titulo.nombre }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Marca y Concesión</span>
+                <span class="sap-kv-value">{{ puesto.marca.nombre }} - {{ puesto.agencia }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Ciudad Operativa</span>
+                <span class="sap-kv-value">{{ puesto.get_ciudad_display }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Área Funcional</span>
+                <span class="sap-kv-value">{{ puesto.get_area_display }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Jefe Directo</span>
+                <span class="sap-kv-value">{{ puesto.nombre_jefe_inmediato }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Puesto del Jefe Directo</span>
+                <span class="sap-kv-value">{{ puesto.puesto_jefe_inmediato }}</span>
+            </div>
         </div>
+    </div>
 
-        <h3>Requisitos y Condiciones</h3>
-        <div class="detail-grid">
-            <div class="detail-item"><span class="label">Experiencia Mínima</span><span class="value">{{ puesto.experiencia_minima|default:"N/A" }} años</span></div>
-            <div class="detail-item"><span class="label">Carrera Sugerida</span><span class="value">{{ puesto.carrera_sugerida|default:"N/A" }}</span></div>
-            <div class="detail-item"><span class="label">Horario</span><span class="value">{{ puesto.horario }}</span></div>
-            <div class="detail-item"><span class="label">Sueldo Base (Bruto)</span><span class="value">${{ puesto.sueldo_base|default:"N/A" }}</span></div>
-            <div class="detail-item full-width"><span class="label">Conocimientos y Herramientas</span><span class="value">{{ puesto.conocimientos_tecnicos }} / {{ puesto.herramientas_puesto }}</span></div>
-            {% if puesto.esquema_comisiones %}<div class="detail-item full-width"><span class="label">Esquema de Comisiones/Bonos</span><span class="value">{{ puesto.esquema_comisiones|linebreaks }}</span></div>{% endif %}
-            {% if puesto.archivo_justificacion %}<div class="detail-item full-width"><span class="label">Documento de Justificación</span><span class="value"><a href="{{ puesto.archivo_justificacion.url }}" target="_blank">Ver Documento Adjunto</a></span></div>{% endif %}
+    <!-- Section 2: Justification and duties -->
+    <div class="sap-object-section">
+        <h2 class="sap-section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            Justificación y Funciones del Puesto
+        </h2>
+        <div class="sap-kv-grid">
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Motivo de Requisición</span>
+                <span class="sap-kv-value"><span class="sap-badge sap-badge-neutral">{{ puesto.get_motivo_requisicion_display }}</span></span>
+            </div>
+            {% if puesto.reemplaza_a %}
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Sustituye a</span>
+                <span class="sap-kv-value">{{ puesto.reemplaza_a }}</span>
+            </div>
+            {% endif %}
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Misión / Objetivo del Puesto</span>
+                <span class="sap-kv-value" style="line-height: 1.6;">{{ puesto.objetivo_puesto|linebreaks }}</span>
+            </div>
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Principales Responsabilidades y Funciones</span>
+                <span class="sap-kv-value" style="line-height: 1.6;">{{ puesto.funciones_puesto|linebreaks }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Requirements and compensation -->
+    <div class="sap-object-section">
+        <h2 class="sap-section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="M7 15h0M2 9.5h20"></path>
+            </svg>
+            Perfil Requerido y Condiciones de Contratación
+        </h2>
+        <div class="sap-kv-grid">
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Experiencia Mínima</span>
+                <span class="sap-kv-value">{{ puesto.experiencia_minima|default:"0" }} años</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Formación Académica Sugerida</span>
+                <span class="sap-kv-value">{{ puesto.carrera_sugerida|default:"No especificada" }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Horario Laboral</span>
+                <span class="sap-kv-value">{{ puesto.horario|default:"Jornada habitual de agencia" }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Sueldo Base Mensual (Bruto)</span>
+                <span class="sap-kv-value">
+                    <span class="sap-badge sap-badge-success" style="font-size: 0.95rem; font-weight: 700;">
+                        ${{ puesto.sueldo_base|default:"N/A" }}
+                    </span>
+                </span>
+            </div>
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Conocimientos Técnicos y Herramientas</span>
+                <span class="sap-kv-value">{{ puesto.conocimientos_tecnicos|default:"N/A" }} / {{ puesto.herramientas_puesto|default:"N/A" }}</span>
+            </div>
+            {% if puesto.esquema_comisiones %}
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Esquema de Comisiones y Bonos</span>
+                <span class="sap-kv-value">{{ puesto.esquema_comisiones|linebreaks }}</span>
+            </div>
+            {% endif %}
+            {% if puesto.archivo_justificacion %}
+            <div class="sap-kv-item sap-kv-full">
+                <span class="sap-kv-label">Documento de Soporte Adjunto</span>
+                <span class="sap-kv-value">
+                    <a href="{{ puesto.archivo_justificacion.url }}" target="_blank" class="sap-doc-link">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Descargar / Ver Documento de Requisición
+                    </a>
+                </span>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -1,80 +1,197 @@
-{% if 'Asesoras' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_staff %}
-    <a href="{% url 'bolsa_trabajo_consulta' %}" class="menu-item">
-        <div class="menu-item__icon">👥</div>
-        <div class="menu-item__text"><h4>Bolsa de Trabajo</h4><p>Explora la base de datos de candidatos libres.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-    <a href="{% url 'mis_procesos' %}" class="menu-item">
-        <div class="menu-item__icon">📋</div>
-        <div class="menu-item__text"><h4>Mis Procesos</h4><p>Gestiona el avance de tus candidatos asignados.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-    <a href="{% url 'mis_vacantes' %}" class="menu-item">
-        <div class="menu-item__icon">📥</div>
-        <div class="menu-item__text"><h4>Mis Vacantes Asignadas</h4><p>Revisa las vacantes listas para iniciar la búsqueda.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-{% endif %}
+<!-- Cuadrícula de Tiles SAP Fiori Launchpad (Cero Emoticonos) -->
 
-{% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
-    <a href="{% url 'portal_gerente' %}" class="menu-item">
-        <div class="menu-item__icon">✍️</div>
-        <div class="menu-item__text">
-            <h4>Mi Portal de Gerente</h4>
-            <p>Crea nuevas solicitudes de vacantes y da seguimiento.</p>
-        </div>
-        {% if candidatos_entrevista_count > 0 %}
-            <div class="menu-item__stat" style="background-color: #fef3c7; color: #b45309;" title="Candidatos listos para entrevista">
-                {{ candidatos_entrevista_count }} por entrevistar
+<!-- SECCIÓN 1: ATRACCIÓN Y SELECCIÓN DE TALENTO -->
+{% if 'Asesoras' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_staff or user.is_superuser %}
+<div class="sap-tile-group">
+    <div class="sap-tile-group-title">Atracción y Pipeline de Talento</div>
+    <div class="sap-tiles-grid">
+        <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 3s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
             </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Bolsa de Trabajo</h4>
+                <p class="sap-tile-desc">Repositorio general de candidatos evaluados y disponibles.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Consultar talento</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+
+        <a href="{% url 'mis_procesos' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Mis Procesos Asignados</h4>
+                <p class="sap-tile-desc">Gestión y avance de postulantes en el embudo de selección.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Gestionar candidatos</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+
+        <a href="{% url 'mis_vacantes' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Mis Vacantes en Búsqueda</h4>
+                <p class="sap-tile-desc">Requisiciones autorizadas asignadas a mi cartera.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Revisar requisiciones</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- SECCIÓN 2: GESTIÓN OPERATIVA Y APROBACIONES -->
+<div class="sap-tile-group">
+    <div class="sap-tile-group-title">Operaciones y Aprobaciones</div>
+    <div class="sap-tiles-grid">
+        {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
+        <a href="{% url 'portal_gerente' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Portal del Gerente Operativo</h4>
+                <p class="sap-tile-desc">Solicitar nuevas vacantes y evaluar entrevistas con candidatos.</p>
+            </div>
+            <div class="sap-tile-footer">
+                {% if candidatos_entrevista_count > 0 %}
+                    <span class="sap-tile-badge-warning">{{ candidatos_entrevista_count }} por entrevistar</span>
+                {% else %}
+                    <span class="sap-tile-action-text">Gestionar vacantes</span>
+                {% endif %}
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
         {% endif %}
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-{% endif %}
 
-{% if 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-    <a href="{% url 'vista_asignar_puestos' %}" class="menu-item">
-        <div class="menu-item__icon">📌</div>
-        <div class="menu-item__text"><h4>Asignar Vacantes</h4><p>Distribuye las vacantes autorizadas entre las asesoras.</p></div>
-        <div class="menu-item__stat">{{ puestos_por_asignar }}</div>
-    </a>
-    <a href="{% url 'vista_supervisar_procesos' %}" class="menu-item">
-        <div class="menu-item__icon">👀</div>
-        <div class="menu-item__text"><h4>Supervisar Procesos</h4><p>Monitorea y reasigna la carga de trabajo.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-{% endif %}
+        {% if user.is_staff or 'Gerente General de Marca' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
+        <a href="{% url 'lista_solicitudes' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Aprobaciones Pendientes</h4>
+                <p class="sap-tile-desc">Bandeja de requisiciones que requieren revisión y autorización.</p>
+            </div>
+            <div class="sap-tile-footer">
+                {% if pendientes_aprobacion > 0 %}
+                    <span class="sap-tile-badge-warning">{{ pendientes_aprobacion }} pendientes</span>
+                {% else %}
+                    <span class="sap-tile-badge-success">Al día (0)</span>
+                {% endif %}
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+        {% endif %}
 
+        {% if 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
+        <a href="{% url 'vista_asignar_puestos' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M18 17H6v-2h12v2zm0-4H6v-2h12v2zm0-4H6V7h12v2zM3 22l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Asignación de Vacantes</h4>
+                <p class="sap-tile-desc">Distribución de puestos autorizados hacia las analistas.</p>
+            </div>
+            <div class="sap-tile-footer">
+                {% if puestos_por_asignar > 0 %}
+                    <span class="sap-tile-badge-warning">{{ puestos_por_asignar }} por asignar</span>
+                {% else %}
+                    <span class="sap-tile-badge-success">Sin pendientes</span>
+                {% endif %}
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+
+        <a href="{% url 'vista_supervisar_procesos' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Supervisión de Procesos</h4>
+                <p class="sap-tile-desc">Monitoreo de tiempos, avance y reasignación de carga de trabajo.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Supervisar carga</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- SECCIÓN 3: BUSINESS INTELLIGENCE Y AUDITORÍA -->
 {% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or 'Gerente General de Marca' in user_groups or 'Asesoras' in user_groups or user.is_superuser %}
-    <a href="{% url 'vista_reportes' %}" class="menu-item">
-        <div class="menu-item__icon">📊</div>
-        <div class="menu-item__text"><h4>Dashboard de Indicadores y BI</h4><p>SLA de cobertura, embudo de vacantes y trazabilidad 360°.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-    <a href="{% url 'vista_historial_general' %}" class="menu-item">
-        <div class="menu-item__icon">📜</div>
-        <div class="menu-item__text"><h4>Historial de Actividad</h4><p>Revisa un registro completo de todas las acciones.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-    <a href="{% url 'biblioteca_perfiles' %}" class="menu-item">
-        <div class="menu-item__icon">📚</div>
-        <div class="menu-item__text"><h4>Biblioteca de Perfiles</h4><p>Consulta y reutiliza los perfiles de vacantes.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
-{% endif %}
+<div class="sap-tile-group">
+    <div class="sap-tile-group-title">Business Intelligence y Control</div>
+    <div class="sap-tiles-grid">
+        <a href="{% url 'vista_reportes' %}" class="sap-tile sap-tile-featured">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Suite Analítica Ejecutiva & BI</h4>
+                <p class="sap-tile-desc">Cumplimiento de SLAs, embudo operativo, matrices por agencia y usuario.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Abrir Dashboard 360°</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
 
-{% if user.is_staff or 'Gerente General de Marca' in user_groups or user.is_superuser %}
-    <a href="{% url 'lista_solicitudes' %}" class="menu-item">
-        <div class="menu-item__icon">✅</div>
-        <div class="menu-item__text"><h4>Aprobaciones Pendientes</h4><p>Nuevos puestos que requieren tu autorización.</p></div>
-        <div class="menu-item__stat">{{ pendientes_aprobacion }}</div>
-    </a>
-{% endif %}
+        <a href="{% url 'vista_historial_general' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Bitácora de Auditoría</h4>
+                <p class="sap-tile-desc">Registro pormenorizado de todas las operaciones realizadas.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Consultar logs</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
 
-{% if user.is_superuser %}
-    <a href="{% url 'admin:index' %}" class="menu-item">
-        <div class="menu-item__icon">⚙️</div>
-        <div class="menu-item__text"><h4>Admin Avanzado</h4><p>Accede al panel de Django para una gestión detallada.</p></div>
-        <div class="menu-item__arrow">&rarr;</div>
-    </a>
+        <a href="{% url 'biblioteca_perfiles' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Biblioteca de Perfiles</h4>
+                <p class="sap-tile-desc">Catálogo corporativo de descripciones y perfiles de puesto.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Explorar perfiles</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+
+        {% if user.is_superuser %}
+        <a href="{% url 'admin:index' %}" class="sap-tile">
+            <div class="sap-tile-icon-box">
+                <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </div>
+            <div class="sap-tile-content">
+                <h4 class="sap-tile-title">Consola de Administración</h4>
+                <p class="sap-tile-desc">Gestión avanzada de seguridad, usuarios y base de datos.</p>
+            </div>
+            <div class="sap-tile-footer">
+                <span class="sap-tile-action-text">Entrar a Django Admin</span>
+                <span class="sap-tile-arrow">&rarr;</span>
+            </div>
+        </a>
+        {% endif %}
+    </div>
+</div>
 {% endif %}

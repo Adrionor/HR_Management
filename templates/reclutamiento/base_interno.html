@@ -3,72 +3,476 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Portal de Reclutamiento{% endblock %} - Premier Automotriz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestión de Talento Humano{% endblock %} | Premier Automotriz</title>
+    
+    <!-- Tipografía Enterprise (SAP 72 / Segoe UI / Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- DataTables & Chart.js -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
-        .navbar {
-            background-color: #3498db;
-            color: white;
-            padding: 0.8em 2em;
+        /* ==========================================================================
+           SISTEMA DE DISEÑO SAP FIORI / HORIZON - PREMIER AUTOMOTRIZ
+           ========================================================================== */
+        :root {
+            --sap-shell-bg: #1d2d3e;
+            --sap-shell-hover: #26384c;
+            --sap-primary: #0070f2;
+            --sap-primary-hover: #0057b8;
+            --sap-primary-active: #00418a;
+            --sap-surface: #ffffff;
+            --sap-bg: #f5f6f8;
+            --sap-border: #d9dde3;
+            --sap-border-subtle: #e5e8ec;
+            --sap-text: #1d2d3e;
+            --sap-muted: #59697a;
+            --sap-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            
+            /* Semáforos y Estados Semánticos (Sin Emojis) */
+            --sap-success-bg: #e7f6ec;
+            --sap-success-text: #107e3e;
+            --sap-success-border: #bfe7ce;
+            --sap-success-dot: #107e3e;
+
+            --sap-warning-bg: #fff4e5;
+            --sap-warning-text: #b25900;
+            --sap-warning-border: #feddb0;
+            --sap-warning-dot: #b25900;
+
+            --sap-error-bg: #ffeef0;
+            --sap-error-text: #bb0000;
+            --sap-error-border: #fcced3;
+            --sap-error-dot: #bb0000;
+
+            --sap-info-bg: #e8f3ff;
+            --sap-info-text: #0057b8;
+            --sap-info-border: #b6d8ff;
+            --sap-info-dot: #0057b8;
+
+            --sap-neutral-bg: #f1f3f5;
+            --sap-neutral-text: #495057;
+            --sap-neutral-border: #dee2e6;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--sap-font);
+            background-color: var(--sap-bg);
+            color: var(--sap-text);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --------------------------------------------------------------------------
+           SAP ShellBar (Barra de Navegación Principal)
+           -------------------------------------------------------------------------- */
+        .sap-shellbar {
+            background-color: var(--sap-shell-bg);
+            color: #ffffff;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .sap-shellbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .sap-logo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+        }
+        .sap-logo-link img {
+            height: 32px;
+            width: auto;
+            border-radius: 4px;
+            background: #ffffff;
+            padding: 2px 6px;
+        }
+        .sap-brand-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .sap-brand-subtitle {
+            font-weight: 400;
+            font-size: 0.82rem;
+            color: #9cb1c9;
+            border-left: 1px solid #3c5067;
+            padding-left: 10px;
+            margin-left: 4px;
+            white-space: nowrap;
+        }
+
+        .sap-shellbar-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 1rem;
+        }
+        .sap-nav-item {
+            color: #c9d8ea;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+        .sap-nav-item:hover, .sap-nav-item.active {
+            color: #ffffff;
+            background-color: var(--sap-shell-hover);
+        }
+
+        .sap-shellbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .sap-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background-color: var(--sap-shell-hover);
+            color: #ffffff;
+            font-size: 0.85rem;
+        }
+        .sap-user-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background-color: var(--sap-primary);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .sap-shell-link {
+            color: #9cb1c9;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+        .sap-shell-link:hover { color: #ffffff; }
+
+        .sap-btn-logout {
+            background: transparent;
+            border: 1px solid #4a6380;
+            color: #c9d8ea;
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .sap-btn-logout:hover {
+            background-color: #bb0000;
+            border-color: #bb0000;
+            color: #ffffff;
+        }
+
+        /* --------------------------------------------------------------------------
+           Estructura de Contenido y Headers SAP
+           -------------------------------------------------------------------------- */
+        .sap-main-content {
+            padding: 1.5rem 2rem;
+            min-height: calc(100vh - 90px);
+        }
+        @media (max-width: 768px) {
+            .sap-main-content { padding: 1rem; }
+            .sap-brand-subtitle { display: none; }
+        }
+
+        /* --------------------------------------------------------------------------
+           Sistema de Botones SAP Fiori
+           -------------------------------------------------------------------------- */
+        .sap-btn {
+            font-family: var(--sap-font);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .sap-btn-primary {
+            background-color: var(--sap-primary);
+            color: #ffffff;
+            border-color: var(--sap-primary);
+        }
+        .sap-btn-primary:hover {
+            background-color: var(--sap-primary-hover);
+            border-color: var(--sap-primary-hover);
+        }
+        .sap-btn-secondary {
+            background-color: #ffffff;
+            color: var(--sap-text);
+            border-color: var(--sap-border);
+        }
+        .sap-btn-secondary:hover {
+            background-color: #f1f3f5;
+            border-color: #b9bec5;
+        }
+        .sap-btn-positive {
+            background-color: #107e3e;
+            color: #ffffff;
+            border-color: #107e3e;
+        }
+        .sap-btn-positive:hover { background-color: #0b612e; }
+        .sap-btn-negative {
+            background-color: #bb0000;
+            color: #ffffff;
+            border-color: #bb0000;
+        }
+        .sap-btn-negative:hover { background-color: #990000; }
+        .sap-btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+        /* --------------------------------------------------------------------------
+           Badges y Puntos de Estado Semánticos (CERO EMOJIS)
+           -------------------------------------------------------------------------- */
+        .sap-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+        .sap-badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .sap-badge-success {
+            background-color: var(--sap-success-bg);
+            color: var(--sap-success-text);
+            border-color: var(--sap-success-border);
+        }
+        .sap-badge-success .sap-badge-dot { background-color: var(--sap-success-dot); }
+
+        .sap-badge-warning {
+            background-color: var(--sap-warning-bg);
+            color: var(--sap-warning-text);
+            border-color: var(--sap-warning-border);
+        }
+        .sap-badge-warning .sap-badge-dot { background-color: var(--sap-warning-dot); }
+
+        .sap-badge-error {
+            background-color: var(--sap-error-bg);
+            color: var(--sap-error-text);
+            border-color: var(--sap-error-border);
+        }
+        .sap-badge-error .sap-badge-dot { background-color: var(--sap-error-dot); }
+
+        .sap-badge-info {
+            background-color: var(--sap-info-bg);
+            color: var(--sap-info-text);
+            border-color: var(--sap-info-border);
+        }
+        .sap-badge-info .sap-badge-dot { background-color: var(--sap-info-dot); }
+
+        .sap-badge-neutral {
+            background-color: var(--sap-neutral-bg);
+            color: var(--sap-neutral-text);
+            border-color: var(--sap-neutral-border);
+        }
+        .sap-badge-neutral .sap-badge-dot { background-color: var(--sap-neutral-text); }
+
+        /* --------------------------------------------------------------------------
+           Tarjetas y Contenedores SAP
+           -------------------------------------------------------------------------- */
+        .sap-card {
+            background-color: var(--sap-surface);
+            border: 1px solid var(--sap-border);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .sap-card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--sap-border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: #ffffff;
         }
-        .navbar .logo-container {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            color: white;
-        }
-        .navbar .logo-container img {
-            height: 50px;
-            width: auto;
-            margin-right: 15px;
-        }
-        .navbar .logo-container h1 {
+        .sap-card-title {
             margin: 0;
-            font-size: 1.5em;
-            font-weight: 600;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--sap-text);
         }
-        .navbar .user-info { display: flex; align-items: center; }
-        .navbar-link { text-decoration: underline; margin: 0 10px; color: white; font-weight: 600; }
-        .logout-button { background: none; border: none; color: white; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 1em; cursor: pointer; padding: 0; margin-left: 5px; text-decoration: underline; }
+        .sap-card-body { padding: 1.25rem; }
 
-        /* Bloque para que cada página hija pueda añadir sus propios estilos */
+        /* --------------------------------------------------------------------------
+           Formularios e Inputs SAP
+           -------------------------------------------------------------------------- */
+        .sap-form-group { margin-bottom: 1.2rem; }
+        .sap-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--sap-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .sap-input, .sap-select, .sap-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--sap-text);
+            background-color: #ffffff;
+            border: 1px solid var(--sap-border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .sap-input:focus, .sap-select:focus, .sap-textarea:focus {
+            outline: none;
+            border-color: var(--sap-primary);
+            box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
+        }
+
+        /* --------------------------------------------------------------------------
+           Tablas Enterprise DataTables
+           -------------------------------------------------------------------------- */
+        table.dataTable {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            font-size: 0.88rem;
+        }
+        table.dataTable thead th {
+            background-color: #1d2d3e !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            padding: 10px 12px !important;
+            border-bottom: 1px solid #101c29 !important;
+            white-space: nowrap;
+        }
+        table.dataTable tbody td {
+            padding: 10px 12px !important;
+            border-bottom: 1px solid var(--sap-border-subtle) !important;
+            vertical-align: middle;
+            color: var(--sap-text);
+        }
+        table.dataTable tbody tr:hover {
+            background-color: #f8fafc !important;
+        }
+
+        /* Footer */
+        .sap-footer {
+            border-top: 1px solid var(--sap-border);
+            background-color: #ffffff;
+            padding: 1rem 2rem;
+            font-size: 0.8rem;
+            color: var(--sap-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Íconos SVG Utility (24x24 estándar, 16x16 pequeño) */
+        .sap-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+        .sap-icon-lg { width: 22px; height: 22px; }
+
         {% block style %}{% endblock %}
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <a href="{% url 'dashboard' %}" class="logo-container">
-            <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier">
-            <h1>Portal de Reclutamiento</h1>
-        </a>
-        <div class="user-info">
-            <span>Hola, {{ user.get_full_name|default:user.username }} |</span>
-            <a href="{% url 'password_change' %}" class="navbar-link">Cambiar Contraseña</a> |
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+    <!-- SAP ShellBar -->
+    <header class="sap-shellbar">
+        <div class="sap-shellbar-left">
+            <a href="{% url 'dashboard' %}" class="sap-logo-link">
+                <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Premier Automotriz">
+                <div>
+                    <span class="sap-brand-title">Premier Automotriz</span>
+                    <span class="sap-brand-subtitle">Gestión de Talento Humano</span>
+                </div>
+            </a>
+            <nav class="sap-shellbar-nav">
+                <a href="{% url 'dashboard' %}" class="sap-nav-item">Portal Principal</a>
+                <a href="{% url 'vista_reportes' %}" class="sap-nav-item">Suite Analítica BI</a>
+            </nav>
+        </div>
+
+        <div class="sap-shellbar-right">
+            <div class="sap-user-chip">
+                <div class="sap-user-avatar">
+                    {{ user.username|slice:":2" }}
+                </div>
+                <span>{{ user.get_full_name|default:user.username }}</span>
+            </div>
+            <a href="{% url 'password_change' %}" class="sap-shell-link">Seguridad</a>
+            <form action="{% url 'logout' %}" method="post" style="display: inline; margin: 0;">
                 {% csrf_token %}
-                <button type="submit" class="logout-button">Cerrar Sesión</button>
+                <button type="submit" class="sap-btn-logout">Cerrar Sesión</button>
             </form>
         </div>
-    </nav>
+    </header>
 
-    <main>
+    <!-- Contenido Principal -->
+    <main class="sap-main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer">
-        <p>Copyright © {% now "Y" %} Premier Automotriz. Todos los derechos reservados.</p>
+    <!-- Footer Corporativo -->
+    <footer class="sap-footer">
+        <div>Premier Automotriz &bull; Sistema de Atracción, Selección y Business Intelligence</div>
+        <div>Confidencial &bull; Uso Interno Corporativo &bull; {% now "Y" %}</div>
     </footer>
 
+    <!-- Scripts Base -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
