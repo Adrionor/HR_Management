@@ -188,7 +188,11 @@
                         {% endif %}
                     </td>
                     <td>
-                        {{ sol.asesora_encargada.get_full_name|default:sol.asesora_encargada.username|default:"<span style='color:#94a3b8;'>Por asignar</span>"|safe }}
+                        {% if sol.asesora_encargada %}
+                            {{ sol.asesora_encargada.get_full_name|default:sol.asesora_encargada.username }}
+                        {% else %}
+                            <span style="color:#94a3b8;">Por asignar</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}

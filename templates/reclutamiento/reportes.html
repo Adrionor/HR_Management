@@ -52,6 +52,28 @@
     .sla-pill.gray { background-color: #f1f5f9; color: #475569; }
 
     .etapa-badge { font-weight: 600; font-size: 0.85em; color: #1e293b; display: inline-block; background-color: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; }
+
+    /* Paginación mejorada */
+    .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5em; padding-top: 1em; border-top: 1px solid #e2e8f0; }
+    .pagination-info { font-size: 0.9em; color: #64748b; }
+    .pagination-links { display: flex; gap: 5px; }
+    .pagination-links a, .pagination-links span { 
+        padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; 
+        text-decoration: none; color: #1e293b; font-size: 0.9em; 
+    }
+    .pagination-links a:hover { background-color: #f1f5f9; }
+    .pagination-links .current { background-color: #2563eb; color: white; border-color: #2563eb; font-weight: 600; }
+    .pagination-links .disabled { color: #94a3b8; pointer-events: none; }
+
+    /* Indicador de carga */
+    .loading-indicator { 
+        display: none; 
+        text-align: center; 
+        padding: 2em; 
+        color: #64748b; 
+        font-weight: 600; 
+    }
+    .loading-indicator.active { display: block; }
 </style>
 {% endblock %}
 
@@ -197,7 +219,13 @@
         </h3>
         <p style="color: #64748b; font-size: 0.9em; margin-bottom: 1.5em;">
             Consulta la posición exacta de cada vacante en el proceso, días transcurridos vs meta y el candidato más avanzado.
+            <strong>Mostrando {{ puestos.start_index }}-{{ puestos.end_index }} de {{ paginator.count }} vacantes</strong>
         </p>
+
+        <div class="loading-indicator" id="loadingIndicator">
+            <div style="font-size: 2em; margin-bottom: 10px;">⏳</div>
+            <div>Cargando datos...</div>
+        </div>
 
         <table id="puestosReportTable" class="display" style="width:100%">
             <thead>
@@ -229,7 +257,11 @@
                         <small style="display: block; color: #64748b;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
                     </td>
                     <td>
-                        {{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username|default:"<span style='color:#94a3b8;'>Sin Asignar</span>"|safe }}
+                        {% if puesto.asesora_encargada %}
+                            {{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username }}
+                        {% else %}
+                            <span style="color:#94a3b8;">Sin Asignar</span>
+                        {% endif %}
                     </td>
                     <td>
                         <span class="etapa-badge">{{ puesto.etapa_operativa }}</span>
@@ -273,6 +305,36 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <!-- Paginación mejorada -->
+        {% if paginator.num_pages > 1 %}
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Página {{ puestos.number }} de {{ paginator.num_pages }} ({{ paginator.count }} registros totales)
+            </div>
+            <div class="pagination-links">
+                {% if puestos.has_previous %}
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.previous_page_number }}">« Anterior</a>
+                {% else %}
+                    <span class="disabled">« Anterior</span>
+                {% endif %}
+
+                {% for page_num in paginator.page_range %}
+                    {% if page_num == puestos.number %}
+                        <span class="current">{{ page_num }}</span>
+                    {% else %}
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if puestos.has_next %}
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.next_page_number }}">Siguiente »</a>
+                {% else %}
+                    <span class="disabled">Siguiente »</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -280,10 +342,19 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    // Mostrar indicador de carga cuando se aplican filtros
+    $('#filterForm').on('submit', function() {
+        $('#loadingIndicator').addClass('active');
+        $('#puestosReportTable').hide();
+    });
+
+    // Inicializar DataTables pero deshabilitar paginación nativa (usamos la nuestra)
     $('#puestosReportTable').DataTable({
         "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
-        "order": [],
-        "pageLength": 25
+        "ordering": true,
+        "searching": true,
+        "paging": false,  // Deshabilitamos paginación de DataTables para usar la de Django
+        "info": false     // Deshabilitamos info de DataTables
     });
 
     // 1. Gráfico Embudo de Vacantes

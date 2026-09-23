@@ -194,70 +194,25 @@ def biblioteca_perfiles_view(request):
 @login_required
 @user_passes_test(puede_ver_reportes, login_url=reverse_lazy('acceso_denegado'))
 def reportes_view(request):
-    usuario = request.user
-
-    # 1. Base queryset con scoping según rol
-    if usuario.is_superuser or usuario.is_staff or es_gerente_ch(usuario):
-        puestos_qs = Puesto.objects.all()
-    elif es_gerente_general(usuario) and hasattr(usuario, 'perfilusuario'):
-        marcas_usuario = usuario.perfilusuario.marcas.all()
-        puestos_qs = Puesto.objects.filter(marca__in=marcas_usuario)
-    elif es_asesora(usuario):
-        puestos_qs = Puesto.objects.filter(asesora_encargada=usuario)
-    else:
-        puestos_qs = Puesto.objects.filter(solicitado_por=usuario)
-
-    puestos_qs = puestos_qs.select_related(
-        'titulo', 'marca', 'solicitado_por', 'asesora_encargada', 'perfil_detallado'
-    ).prefetch_related('procesos', 'procesos__candidato')
-
-    # Catálogos para filtros
-    marcas_disponibles = Marca.objects.filter(id__in=puestos_qs.values_list('marca_id', flat=True).distinct()).order_by('nombre')
-    agencias_disponibles = sorted(list(set(puestos_qs.exclude(agencia__isnull=True).exclude(agencia='').values_list('agencia', flat=True))))
-    ciudades_codigos = sorted(list(set(puestos_qs.exclude(ciudad__isnull=True).exclude(ciudad='').values_list('ciudad', flat=True))))
-    ciudades_map = dict(Puesto.CIUDADES_CHOICES)
-    ciudades_disponibles = [{'codigo': c, 'nombre': ciudades_map.get(c, c)} for c in ciudades_codigos]
-    asesoras_disponibles = User.objects.filter(id__in=puestos_qs.filter(asesora_encargada__isnull=False).values_list('asesora_encargada_id', flat=True).distinct()).order_by('first_name', 'username')
-
-    # 2. Aplicar filtros GET
-    fecha_desde = request.GET.get('fecha_desde', '').strip()
-    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
-    marca_filtro = request.GET.get('marca', '').strip()
-    agencia_filtro = request.GET.get('agencia', '').strip()
-    ciudad_filtro = request.GET.get('ciudad', '').strip()
-    asesora_filtro = request.GET.get('asesora', '').strip()
-    sla_filtro = request.GET.get('sla', '').strip()
-    etapa_filtro = request.GET.get('etapa', '').strip()
-
-    if fecha_desde:
-        puestos_qs = puestos_qs.filter(fecha_solicitud__date__gte=fecha_desde)
-    if fecha_hasta:
-        puestos_qs = puestos_qs.filter(fecha_solicitud__date__lte=fecha_hasta)
-    if marca_filtro and marca_filtro.isdigit():
-        puestos_qs = puestos_qs.filter(marca_id=int(marca_filtro))
-    if agencia_filtro:
-        puestos_qs = puestos_qs.filter(agencia=agencia_filtro)
-    if ciudad_filtro:
-        puestos_qs = puestos_qs.filter(ciudad=ciudad_filtro)
-    if asesora_filtro and asesora_filtro.isdigit():
-        puestos_qs = puestos_qs.filter(asesora_encargada_id=int(asesora_filtro))
-
-    # Convertir a lista para filtros computados (SLA y Etapa Operativa)
-    lista_puestos = list(puestos_qs)
-
-    if sla_filtro:
-        lista_puestos = [p for p in lista_puestos if p.estatus_sla == sla_filtro]
-    if etapa_filtro:
-        lista_puestos = [p for p in lista_puestos if p.etapa_operativa == etapa_filtro]
-
-    # Ordenar: primero abiertas (vencidas primero), luego cubiertas
-    def orden_puesto(p):
-        peso_sla = {'VENCIDA': 0, 'POR_VENCER': 1, 'EN_TIEMPO': 2, 'CUBIERTA': 3, 'CANCELADA': 4}.get(p.estatus_sla, 5)
-        return (not p.esta_abierto, peso_sla, -p.fecha_solicitud.timestamp())
-
-    lista_puestos.sort(key=orden_puesto)
-
-    # 3. Exportación a CSV si se solicita
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from .services import ReportesService
+    
+    # Recopilar filtros del request
+    filtros = {
+        'fecha_desde': request.GET.get('fecha_desde', '').strip(),
+        'fecha_hasta': request.GET.get('fecha_hasta', '').strip(),
+        'marca': request.GET.get('marca', '').strip(),
+        'agencia': request.GET.get('agencia', '').strip(),
+        'ciudad': request.GET.get('ciudad', '').strip(),
+        'asesora': request.GET.get('asesora', '').strip(),
+        'sla': request.GET.get('sla', '').strip(),
+        'etapa': request.GET.get('etapa', '').strip(),
+    }
+    
+    # Generar datos usando el service layer
+    datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
+    
+    # 3. Exportación a CSV si se solicita (antes de paginación)
     if request.GET.get('export') == 'csv':
         response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
         response['Content-Disposition'] = f'attachment; filename="reporte_vacantes_{timezone.now().strftime("%Y%m%d_%H%M")}.csv"'
@@ -269,7 +224,7 @@ def reportes_view(request):
             'Etapa Operativa', 'Plazas Solicitadas', 'Plazas Cubiertas',
             'Candidato Más Avanzado', 'Última Observación'
         ])
-        for p in lista_puestos:
+        for p in datos_reporte['puestos']:
             cand = p.candidato_mas_avanzado
             writer.writerow([
                 p.id,
@@ -290,116 +245,54 @@ def reportes_view(request):
                 p.ultima_observacion
             ])
         return response
-
-    # 4. Cálculo de KPIs Ejecutivos
-    total_vacantes = len(lista_puestos)
-    vacantes_activas = [p for p in lista_puestos if p.esta_abierto]
-    total_activas = len(vacantes_activas)
-
-    vencidas = [p for p in vacantes_activas if p.estatus_sla == 'VENCIDA']
-    por_vencer = [p for p in vacantes_activas if p.estatus_sla == 'POR_VENCER']
-    en_tiempo = [p for p in vacantes_activas if p.estatus_sla == 'EN_TIEMPO']
-
-    cubiertas = [p for p in lista_puestos if not p.esta_abierto and p.estatus_autorizacion != Puesto.EstatusAutorizacion.RECHAZADO]
-    total_cubiertas = len(cubiertas)
-
-    total_plazas_solicitadas = sum(p.cantidad_vacantes for p in lista_puestos)
-    total_plazas_cubiertas = sum(p.plazas_cubiertas for p in lista_puestos)
-
-    # % de cumplimiento SLA sobre las activas
-    cumplimiento_sla = round(((len(en_tiempo) + len(por_vencer)) / total_activas * 100), 1) if total_activas > 0 else 100.0
-
-    # Promedio de días transcurridos / tiempo de cobertura
-    tiempos = [p.dias_transcurridos for p in lista_puestos]
-    promedio_dias_cobertura = round(sum(tiempos) / len(tiempos), 1) if tiempos else 0
-
-    # 5. Agregación para Gráficos Chart.js
-    etapas_orden = [
-        '1. En Aprobación', '2. Por Asignar Asesora', '3. Por Definir Perfil',
-        '4. En Búsqueda', '5. En Filtros y Evaluaciones', '6. En Entrevista con Jefe Inmediato',
-        '7. En Trámites de Ingreso', '8. Cubierta / Cerrada'
-    ]
-    conteo_etapas = {etapa: 0 for etapa in etapas_orden}
-    for p in lista_puestos:
-        if p.etapa_operativa in conteo_etapas:
-            conteo_etapas[p.etapa_operativa] += 1
-        elif 'Rechazada' in p.etapa_operativa:
-            conteo_etapas['8. Cubierta / Cerrada'] += 1
-
-    chart_embudo_labels = list(conteo_etapas.keys())
-    chart_embudo_data = list(conteo_etapas.values())
-
-    # SLA por Agencia (Top 8 agencias con más vacantes)
-    agencias_conteo = {}
-    for p in vacantes_activas:
-        ag = p.agencia or "Sin Agencia"
-        if ag not in agencias_conteo:
-            agencias_conteo[ag] = {'en_tiempo': 0, 'vencida': 0}
-        if p.estatus_sla == 'VENCIDA':
-            agencias_conteo[ag]['vencida'] += 1
-        else:
-            agencias_conteo[ag]['en_tiempo'] += 1
-
-    top_agencias = sorted(agencias_conteo.items(), key=lambda x: (x[1]['en_tiempo'] + x[1]['vencida']), reverse=True)[:8]
-    chart_agencias_labels = [item[0] for item in top_agencias]
-    chart_agencias_en_tiempo = [item[1]['en_tiempo'] for item in top_agencias]
-    chart_agencias_vencidas = [item[1]['vencida'] for item in top_agencias]
-
-    # Carga por Asesora
-    asesoras_conteo = {}
-    for p in lista_puestos:
-        asesora_nom = p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar"
-        if asesora_nom not in asesoras_conteo:
-            asesoras_conteo[asesora_nom] = {'activas': 0, 'cubiertas': 0}
-        if p.esta_abierto:
-            asesoras_conteo[asesora_nom]['activas'] += 1
-        else:
-            asesoras_conteo[asesora_nom]['cubiertas'] += 1
-
-    top_asesoras = sorted(asesoras_conteo.items(), key=lambda x: (x[1]['activas'] + x[1]['cubiertas']), reverse=True)
-    chart_asesoras_labels = [item[0] for item in top_asesoras]
-    chart_asesoras_activas = [item[1]['activas'] for item in top_asesoras]
-    chart_asesoras_cubiertas = [item[1]['cubiertas'] for item in top_asesoras]
-
+    
+    # Implementar paginación para la tabla de resultados
+    puestos_paginados = datos_reporte['puestos']
+    page = request.GET.get('page', 1)
+    paginator = Paginator(puestos_paginados, 25)  # 25 items por página
+    
+    try:
+        puestos_page = paginator.page(page)
+    except PageNotAnInteger:
+        puestos_page = paginator.page(1)
+    except EmptyPage:
+        puestos_page = paginator.page(paginator.num_pages)
+    
+    # Preparar contexto para el template
     contexto = {
-        'puestos': lista_puestos,
-        'total_vacantes': total_vacantes,
-        'total_activas': total_activas,
-        'vencidas_count': len(vencidas),
-        'por_vencer_count': len(por_vencer),
-        'en_tiempo_count': len(en_tiempo),
-        'total_cubiertas': total_cubiertas,
-        'total_plazas_solicitadas': total_plazas_solicitadas,
-        'total_plazas_cubiertas': total_plazas_cubiertas,
-        'cumplimiento_sla': cumplimiento_sla,
-        'promedio_dias_cobertura': promedio_dias_cobertura,
+        'puestos': puestos_page,  # Ahora es la página paginada
+        'paginator': paginator,
+        'page_obj': puestos_page,
+        
+        # KPIs (calculados sobre todos los datos, no solo la página)
+        'total_vacantes': datos_reporte['kpis']['total_vacantes'],
+        'total_activas': datos_reporte['kpis']['total_activas'],
+        'vencidas_count': datos_reporte['kpis']['vencidas_count'],
+        'por_vencer_count': datos_reporte['kpis']['por_vencer_count'],
+        'en_tiempo_count': datos_reporte['kpis']['en_tiempo_count'],
+        'total_cubiertas': datos_reporte['kpis']['total_cubiertas'],
+        'total_plazas_solicitadas': datos_reporte['kpis']['total_plazas_solicitadas'],
+        'total_plazas_cubiertas': datos_reporte['kpis']['total_plazas_cubiertas'],
+        'cumplimiento_sla': datos_reporte['kpis']['cumplimiento_sla'],
+        'promedio_dias_cobertura': datos_reporte['kpis']['promedio_dias_cobertura'],
 
         # Filtros
-        'marcas_disponibles': marcas_disponibles,
-        'agencias_disponibles': agencias_disponibles,
-        'ciudades_disponibles': ciudades_disponibles,
-        'asesoras_disponibles': asesoras_disponibles,
-        'etapas_disponibles': etapas_orden,
-        'filtros_aplicados': {
-            'fecha_desde': fecha_desde,
-            'fecha_hasta': fecha_hasta,
-            'marca': marca_filtro,
-            'agencia': agencia_filtro,
-            'ciudad': ciudad_filtro,
-            'asesora': asesora_filtro,
-            'sla': sla_filtro,
-            'etapa': etapa_filtro,
-        },
+        'marcas_disponibles': datos_reporte['catalogos']['marcas'],
+        'agencias_disponibles': datos_reporte['catalogos']['agencias'],
+        'ciudades_disponibles': datos_reporte['catalogos']['ciudades'],
+        'asesoras_disponibles': datos_reporte['catalogos']['asesoras'],
+        'etapas_disponibles': datos_reporte['chart_data']['etapas_disponibles'],
+        'filtros_aplicados': datos_reporte['filtros_aplicados'],
 
         # Datos JSON para Chart.js
-        'chart_embudo_labels_json': json.dumps(chart_embudo_labels),
-        'chart_embudo_data_json': json.dumps(chart_embudo_data),
-        'chart_agencias_labels_json': json.dumps(chart_agencias_labels),
-        'chart_agencias_en_tiempo_json': json.dumps(chart_agencias_en_tiempo),
-        'chart_agencias_vencidas_json': json.dumps(chart_agencias_vencidas),
-        'chart_asesoras_labels_json': json.dumps(chart_asesoras_labels),
-        'chart_asesoras_activas_json': json.dumps(chart_asesoras_activas),
-        'chart_asesoras_cubiertas_json': json.dumps(chart_asesoras_cubiertas),
+        'chart_embudo_labels_json': json.dumps(datos_reporte['chart_data']['embudo_labels']),
+        'chart_embudo_data_json': json.dumps(datos_reporte['chart_data']['embudo_data']),
+        'chart_agencias_labels_json': json.dumps(datos_reporte['chart_data']['agencias_labels']),
+        'chart_agencias_en_tiempo_json': json.dumps(datos_reporte['chart_data']['agencias_en_tiempo']),
+        'chart_agencias_vencidas_json': json.dumps(datos_reporte['chart_data']['agencias_vencidas']),
+        'chart_asesoras_labels_json': json.dumps(datos_reporte['chart_data']['asesoras_labels']),
+        'chart_asesoras_activas_json': json.dumps(datos_reporte['chart_data']['asesoras_activas']),
+        'chart_asesoras_cubiertas_json': json.dumps(datos_reporte['chart_data']['asesoras_cubiertas']),
     }
     return render(request, 'reclutamiento/reportes.html', contexto)
 
