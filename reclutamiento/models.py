@@ -124,6 +124,7 @@ class Puesto(models.Model):
         help_text="Anexa un correo o documento que respalde la solicitud (PDF, Word, etc.)"
     )
     es_confidencial = models.BooleanField(default=False, verbose_name="¿Es una vacante confidencial?")
+    motivo_rechazo = models.TextField(null=True, blank=True, verbose_name="Motivo de Rechazo")
 
     # --- Flujo de Aprobación y Asignación (campos que ya teníamos) ---
     estatus_autorizacion = models.CharField(max_length=20, choices=EstatusAutorizacion.choices, default=EstatusAutorizacion.PENDIENTE)
@@ -137,6 +138,149 @@ class Puesto(models.Model):
     fecha_segunda_autorizacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Segunda Aprobación")
     esta_abierto = models.BooleanField(default=False)
     asesora_encargada = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='puestos_asignados')
+
+    METAS_POR_PUESTO_DEFAULT = {
+        'Asesor(a) de ventas': 20, 'Asesor(a) de ventas de flotillas': 20, 'Asesor de servicio': 20,
+        'Vendedor Ecommerce': 12, 'Vendedor de Mayoreo Colisión': 12, 'Vendedor de Mayoreo Foráneo': 12,
+        'Vendedor de Mayoreo Partes': 12, 'Asesor de ventas accesorios': 12, 'Vendedor de Mostrador': 12,
+        'Previador': 12, 'Asesor(a) leads': 12, 'Intercambios': 12, 'Guardia de seguridad': 12,
+        'Lavador de autos': 12, 'Chofer': 12, 'Chofer/Almacenisa': 12, 'Ayudante de Técnico': 12,
+        'Hojalatero': 12, 'Pintor': 12, 'Preparador': 12, 'Pulidor': 12, 'Asesor de HYP': 12,
+        'Despachador de Body shop': 12, 'Despachador de Ventanilla': 12, 'Encargado de patio': 12,
+        'Encargado de Exhibición y Demos': 12, 'Encargado de Previas': 12, 'Jefe de lavado': 12,
+        'Responding': 12, 'Especialista de marketing Digital': 12, 'Auxiliar contable': 20,
+        'Auxiliar de F&I': 12, 'Administradora de ventas': 12, 'Facturista': 12,
+        'Comprador(a) de autos': 12, 'Asistente de dirección': 12, 'Auxiliar de Citas': 12,
+        'Administrador(a) de garantías': 12, 'Auxiliar de Garantías': 12, 'Auxiliar administrativo': 12,
+        'Auxiliar administrativo HYP': 12, 'Almacenista': 12, 'Conmutador': 12,
+        'Encargado(a) de Caja general': 12, 'Asesor(a) de capital humano': 12,
+        'Auxiliar Crédito y Cobranza': 12, 'Cobrador': 12, 'Encargado(a) de Crédito y cobranza': 12,
+        'Contador(a) general': 12, 'Office boy': 12, 'Subcontador(a)': 12, 'Practicante': 10,
+        'Asesor de sistemas': 20, 'Control de Calidad': 20, 'Técnico en Diagnóstico': 20,
+        'Técnico en Mantenimiento': 20, 'Técnico en Reparación': 20, 'Técnico Master': 20,
+        'Técnico de HyP': 20, 'Valuador': 20, 'Auditor Interno': 20, 'Capacitador': 20,
+        'Auditor(a) de marca': 20, 'Asesor(a) de Mejora Continua': 20, 'Especialista en contenido': 20,
+        'Diseñador(a) Sr.': 20, 'Diseñador(a) training': 20, 'Ejecutivo(a) de Responding': 20,
+        'Ejecutiva de Imagen': 20, 'Especialista en Paid Media': 20,
+        'Especialista en Paid Media Training': 20, 'Productor(a) Audiovisual': 20,
+        'User Experience Jr': 20, 'Ejecutivo(a) BTL': 20, 'Médico general': 20,
+        'Técnico de motos': 20, 'Técnico de autos': 20, 'Asesor(a) de Normatividad': 20,
+        'Encargado de mantenimiento': 20, 'Coord Gastos Médicos Mayores': 20,
+        'Subgerente de Capital Humano': 20, 'Coord. Desarrollo y Bienestar': 20,
+        'Coord. Vinculación con la Comunidad': 20, 'Coord. Comunicación interna': 20,
+        'Coord. De Clima y Mentoring': 20, 'Gerente de ATL y Digital': 20, 'Gerente de BTL': 20,
+        'Gerente de Hospitalidad': 20, 'Subgerente de ventas': 20,
+        'Encargado(a) de Mejora continua': 20, 'Encargado(a) de Mercadotecnia': 20,
+        'Encargado de Sistemas': 20, 'Coordinador de Seguridad': 20, 'Supervisor de seguridad': 20,
+        'Coordinador(a) de Hospitalidad y Responding': 20, 'Coordinador(a) de Publicidad': 20,
+        'Coordinador(a) ETA': 20, 'Coordinador(a) Digital': 20, 'Jefe de taller HyP': 20,
+        'Jefe de taller ': 20, 'Coordinador de HYP': 20, 'Encargado de compras': 20,
+        'Jefe de almacén': 20, 'Jefe de Mayoreo de Colisión': 20, 'Jefe de Mayoreo Partes': 20,
+        'Jefe de ventas Mostrador': 20, 'Subgerente de refacciones': 20, 'Subgerente de Sistemas': 20,
+        'Coordinador(a) de Leds': 20, 'Encargado(a) de Inventarios': 20,
+        'Coordinador(a) de Citas': 20, 'Coordinador(a) de asesores de servicio': 20,
+        'Encargado(a) de F&I': 20, 'Gerente General / Comercial / Director': 30,
+        'Gerente de servicio / ventas /  refacciones / administrativo / seminuevos / HYP': 25,
+        'Gerente Corporativo': 25
+    }
+
+    @property
+    def plazas_cubiertas(self):
+        return self.procesos.filter(estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO).count()
+
+    @property
+    def plazas_pendientes(self):
+        return max(0, self.cantidad_vacantes - self.plazas_cubiertas)
+
+    @property
+    def esta_completamente_cubierta(self):
+        return self.plazas_cubiertas >= self.cantidad_vacantes
+
+    @property
+    def dias_meta(self):
+        puesto_nom = self.titulo.nombre if self.titulo else ""
+        return self.METAS_POR_PUESTO_DEFAULT.get(puesto_nom, 20)
+
+    @property
+    def dias_transcurridos(self):
+        if not self.esta_abierto:
+            if self.estatus_autorizacion == self.EstatusAutorizacion.RECHAZADO:
+                fecha_fin = self.fecha_aprobacion_director or self.fecha_aprobacion_gerente_marca or self.fecha_solicitud
+            else:
+                ultimo_contratado = self.procesos.filter(
+                    estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO
+                ).order_by('-fecha_inicio_etapa').first()
+                fecha_fin = ultimo_contratado.fecha_inicio_etapa if ultimo_contratado else timezone.now()
+            return max(0, (fecha_fin - self.fecha_solicitud).days)
+        return max(0, (timezone.now() - self.fecha_solicitud).days)
+
+    @property
+    def fecha_limite_sla(self):
+        return self.fecha_solicitud + timezone.timedelta(days=self.dias_meta)
+
+    @property
+    def estatus_sla(self):
+        if not self.esta_abierto:
+            if self.estatus_autorizacion == self.EstatusAutorizacion.RECHAZADO:
+                return 'CANCELADA'
+            return 'CUBIERTA'
+        dias = self.dias_transcurridos
+        meta = self.dias_meta
+        if dias > meta:
+            return 'VENCIDA'
+        elif meta - dias <= 3:
+            return 'POR_VENCER'
+        return 'EN_TIEMPO'
+
+    @property
+    def etapa_operativa(self):
+        if self.estatus_autorizacion in [self.EstatusAutorizacion.PENDIENTE, self.EstatusAutorizacion.PENDIENTE_DIR]:
+            return '1. En Aprobación'
+        if self.estatus_autorizacion == self.EstatusAutorizacion.RECHAZADO:
+            return 'Rechazada / Cancelada'
+        if not self.esta_abierto:
+            return '8. Cubierta / Cerrada'
+        if not self.asesora_encargada:
+            return '2. Por Asignar Asesora'
+        if not hasattr(self, 'perfil_detallado'):
+            return '3. Por Definir Perfil'
+
+        procesos_activos = self.procesos.exclude(
+            estatus_proceso__in=[Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
+        )
+        if not procesos_activos.exists():
+            return '4. En Búsqueda'
+
+        estatus_set = set(procesos_activos.values_list('estatus_proceso', flat=True))
+        tramites = [
+            Proceso.Estatus.EXAMENES_MEDICOS, Proceso.Estatus.SOLICITUD_DOCS,
+            Proceso.Estatus.FIRMA_CONTRATO, Proceso.Estatus.ALTA_SISTEMAS, Proceso.Estatus.FECHA_INGRESO
+        ]
+        if any(e in estatus_set for e in tramites):
+            return '7. En Trámites de Ingreso'
+        if Proceso.Estatus.ENTREVISTA_JEFE in estatus_set:
+            return '6. En Entrevista con Jefe Inmediato'
+        filtros = [
+            Proceso.Estatus.NUEVO, Proceso.Estatus.INTEGRIDAD,
+            Proceso.Estatus.PSICOMETRICOS, Proceso.Estatus.REFERENCIAS,
+            Proceso.Estatus.ENTREVISTA_ASESORA
+        ]
+        if any(e in estatus_set for e in filtros):
+            return '5. En Filtros y Evaluaciones'
+
+        return '4. En Búsqueda'
+
+    @property
+    def candidato_mas_avanzado(self):
+        proc = self.procesos.exclude(
+            estatus_proceso__in=[Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
+        ).order_by('-fecha_inicio_etapa').first()
+        return proc.candidato if proc else None
+
+    @property
+    def ultima_observacion(self):
+        proc = self.procesos.order_by('-fecha_inicio_etapa').first()
+        return proc.retroalimentacion if proc and proc.retroalimentacion else "Sin observaciones"
 
     def __str__(self):
         return f"{self.titulo} ({self.get_ciudad_display()})"
@@ -347,18 +491,6 @@ class PerfilDePuesto(models.Model):
 
     def __str__(self):
         return f"Perfil para {self.puesto.titulo.nombre}"
-
-
-# --- SEÑALES AL FINAL ---
-@receiver(post_save, sender=User)
-def ensure_user_profile(sender, instance, **kwargs):
-    """
-    Asegura que cada User tenga un PerfilUsuario asociado.
-    Si el usuario es nuevo, crea el perfil.
-    Si el usuario ya existe pero no tiene perfil, se lo crea.
-    Si ya existe el perfil, no hace nada.
-    """
-    PerfilUsuario.objects.get_or_create(usuario=instance)
 
 
 class Aviso(models.Model):

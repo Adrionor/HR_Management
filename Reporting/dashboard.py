@@ -1,16 +1,28 @@
+import os
+from pathlib import Path
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine
 from datetime import datetime
 
+# Cargar .env si existe en el directorio raíz
+env_path = Path(__file__).resolve().parent.parent / '.env'
+if env_path.exists():
+    with open(env_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
 # ==============================================================================
 # 1. CONFIGURACIÓN Y CONSULTA A LA BASE DE DATOS
 # ==============================================================================
-DB_USER = "readonly_user"
-DB_PASSWORD = "GrupoPremi3r25$"
-DB_HOST = "recursos-humanos.ckgrykmwkt91.us-east-1.rds.amazonaws.com"
-DB_PORT = "5432"
-DB_NAME = "recursos_humanos"
+DB_USER = os.environ.get("DB_USER", "readonly_user")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
+DB_HOST = os.environ.get("DB_HOST", "recursos-humanos.ckgrykmwkt91.us-east-1.rds.amazonaws.com")
+DB_PORT = os.environ.get("DB_PORT", "5432")
+DB_NAME = os.environ.get("DB_NAME", "recursos_humanos")
 
 SQL_QUERY = """
 SELECT
@@ -27,7 +39,7 @@ SELECT
     proc.fecha_inicio_etapa AS fecha_del_estatus,
     proc.retroalimentacion,
     pub.monto_inversion,
-    cand.medio_conocimiento
+    cand.motivo_busqueda AS medio_conocimiento
 FROM
     public.reclutamiento_proceso AS proc
 LEFT JOIN

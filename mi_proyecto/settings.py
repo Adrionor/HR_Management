@@ -16,16 +16,27 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# Cargar variables de entorno desde archivo .env si existe
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    with open(env_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, val = line.split('=', 1)
+                os.environ.setdefault(key.strip(), val.strip())
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qe!iin2wvekik3sbuc&bvxq&b#sau&$#n9@5zz&b=)di=zpa84'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-qe!iin2wvekik3sbuc&bvxq&b#sau&$#n9@5zz&b=)di=zpa84')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = []
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS')
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['aguzmaninz.pythonanywhere.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -130,7 +141,6 @@ LOGOUT_REDIRECT_URL = 'login'    # A dónde ir después de cerrar sesión
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-ALLOWED_HOSTS = ['aguzmaninz.pythonanywhere.com','127.0.0.1']
 
 # mi_proyecto/settings.py
 

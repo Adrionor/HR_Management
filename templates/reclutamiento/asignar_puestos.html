@@ -43,7 +43,7 @@
                     <small style="display: block; color: #7f8c8d;">{{ puesto.marca.nombre }} - {{ puesto.get_ciudad_display }}</small>
                 </td>
                 <td>{{ puesto.get_area_display }}</td>
-                <td>{{ puesto.jefe_inmediato_nombre }}</td>
+                <td>{{ puesto.nombre_jefe_inmediato }}</td>
                 <td>{{ puesto.get_motivo_requisicion_display }}</td>
                 <td style="text-align: center;">{{ puesto.experiencia_minima|default:"N/A" }}</td>
                 <td style="white-space: nowrap;">${{ puesto.sueldo_base|default:"N/A" }}</td>

@@ -1,79 +1,274 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Dashboard de Reportes{% endblock %}
+{% block title %}Dashboard Ejecutivo de Reclutamiento y BI{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 1400px; }
-    h2, h3 { color: #34495e; }
-    h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 1.5em; margin-bottom: 1em; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
-    .kpi-card { background-color: #ffffff; border-radius: 10px; padding: 1.5em; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid #3498db; }
-    .kpi-card h3 { margin: 0 0 0.5em 0; font-size: 1em; color: #7f8c8d; text-transform: uppercase; border: none; }
-    .kpi-card .number { font-size: 2.5em; font-weight: 700; color: #2c3e50; }
-    .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; }
-    .report-table-container { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .report-table { width: 100%; border-collapse: collapse; margin-top: 1em; }
-    .report-table thead th { background-color: #ecf0f1; color: #34495e; padding: 12px; text-align: left; }
-    .report-table tbody td { padding: 12px; border-bottom: 1px solid #ecf0f1; }
-    .report-section { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 2em; }
-    table.dataTable thead th { background-color: #34495e; color: #ffffff; }
-    a.history-link { font-weight: 600; color: #3498db; text-decoration: none; }
+    .container { max-width: 96%; margin: 1.5em auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; gap: 1em; }
+    h1, h2, h3 { color: #1e293b; }
+    h1 { font-size: 1.85em; font-weight: 700; margin: 0; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .boton-volver { text-decoration: none; background-color: #64748b; color: white; padding: 0.6em 1.2em; border-radius: 6px; font-weight: 600; font-size: 0.9em; }
+    .btn-export { text-decoration: none; background-color: #059669; color: white; padding: 0.6em 1.2em; border-radius: 6px; font-weight: 600; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-export:hover { background-color: #047857; }
+
+    /* Barra de Filtros Ejecutivos */
+    .filter-panel { background: #ffffff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 2em; border: 1px solid #e2e8f0; }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em; align-items: flex-end; }
+    .filter-group label { display: block; font-size: 0.82em; font-weight: 600; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-group select, .filter-group input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.9em; box-sizing: border-box; }
+    .filter-buttons { display: flex; gap: 8px; }
+    .btn-filter { background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-filter:hover { background-color: #1d4ed8; }
+    .btn-clear { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9em; }
+
+    /* Tarjetas de KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2em; margin-bottom: 2em; }
+    .kpi-card { background-color: #ffffff; border-radius: 10px; padding: 1.2em 1.5em; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; border-left: 5px solid #3b82f6; }
+    .kpi-card.kpi-red { border-left-color: #ef4444; }
+    .kpi-card.kpi-yellow { border-left-color: #f59e0b; }
+    .kpi-card.kpi-green { border-left-color: #10b981; }
+    .kpi-card.kpi-purple { border-left-color: #8b5cf6; }
+    .kpi-card h4 { margin: 0 0 0.3em 0; font-size: 0.82em; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-card .number { font-size: 2.2em; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .kpi-card .subtext { font-size: 0.82em; color: #64748b; margin-top: 5px; }
+
+    /* Gráficos */
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
+    .chart-container { background: #ffffff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .chart-container h3 { margin-top: 0; font-size: 1.1em; color: #334155; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.6em; }
+
+    /* Sábana de Datos */
+    .table-container { background: #ffffff; padding: 1.8em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    table.dataTable thead th { background-color: #1e293b; color: #ffffff; font-size: 0.88em; padding: 10px 8px; }
+    table.dataTable tbody td { font-size: 0.9em; padding: 8px 8px; vertical-align: middle; }
+
+    .sla-pill { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; display: inline-block; white-space: nowrap; }
+    .sla-pill.red { background-color: #fee2e2; color: #991b1b; }
+    .sla-pill.yellow { background-color: #fef3c7; color: #92400e; }
+    .sla-pill.green { background-color: #dcfce7; color: #166534; }
+    .sla-pill.gray { background-color: #f1f5f9; color: #475569; }
+
+    .etapa-badge { font-weight: 600; font-size: 0.85em; color: #1e293b; display: inline-block; background-color: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="header">
-        <h1>Dashboard de Indicadores</h1>
-        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Portal</a>
+        <div>
+            <h1>Dashboard Ejecutivo de Reclutamiento y BI</h1>
+            <p style="margin: 0; color: #64748b;">Visión 360° en tiempo real del embudo de talento, cumplimiento de SLAs y trazabilidad por vacante.</p>
+        </div>
+        <div class="header-actions">
+            <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv" class="btn-export">
+                📥 Descargar Sábana Excel (CSV)
+            </a>
+            <a href="{% url 'dashboard' %}" class="boton-volver">← Portal Principal</a>
+        </div>
     </div>
 
-    <h2>Indicadores Clave (KPIs)</h2>
+    <!-- PANEL DE FILTROS EJECUTIVOS -->
+    <div class="filter-panel">
+        <form method="get" id="filterForm">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Fecha Desde</label>
+                    <input type="date" name="fecha_desde" value="{{ filtros_aplicados.fecha_desde }}">
+                </div>
+                <div class="filter-group">
+                    <label>Fecha Hasta</label>
+                    <input type="date" name="fecha_hasta" value="{{ filtros_aplicados.fecha_hasta }}">
+                </div>
+                <div class="filter-group">
+                    <label>Marca</label>
+                    <select name="marca">
+                        <option value="">Todas las Marcas</option>
+                        {% for m in marcas_disponibles %}
+                        <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Agencia</label>
+                    <select name="agencia">
+                        <option value="">Todas las Agencias</option>
+                        {% for ag in agencias_disponibles %}
+                        <option value="{{ ag }}" {% if filtros_aplicados.agencia == ag %}selected{% endif %}>{{ ag }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ciudad</label>
+                    <select name="ciudad">
+                        <option value="">Todas las Ciudades</option>
+                        {% for c in ciudades_disponibles %}
+                        <option value="{{ c.codigo }}" {% if filtros_aplicados.ciudad == c.codigo %}selected{% endif %}>{{ c.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Asesora Encargada</label>
+                    <select name="asesora">
+                        <option value="">Todas las Asesoras</option>
+                        {% for as in asesoras_disponibles %}
+                        <option value="{{ as.id }}" {% if filtros_aplicados.asesora == as.id|stringformat:"s" %}selected{% endif %}>{{ as.get_full_name|default:as.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Semáforo SLA</label>
+                    <select name="sla">
+                        <option value="">Todos los Estados</option>
+                        <option value="EN_TIEMPO" {% if filtros_aplicados.sla == 'EN_TIEMPO' %}selected{% endif %}>🟢 En Tiempo</option>
+                        <option value="POR_VENCER" {% if filtros_aplicados.sla == 'POR_VENCER' %}selected{% endif %}>🟡 Por Vencer (≤3 días)</option>
+                        <option value="VENCIDA" {% if filtros_aplicados.sla == 'VENCIDA' %}selected{% endif %}>🔴 Vencida</option>
+                        <option value="CUBIERTA" {% if filtros_aplicados.sla == 'CUBIERTA' %}selected{% endif %}>⚪ Cubierta</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Etapa Operativa</label>
+                    <select name="etapa">
+                        <option value="">Todas las Etapas</option>
+                        {% for et in etapas_disponibles %}
+                        <option value="{{ et }}" {% if filtros_aplicados.etapa == et %}selected{% endif %}>{{ et }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-buttons">
+                    <button type="submit" class="btn-filter">Filtrar</button>
+                    <a href="{% url 'vista_reportes' %}" class="btn-clear">Limpiar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- TARJETAS DE KPIS EJECUTIVOS -->
     <div class="kpi-grid">
-        <div class="kpi-card" style="border-color: #3498db;"><h3>Total de Candidatos</h3><div class="number">{{ kpi_total_candidatos }}</div></div>
-        <div class="kpi-card" style="border-color: #9b59b6;"><h3>Total de Requisiciones</h3><div class="number">{{ kpi_total_requisiciones }}</div></div>
-        <div class="kpi-card" style="border-color: #f1c40f;"><h3>Procesos Activos</h3><div class="number">{{ kpi_procesos_activos }}</div></div>
-        <div class="kpi-card" style="border-color: #2ecc71;"><h3>Contrataciones (Últ. 30 días)</h3><div class="number">{{ kpi_contrataciones_recientes }}</div></div>
+        <div class="kpi-card">
+            <h4>Vacantes Activas</h4>
+            <div class="number">{{ total_activas }}</div>
+            <div class="subtext">De un total de {{ total_vacantes }} requisiciones</div>
+        </div>
+        <div class="kpi-card kpi-red">
+            <h4>Vacantes Vencidas (🔴)</h4>
+            <div class="number" style="color: #dc2626;">{{ vencidas_count }}</div>
+            <div class="subtext">Fuera de tiempo meta de cobertura</div>
+        </div>
+        <div class="kpi-card kpi-yellow">
+            <h4>Por Vencer (🟡)</h4>
+            <div class="number" style="color: #d97706;">{{ por_vencer_count }}</div>
+            <div class="subtext">Faltan ≤ 3 días para su límite</div>
+        </div>
+        <div class="kpi-card kpi-green">
+            <h4>En Tiempo (🟢)</h4>
+            <div class="number" style="color: #16a34a;">{{ en_tiempo_count }}</div>
+            <div class="subtext">{{ cumplimiento_sla }}% de cumplimiento SLA</div>
+        </div>
+        <div class="kpi-card kpi-purple">
+            <h4>Plazas Cubiertas</h4>
+            <div class="number" style="color: #7c3aed;">{{ total_plazas_cubiertas }} <span style="font-size: 0.5em; color: #64748b;">/ {{ total_plazas_solicitadas }}</span></div>
+            <div class="subtext">Promedio: {{ promedio_dias_cobertura }} días por vacante</div>
+        </div>
     </div>
 
-    <h2>Resúmenes de Actividad</h2>
-    <div class="report-grid">
-        <div class="report-table-container">
-            <h3>Carga por Asesora</h3>
-            <table class="report-table">
-                <thead><tr><th>Asesora</th><th style="text-align:center;">Puestos Asignados</th></tr></thead>
-                <tbody>
-                    {% for item in tabla_vacantes_por_asesora %}<tr><td>{{ item.asesora_encargada__username }}</td><td style="text-align:center;">{{ item.total }}</td></tr>{% endfor %}
-                </tbody>
-            </table>
+    <!-- GRÁFICOS INTERACTIVOS (CHART.JS) -->
+    <div class="charts-grid">
+        <div class="chart-container">
+            <h3>Embudo de Vacantes por Etapa Operativa</h3>
+            <canvas id="chartEmbudo" height="220"></canvas>
         </div>
-        <div class="report-table-container">
-            <h3>Procesos por Estatus</h3>
-            <table class="report-table">
-                <thead><tr><th>Estatus del Proceso</th><th style="text-align:center;">Cantidad</th></tr></thead>
-                <tbody>
-                    {% for item in tabla_procesos_por_estatus %}<tr><td>{{ item.estatus_legible }}</td><td style="text-align:center;">{{ item.total }}</td></tr>{% endfor %}
-                </tbody>
-            </table>
+        <div class="chart-container">
+            <h3>Estado de SLA por Agencia (Top Agencias)</h3>
+            <canvas id="chartAgencias" height="220"></canvas>
+        </div>
+        <div class="chart-container" style="grid-column: 1 / -1;">
+            <h3>Carga y Cobertura por Asesora (Activas vs Cubiertas)</h3>
+            <canvas id="chartAsesoras" height="120"></canvas>
         </div>
     </div>
 
-    <div class="report-section">
-        <h3>Reporte General de Puestos</h3>
+    <!-- SÁBANA DE DATOS Y TRAZABILIDAD VACANTE POR VACANTE -->
+    <div class="table-container">
+        <h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.6em;">
+            Sábana de Trazabilidad Vacante por Vacante
+        </h3>
+        <p style="color: #64748b; font-size: 0.9em; margin-bottom: 1.5em;">
+            Consulta la posición exacta de cada vacante en el proceso, días transcurridos vs meta y el candidato más avanzado.
+        </p>
+
         <table id="puestosReportTable" class="display" style="width:100%">
             <thead>
-                <tr><th>Puesto</th><th>Estatus</th><th>Asesora</th><th>Procesos</th><th>Acciones</th></tr>
+                <tr>
+                    <th>ID</th>
+                    <th>Puesto</th>
+                    <th>Marca / Agencia</th>
+                    <th>Asesora</th>
+                    <th>Etapa Operativa</th>
+                    <th>Plazas</th>
+                    <th>SLA (Transcurrido / Meta)</th>
+                    <th>Candidato Más Avanzado</th>
+                    <th>Última Observación</th>
+                    <th>Acciones</th>
+                </tr>
             </thead>
             <tbody>
                 {% for puesto in puestos %}
                 <tr>
-                    <td>{{ puesto.titulo.nombre }}</td>
-                    <td>{{ puesto.get_estatus_autorizacion_display }}</td>
-                    <td>{{ puesto.asesora_encargada.username|default:"Sin Asignar"|safe }}</td>
-                    <td style="text-align: center;">{{ puesto.num_procesos }}</td>
-                    <td><a href="{% url 'historial_puesto' puesto.id %}" class="history-link">Ver Historial</a></td>
+                    <td><strong>#{{ puesto.id }}</strong></td>
+                    <td>
+                        <a href="{% url 'puesto_detalle' puesto.id %}" target="_blank" style="font-weight: 700; color: #1e40af; text-decoration: none;">
+                            {{ puesto.titulo.nombre|default:"N/A" }}
+                        </a>
+                        <small style="display: block; color: #64748b;">Req: {{ puesto.fecha_solicitud|date:"d/m/Y" }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ puesto.marca.nombre }}</strong>
+                        <small style="display: block; color: #64748b;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
+                    </td>
+                    <td>
+                        {{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username|default:"<span style='color:#94a3b8;'>Sin Asignar</span>"|safe }}
+                    </td>
+                    <td>
+                        <span class="etapa-badge">{{ puesto.etapa_operativa }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <strong>{{ puesto.plazas_cubiertas }}</strong> / {{ puesto.cantidad_vacantes }}
+                    </td>
+                    <td>
+                        {% if puesto.esta_abierto %}
+                            {% if puesto.estatus_sla == 'VENCIDA' %}
+                                <span class="sla-pill red">🔴 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Vencida)</span>
+                            {% elif puesto.estatus_sla == 'POR_VENCER' %}
+                                <span class="sla-pill yellow">🟡 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Por Vencer)</span>
+                            {% else %}
+                                <span class="sla-pill green">🟢 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (En Tiempo)</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="sla-pill gray">⚪ Cerrada ({{ puesto.dias_transcurridos }}d)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with cand=puesto.candidato_mas_avanzado %}
+                            {% if cand %}
+                                <a href="{% url 'candidato_detalle' cand.id %}" target="_blank" style="font-weight: 600; color: #0284c7; text-decoration: underline;">
+                                    {{ cand.nombre_completo }}
+                                </a>
+                            {% else %}
+                                <span style="color: #94a3b8; font-style: italic;">Sin postulantes</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td style="max-width: 220px; font-size: 0.85em; color: #475569;" title="{{ puesto.ultima_observacion }}">
+                        {{ puesto.ultima_observacion|truncatechars:70 }}
+                    </td>
+                    <td>
+                        <a href="{% url 'historial_puesto' puesto.id %}" style="font-size: 0.85em; font-weight: 600; color: #2563eb; text-decoration: none;">
+                            📜 Historial
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -85,7 +280,105 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    $('#puestosReportTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" } });
+    $('#puestosReportTable').DataTable({
+        "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+        "order": [],
+        "pageLength": 25
+    });
+
+    // 1. Gráfico Embudo de Vacantes
+    const embudoLabels = JSON.parse('{{ chart_embudo_labels_json|safe }}');
+    const embudoData = JSON.parse('{{ chart_embudo_data_json|safe }}');
+    const ctxEmbudo = document.getElementById('chartEmbudo').getContext('2d');
+    new Chart(ctxEmbudo, {
+        type: 'bar',
+        data: {
+            labels: embudoLabels,
+            datasets: [{
+                label: 'Cantidad de Vacantes',
+                data: embudoData,
+                backgroundColor: [
+                    '#94a3b8', '#38bdf8', '#818cf8',
+                    '#f59e0b', '#ec4899', '#f97316',
+                    '#10b981', '#64748b'
+                ],
+                borderRadius: 5
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // 2. Gráfico SLA por Agencia
+    const agenciasLabels = JSON.parse('{{ chart_agencias_labels_json|safe }}');
+    const agenciasEnTiempo = JSON.parse('{{ chart_agencias_en_tiempo_json|safe }}');
+    const agenciasVencidas = JSON.parse('{{ chart_agencias_vencidas_json|safe }}');
+    const ctxAgencias = document.getElementById('chartAgencias').getContext('2d');
+    new Chart(ctxAgencias, {
+        type: 'bar',
+        data: {
+            labels: agenciasLabels,
+            datasets: [
+                {
+                    label: 'En Tiempo (🟢)',
+                    data: agenciasEnTiempo,
+                    backgroundColor: '#10b981',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Vencidas (🔴)',
+                    data: agenciasVencidas,
+                    backgroundColor: '#ef4444',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // 3. Gráfico Carga por Asesora
+    const asesorasLabels = JSON.parse('{{ chart_asesoras_labels_json|safe }}');
+    const asesorasActivas = JSON.parse('{{ chart_asesoras_activas_json|safe }}');
+    const asesorasCubiertas = JSON.parse('{{ chart_asesoras_cubiertas_json|safe }}');
+    const ctxAsesoras = document.getElementById('chartAsesoras').getContext('2d');
+    new Chart(ctxAsesoras, {
+        type: 'bar',
+        data: {
+            labels: asesorasLabels,
+            datasets: [
+                {
+                    label: 'Vacantes Activas en Proceso',
+                    data: asesorasActivas,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Vacantes Cubiertas / Concluidas',
+                    data: asesorasCubiertas,
+                    backgroundColor: '#94a3b8',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
 });
 </script>
 {% endblock %}

@@ -1,158 +1,330 @@
-<!DOCTYPE html>
+{% extends "reclutamiento/base_interno.html" %}
 {% load static %}
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Portal de Gerente</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f6; padding: 2em; margin: 0; }
-        .container { max-width: 1000px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; }
-        h1, h2 { color: #2c3e50; }
-        h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 2em; }
-        .header .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
-        form { margin-top: 1.5em; }
-        .form-section { border: 1px solid #ddd; padding: 1.5em 2em; border-radius: 8px; margin-bottom: 2em; }
-        .form-section legend { font-weight: 600; font-size: 1.2em; color: #34495e; padding: 0 0.5em; margin-left: 1em; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5em; }
-        .form-group { margin-bottom: 1em; }
-        .form-group label { display: block; margin-bottom: 0.5em; font-weight: 600; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: 'Poppins', sans-serif; font-size: 1em; }
-        .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; display: block; }
-        .file-upload-wrapper input[type="file"] { display: none; }
-        .boton-file { display: inline-block; padding: 10px 15px; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 600; }
-        #file-chosen-justificacion { margin-left: 10px; font-style: italic; color: #555; }
-        .boton-submit { background-color: #2ecc71; color: white; border: none; padding: 12px 25px; font-size: 1.1em; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 1em; }
-        .boton-submit:hover { background-color: #27ae60; }
-        #solicitudesTable thead th { background-color: #34495e; color: #ffffff; }
-        #solicitudesTable tbody tr:hover { background-color: #ecf0f1 !important; }
-        .checkbox-group { display: flex; align-items: center; gap: 10px; }
-        .checkbox-group input { width: auto; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header"><h1>Portal del Gerente Operativo</h1><a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a></div>
 
-        <section>
-            <h2>Solicitar Nueva Vacante</h2>
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {% if form.errors %}<p style="color:red;">Por favor, corrige los errores en el formulario.</p>{% endif %}
+{% block title %}Portal del Gerente Operativo{% endblock %}
 
-                <fieldset class="form-section"><legend>Información General</legend>
-                    <div class="form-grid">
-                        <div class="form-group">{{ form.marca.label_tag }}{{ form.marca }}</div>
-                        <div class="form-group">{{ form.agencia.label_tag }}{{ form.agencia }}</div>
-                        <div class="form-group">{{ form.titulo.label_tag }}{{ form.titulo }}</div>
-                        <div class="form-group">{{ form.ciudad.label_tag }}{{ form.ciudad }}</div>
-                        <div class="form-group">{{ form.area.label_tag }}{{ form.area }}</div>
-                        <div class="form-group">{{ form.cantidad_vacantes.label_tag }}{{ form.cantidad_vacantes }}</div>
-                        <div class="form-group">{{ form.nombre_jefe_inmediato.label_tag }}{{ form.nombre_jefe_inmediato }}</div>
-                        <div class="form-group">{{ form.puesto_jefe_inmediato.label_tag }}{{ form.puesto_jefe_inmediato }}</div>
-                    </div>
-                </fieldset>
+{% block style %}
+<style>
+    .container { max-width: 1200px; margin: 2em auto; padding: 0 1.5em; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2em; }
+    h1, h2, h3 { color: #2c3e50; }
+    h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5em; margin-top: 1.5em; }
+    .boton-volver { text-decoration: none; background-color: #95a5a6; color: white; padding: 0.6em 1.2em; border-radius: 5px; font-weight: 600; }
 
-                <fieldset class="form-section"><legend>Justificación y Funciones</legend>
-                    <div class="form-group">{{ form.motivo_requisicion.label_tag }}{{ form.motivo_requisicion }}</div>
+    .card { background-color: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 2em; }
 
-                    <div class="form-group" id="reemplaza_a_wrapper" style="display: none;">
-                        {{ form.reemplaza_a.label_tag }}
-                        {{ form.reemplaza_a }}
-                    </div>
-                    <div class="form-group">{{ form.objetivo_puesto.label_tag }}{{ form.objetivo_puesto }}</div>
-                    <div class="form-group">{{ form.funciones_puesto.label_tag }}<small class="help-text">{{ form.funciones_puesto.help_text }}</small>{{ form.funciones_puesto }}</div>
-                    <div class="form-group">{{ form.indicador_puesto.label_tag }}{{ form.indicador_puesto }}</div>
-                </fieldset>
+    .form-section { border: 1px solid #e2e8f0; padding: 1.5em 2em; border-radius: 8px; margin-bottom: 2em; background-color: #f8fafc; }
+    .form-section legend { font-weight: 600; font-size: 1.15em; color: #34495e; padding: 0 0.6em; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5em; }
+    .form-group { margin-bottom: 1em; }
+    .form-group label { display: block; margin-bottom: 0.4em; font-weight: 600; font-size: 0.9em; color: #475569; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 0.95em; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15); }
+    .help-text { font-size: 0.8em; color: #7f8c8d; margin-top: 4px; display: block; }
+    .file-upload-wrapper input[type="file"] { display: none; }
+    .boton-file { display: inline-block; padding: 10px 16px; background-color: #3498db; color: white; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9em; }
+    #file-chosen-justificacion { margin-left: 10px; font-style: italic; color: #64748b; font-size: 0.9em; }
+    .boton-submit { background-color: #2ecc71; color: white; border: none; padding: 12px 28px; font-size: 1.05em; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 1em; transition: background-color 0.2s; }
+    .boton-submit:hover { background-color: #27ae60; }
 
-                <fieldset class="form-section"><legend>Requisitos y Condiciones</legend>
-                    <div class="form-grid">
-                        <div class="form-group">{{ form.experiencia_minima.label_tag }}{{ form.experiencia_minima }}</div>
-                        <div class="form-group">{{ form.carrera_sugerida.label_tag }}{{ form.carrera_sugerida }}</div>
-                        <div class="form-group">{{ form.horario.label_tag }}{{ form.horario }}</div>
-                        <div class="form-group">{{ form.sueldo_base.label_tag }}{{ form.sueldo_base }}</div>
-                    </div>
-                    <div class="form-group">{{ form.herramientas_puesto.label_tag }}<small class="help-text">{{ form.herramientas_puesto.help_text }}</small>{{ form.herramientas_puesto }}</div>
-                    <div class="form-group">{{ form.conocimientos_tecnicos.label_tag }}<small class="help-text">{{ form.conocimientos_tecnicos.help_text }}</small>{{ form.conocimientos_tecnicos }}</div>
-                    <div class="form-group">{{ form.esquema_comisiones.label_tag }}{{ form.esquema_comisiones }}</div>
-                </fieldset>
+    /* Estilos para evaluación de candidatos */
+    .interview-card { border-left: 5px solid #f39c12; background: #fffdfa; padding: 1.5em; border-radius: 8px; margin-bottom: 1.2em; border-top: 1px solid #fed7aa; border-right: 1px solid #fed7aa; border-bottom: 1px solid #fed7aa; display: flex; flex-direction: column; gap: 1em; }
+    .interview-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+    .interview-candidate-name { font-size: 1.2em; font-weight: 700; color: #2c3e50; margin: 0; }
+    .interview-vacancy { color: #d97706; font-weight: 600; font-size: 0.95em; }
+    .candidate-meta { display: flex; gap: 15px; font-size: 0.88em; color: #64748b; flex-wrap: wrap; }
+    .interview-actions { background-color: #fff; padding: 1.2em; border-radius: 6px; border: 1px solid #f1f5f9; }
+    .eval-form { display: grid; grid-template-columns: 1fr; gap: 1em; }
+    .eval-buttons { display: flex; gap: 10px; }
+    .btn-eval-approve { background-color: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 5px; font-weight: 600; cursor: pointer; }
+    .btn-eval-approve:hover { background-color: #059669; }
+    .btn-eval-reject { background-color: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 5px; font-weight: 600; cursor: pointer; }
+    .btn-eval-reject:hover { background-color: #dc2626; }
 
-                <fieldset class="form-section"><legend>Documentación de Soporte</legend>
-                    <div class="form-group">
-                        <label for="{{ form.archivo_justificacion.id_for_label }}">{{ form.archivo_justificacion.label }}</label>
-                        <small class="help-text">{{ form.archivo_justificacion.help_text }}</small>
-                        <div class="file-upload-wrapper">
-                            <label for="{{ form.archivo_justificacion.id_for_label }}" class="boton-file">Seleccionar Archivo</label>
-                            <span id="file-chosen-justificacion">Ningún archivo seleccionado</span>
-                            {{ form.archivo_justificacion }}
-                        </div>
-                    </div>
-                </fieldset>
+    /* Badges de estado */
+    .badge-status { padding: 4px 10px; border-radius: 20px; font-size: 0.82em; font-weight: 600; display: inline-block; }
+    .badge-pending { background-color: #fef3c7; color: #92400e; }
+    .badge-authorized { background-color: #d1fae5; color: #065f46; }
+    .badge-rejected { background-color: #fee2e2; color: #991b1b; }
+    .badge-motivo { font-size: 0.82em; color: #b91c1c; background-color: #fff1f2; padding: 4px 8px; border-radius: 4px; display: block; margin-top: 4px; border-left: 3px solid #e11d48; }
 
-                {% if user.is_superuser %}
-                <fieldset class="form-section" style="border-color: #c0392b;">
-                    <legend style="color: #c0392b;">Opciones de Administrador</legend>
-                    <div class="form-group checkbox-group">
-                        {{ form.es_confidencial }} {{ form.es_confidencial.label_tag }}
-                    </div>
-                    <small class="help-text">Al marcar esta opción, la vacante no pasará por aprobación y no será pública.</small>
-                </fieldset>
-                {% endif %}
+    .sla-badge { font-weight: 700; font-size: 0.85em; padding: 3px 8px; border-radius: 4px; }
+    .sla-green { background-color: #dcfce7; color: #166534; }
+    .sla-yellow { background-color: #fef9c3; color: #854d0e; }
+    .sla-red { background-color: #fee2e2; color: #991b1b; }
 
-                <button type="submit" class="boton-submit">Enviar Solicitud de Requisición</button>
-            </form>
-        </section>
+    .messages { list-style-type: none; padding: 0; margin-bottom: 1.5em; }
+    .messages li { padding: 12px 18px; margin-bottom: 0.8em; border-radius: 6px; font-weight: 500; }
+    .messages .success { background-color: #dcfce7; color: #15803d; border-left: 4px solid #16a34a; }
+    .messages .info { background-color: #e0f2fe; color: #0369a1; border-left: 4px solid #0284c7; }
+    .messages .warning { background-color: #fef3c7; color: #b45309; border-left: 4px solid #d97706; }
+    .messages .error { background-color: #fee2e2; color: #b91c1c; border-left: 4px solid #dc2626; }
+</style>
+{% endblock %}
 
-        <hr style="margin: 3em 0;">
-
-        <section>
-            <h2>Historial y Estatus de Mis Solicitudes</h2>
-            <table id="solicitudesTable" class="display" style="width:100%">
-                <thead>
-                    <tr><th>Puesto</th><th>Fecha</th><th>Estatus</th><th>Asesora</th><th>Procesos</th></tr>
-                </thead>
-                <tbody>
-                    {% for solicitud in solicitudes %}
-                    <tr>
-                        <td>{{ solicitud.titulo }}</td><td>{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</td>
-                        <td>{{ solicitud.get_estatus_autorizacion_display }}</td>
-                        <td>{{ solicitud.asesora_encargada.username|default:"<span style='color:gray;'>Sin asignar</span>"|safe }}</td>
-                        <td>{{ solicitud.num_procesos }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
+{% block content %}
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>Portal del Gerente Operativo</h1>
+            <p style="margin: 0; color: #64748b;">Administra tus solicitudes de vacantes y evalúa candidatos listos para entrevista.</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="boton-volver">← Volver al Dashboard</a>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#solicitudesTable').DataTable({ "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json"  } });
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
-            $('#id_archivo_justificacion').on('change', function(){
-                const fileName = $(this)[0].files.length > 0 ? $(this)[0].files[0].name : 'Ningún archivo seleccionado';
-                $('#file-chosen-justificacion').text(fileName);
-            });
+    <!-- SECCIÓN 1: CANDIDATOS POR ENTREVISTAR (SI TIENE CANDIDATOS EN ENT_JF) -->
+    {% if candidatos_entrevista %}
+    <div class="card" style="border-top: 4px solid #f39c12;">
+        <h2>👤 Candidatos Pendientes de tu Entrevista ({{ candidatos_entrevista.count }})</h2>
+        <p style="color: #64748b; margin-bottom: 1.5em;">Los siguientes candidatos han superado los filtros iniciales de reclutamiento (Psicometría, Integridad, Referencias) y están listos para tu entrevista. Revisa su perfil y registra tu decisión.</p>
 
-            const motivoSelect = $('#id_motivo_requisicion');
-            const reemplazaWrapper = $('#reemplaza_a_wrapper');
-            function toggleReemplazaField() {
-                const selectedValue = motivoSelect.val();
-                if (selectedValue === 'ROT' || selectedValue === 'INCA') {
-                    reemplazaWrapper.slideDown();
-                } else {
-                    reemplazaWrapper.slideUp();
-                }
-            }
-            toggleReemplazaField();
-            motivoSelect.on('change', toggleReemplazaField);
+        {% for proc in candidatos_entrevista %}
+        <div class="interview-card">
+            <div class="interview-header">
+                <div>
+                    <h3 class="interview-candidate-name">{{ proc.candidato.nombre_completo }}</h3>
+                    <div class="interview-vacancy">Vacante: {{ proc.puesto.titulo.nombre }} ({{ proc.puesto.marca.nombre }} - {{ proc.puesto.get_ciudad_display }})</div>
+                </div>
+                <div class="candidate-meta">
+                    <span>📧 {{ proc.candidato.email }}</span>
+                    <span>📞 {{ proc.candidato.telefono|default:"N/A" }}</span>
+                    {% if proc.candidato.cv %}
+                        <a href="{{ proc.candidato.cv.url }}" target="_blank" style="color: #2563eb; font-weight: 600; text-decoration: underline;">📄 Ver CV Adjunto</a>
+                    {% endif %}
+                    <span style="color: #6b7280;">Enviado por: {{ proc.asesora_asignada.get_full_name|default:proc.asesora_asignada.username }}</span>
+                </div>
+            </div>
+
+            <div class="interview-actions">
+                <form method="post" class="eval-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="evaluar_candidato">
+                    <input type="hidden" name="proceso_id" value="{{ proc.id }}">
+
+                    <div>
+                        <label style="font-weight: 600; font-size: 0.9em; color: #374151; display: block; margin-bottom: 4px;">Retroalimentación y Observaciones de la Entrevista:</label>
+                        <textarea name="retroalimentacion_jefe" placeholder="Describe brevemente tus impresiones: fortalezas, debilidades, ajuste al puesto y condiciones acordadas..." rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-family: inherit;" required></textarea>
+                    </div>
+
+                    <div class="eval-buttons">
+                        <button type="submit" name="decision" value="APROBAR" class="btn-eval-approve">
+                            ✅ Aprobar Candidato (Pasa a Exámenes Médicos)
+                        </button>
+                        <button type="submit" name="decision" value="DESCARTAR" class="btn-eval-reject" onclick="return confirm('¿Confirmas que deseas descartar a este candidato? Retornará a la Bolsa de Trabajo.');">
+                            ❌ Descartar Candidato
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- SECCIÓN 2: HISTORIAL Y ESTATUS DE MIS SOLICITUDES -->
+    <div class="card">
+        <h2>📋 Historial y Estatus de Mis Vacantes</h2>
+        <p style="color: #64748b;">Monitorea el progreso de todas tus requisiciones de personal, tiempo transcurrido y plazas cubiertas.</p>
+
+        <table id="solicitudesTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Puesto</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Estatus / Autorización</th>
+                    <th>Etapa Operativa</th>
+                    <th>Plazas</th>
+                    <th>SLA / Días</th>
+                    <th>Asesora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sol in solicitudes %}
+                <tr>
+                    <td>
+                        <a href="{% url 'puesto_detalle' sol.id %}" style="font-weight: 700; color: #1e40af; text-decoration: none;">
+                            {{ sol.titulo.nombre }}
+                        </a>
+                        <small style="display: block; color: #64748b;">{{ sol.marca.nombre }} - {{ sol.get_ciudad_display }}</small>
+                    </td>
+                    <td>{{ sol.fecha_solicitud|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if sol.estatus_autorizacion == 'AUTORIZADO' %}
+                            <span class="badge-status badge-authorized">✅ Autorizado</span>
+                        {% elif sol.estatus_autorizacion == 'RECHAZADO' %}
+                            <span class="badge-status badge-rejected">❌ Rechazado</span>
+                            {% if sol.motivo_rechazo %}
+                                <div class="badge-motivo"><strong>Motivo:</strong> {{ sol.motivo_rechazo }}</div>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge-status badge-pending">⏳ {{ sol.get_estatus_autorizacion_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight: 600; color: #334155;">{{ sol.etapa_operativa }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <strong>{{ sol.plazas_cubiertas }}</strong> / {{ sol.cantidad_vacantes }}
+                    </td>
+                    <td>
+                        {% if sol.esta_abierto %}
+                            {% if sol.estatus_sla == 'VENCIDA' %}
+                                <span class="sla-badge sla-red">🔴 {{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d (Vencida)</span>
+                            {% elif sol.estatus_sla == 'POR_VENCER' %}
+                                <span class="sla-badge sla-yellow">🟡 {{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d (Por vencer)</span>
+                            {% else %}
+                                <span class="sla-badge sla-green">🟢 {{ sol.dias_transcurridos }}/{{ sol.dias_meta }}d (En tiempo)</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #64748b; font-size: 0.85em;">Concluida en {{ sol.dias_transcurridos }}d</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ sol.asesora_encargada.get_full_name|default:sol.asesora_encargada.username|default:"<span style='color:#94a3b8;'>Por asignar</span>"|safe }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2em; color: #64748b;">No has registrado solicitudes de vacantes aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECCIÓN 3: SOLICITAR NUEVA VACANTE -->
+    <div class="card">
+        <h2>✍️ Solicitar Nueva Vacante (Requisición de Personal)</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div style="background-color: #fee2e2; border: 1px solid #f87171; color: #b91c1c; padding: 12px; border-radius: 6px; margin-bottom: 1.5em;">
+                    <strong>Por favor corrige los siguientes campos:</strong>
+                    <ul style="margin: 6px 0 0 1.2em; padding: 0;">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <fieldset class="form-section">
+                <legend>Información General de la Requisición</legend>
+                <div class="form-grid">
+                    <div class="form-group">{{ form.marca.label_tag }}{{ form.marca }}</div>
+                    <div class="form-group">{{ form.agencia.label_tag }}{{ form.agencia }}</div>
+                    <div class="form-group">{{ form.titulo.label_tag }}{{ form.titulo }}</div>
+                    <div class="form-group">{{ form.ciudad.label_tag }}{{ form.ciudad }}</div>
+                    <div class="form-group">{{ form.area.label_tag }}{{ form.area }}</div>
+                    <div class="form-group">{{ form.cantidad_vacantes.label_tag }}{{ form.cantidad_vacantes }}</div>
+                    <div class="form-group">{{ form.nombre_jefe_inmediato.label_tag }}{{ form.nombre_jefe_inmediato }}</div>
+                    <div class="form-group">{{ form.puesto_jefe_inmediato.label_tag }}{{ form.puesto_jefe_inmediato }}</div>
+                </div>
+            </fieldset>
+
+            <fieldset class="form-section">
+                <legend>Justificación del Requerimiento</legend>
+                <div class="form-group">{{ form.motivo_requisicion.label_tag }}{{ form.motivo_requisicion }}</div>
+
+                <div class="form-group" id="reemplaza_a_wrapper" style="display: none;">
+                    {{ form.reemplaza_a.label_tag }}
+                    {{ form.reemplaza_a }}
+                </div>
+                <div class="form-group">{{ form.objetivo_puesto.label_tag }}{{ form.objetivo_puesto }}</div>
+                <div class="form-group">
+                    {{ form.funciones_puesto.label_tag }}
+                    <small class="help-text">{{ form.funciones_puesto.help_text }}</small>
+                    {{ form.funciones_puesto }}
+                </div>
+                <div class="form-group">{{ form.indicador_puesto.label_tag }}{{ form.indicador_puesto }}</div>
+            </fieldset>
+
+            <fieldset class="form-section">
+                <legend>Requisitos del Perfil y Condiciones Laborales</legend>
+                <div class="form-grid">
+                    <div class="form-group">{{ form.experiencia_minima.label_tag }}{{ form.experiencia_minima }}</div>
+                    <div class="form-group">{{ form.carrera_sugerida.label_tag }}{{ form.carrera_sugerida }}</div>
+                    <div class="form-group">{{ form.horario.label_tag }}{{ form.horario }}</div>
+                    <div class="form-group">{{ form.sueldo_base.label_tag }}{{ form.sueldo_base }}</div>
+                </div>
+                <div class="form-group">
+                    {{ form.herramientas_puesto.label_tag }}
+                    <small class="help-text">{{ form.herramientas_puesto.help_text }}</small>
+                    {{ form.herramientas_puesto }}
+                </div>
+                <div class="form-group">
+                    {{ form.conocimientos_tecnicos.label_tag }}
+                    <small class="help-text">{{ form.conocimientos_tecnicos.help_text }}</small>
+                    {{ form.conocimientos_tecnicos }}
+                </div>
+                <div class="form-group">{{ form.esquema_comisiones.label_tag }}{{ form.esquema_comisiones }}</div>
+            </fieldset>
+
+            <fieldset class="form-section">
+                <legend>Documento de Justificación (Opcional)</legend>
+                <div class="form-group">
+                    <label for="{{ form.archivo_justificacion.id_for_label }}">{{ form.archivo_justificacion.label }}</label>
+                    <small class="help-text">{{ form.archivo_justificacion.help_text }}</small>
+                    <div class="file-upload-wrapper" style="margin-top: 8px;">
+                        <label for="{{ form.archivo_justificacion.id_for_label }}" class="boton-file">📁 Seleccionar Archivo</label>
+                        <span id="file-chosen-justificacion">Ningún archivo seleccionado</span>
+                        {{ form.archivo_justificacion }}
+                    </div>
+                </div>
+            </fieldset>
+
+            {% if user.is_superuser %}
+            <fieldset class="form-section" style="border-color: #f87171;">
+                <legend style="color: #dc2626;">Opciones de Administrador</legend>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    {{ form.es_confidencial }}
+                    <label for="{{ form.es_confidencial.id_for_label }}" style="margin: 0; font-weight: 600;">¿Es una vacante confidencial?</label>
+                </div>
+                <small class="help-text">Al marcar esta opción, la vacante se autoriza de forma inmediata y no aparecerá en la bolsa pública.</small>
+            </fieldset>
+            {% endif %}
+
+            <button type="submit" class="boton-submit">🚀 Enviar Solicitud de Requisición</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#solicitudesTable').DataTable({
+            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+            "order": [[ 1, "desc" ]]
         });
-    </script>
-</body>
-</html>
+
+        $('#id_archivo_justificacion').on('change', function(){
+            const fileName = $(this)[0].files.length > 0 ? $(this)[0].files[0].name : 'Ningún archivo seleccionado';
+            $('#file-chosen-justificacion').text(fileName);
+        });
+
+        const motivoSelect = $('#id_motivo_requisicion');
+        const reemplazaWrapper = $('#reemplaza_a_wrapper');
+        function toggleReemplazaField() {
+            const selectedValue = motivoSelect.val();
+            if (selectedValue === 'ROT' || selectedValue === 'INCA') {
+                reemplazaWrapper.slideDown();
+            } else {
+                reemplazaWrapper.slideUp();
+            }
+        }
+        toggleReemplazaField();
+        motivoSelect.on('change', toggleReemplazaField);
+    });
+</script>
+{% endblock %}

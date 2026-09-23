@@ -19,7 +19,15 @@
 {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
     <a href="{% url 'portal_gerente' %}" class="menu-item">
         <div class="menu-item__icon">✍️</div>
-        <div class="menu-item__text"><h4>Mi Portal de Gerente</h4><p>Crea nuevas solicitudes de vacantes y da seguimiento.</p></div>
+        <div class="menu-item__text">
+            <h4>Mi Portal de Gerente</h4>
+            <p>Crea nuevas solicitudes de vacantes y da seguimiento.</p>
+        </div>
+        {% if candidatos_entrevista_count > 0 %}
+            <div class="menu-item__stat" style="background-color: #fef3c7; color: #b45309;" title="Candidatos listos para entrevista">
+                {{ candidatos_entrevista_count }} por entrevistar
+            </div>
+        {% endif %}
         <div class="menu-item__arrow">&rarr;</div>
     </a>
 {% endif %}
@@ -37,10 +45,10 @@
     </a>
 {% endif %}
 
-{% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or 'Asesoras' in user_groups %}
+{% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or 'Gerente General de Marca' in user_groups or 'Asesoras' in user_groups or user.is_superuser %}
     <a href="{% url 'vista_reportes' %}" class="menu-item">
         <div class="menu-item__icon">📊</div>
-        <div class="menu-item__text"><h4>Dashboard de Indicadores</h4><p>Visualiza el estado general del sistema.</p></div>
+        <div class="menu-item__text"><h4>Dashboard de Indicadores y BI</h4><p>SLA de cobertura, embudo de vacantes y trazabilidad 360°.</p></div>
         <div class="menu-item__arrow">&rarr;</div>
     </a>
     <a href="{% url 'vista_historial_general' %}" class="menu-item">
@@ -55,7 +63,7 @@
     </a>
 {% endif %}
 
-{% if user.is_staff %}
+{% if user.is_staff or 'Gerente General de Marca' in user_groups or user.is_superuser %}
     <a href="{% url 'lista_solicitudes' %}" class="menu-item">
         <div class="menu-item__icon">✅</div>
         <div class="menu-item__text"><h4>Aprobaciones Pendientes</h4><p>Nuevos puestos que requieren tu autorización.</p></div>

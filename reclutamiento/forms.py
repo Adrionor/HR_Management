@@ -174,22 +174,6 @@ class RegistroCandidatoForm(forms.ModelForm):
 
         return cv
 
-class SolicitudPuestoForm(forms.ModelForm):
-    class Meta:
-        model = Puesto
-        fields = [
-            'marca', 'agencia', 'titulo', 'ciudad', 'area', 'cantidad_vacantes',
-            'nombre_jefe_inmediato', 'puesto_jefe_inmediato',
-            'motivo_requisicion',
-            'reemplaza_a',  # <-- AÑADIDO
-            'objetivo_puesto', 'funciones_puesto',
-            'indicador_puesto',
-            'experiencia_minima', 'carrera_sugerida',  # <-- AÑADIDOS
-            'herramientas_puesto', 'conocimientos_tecnicos',
-            'horario', 'sueldo_base', 'esquema_comisiones',
-            'archivo_justificacion', 'es_confidencial'
-        ]
-
 
 class PublicacionForm(forms.ModelForm):
     # Hacemos el campo opcional en el formulario para que no sea obligatorio llenarlo

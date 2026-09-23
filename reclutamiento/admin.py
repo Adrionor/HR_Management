@@ -48,18 +48,18 @@ class MarcaAdmin(admin.ModelAdmin):
 class PuestoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'marca', 'estatus_autorizacion', 'asesora_encargada', 'esta_abierto')
     list_filter = ('estatus_autorizacion', 'marca', 'area', 'esta_abierto')
-    search_fields = ('titulo', 'descripcion')
+    search_fields = ('titulo__nombre', 'agencia', 'ciudad')
 
 @admin.register(Candidato)
 class CandidatoAdmin(admin.ModelAdmin):
     list_display = ('nombres', 'apellidos', 'email', 'telefono', 'puesto_de_interes')
-    search_fields = ('nombre_completo', 'email', 'habilidades')
+    search_fields = ('nombres', 'apellidos', 'email', 'rfc', 'habilidades')
 
 @admin.register(Proceso)
 class ProcesoAdmin(admin.ModelAdmin):
     list_display = ('candidato', 'puesto', 'asesora_asignada', 'estatus_proceso')
     list_filter = ('estatus_proceso', 'asesora_asignada', 'puesto__marca')
-    search_fields = ('candidato__nombre_completo', 'puesto__titulo')
+    search_fields = ('candidato__nombres', 'candidato__apellidos', 'puesto__titulo__nombre')
 
 @admin.register(RegistroActividad)
 class RegistroActividadAdmin(admin.ModelAdmin):
@@ -72,7 +72,7 @@ class RegistroActividadAdmin(admin.ModelAdmin):
 class PerfilDePuestoAdmin(admin.ModelAdmin):
     list_display = ('puesto', 'creado_por', 'fecha_actualizacion')
     list_filter = ('puesto__marca', 'creado_por')
-    search_fields = ('puesto__titulo', 'habilidades_clave')
+    search_fields = ('puesto__titulo__nombre', 'comentarios_adicionales')
 # Nota: El modelo PerfilUsuario no necesita registrarse por separado
 # porque ya lo estamos mostrando "inline" dentro del Usuario.
 
