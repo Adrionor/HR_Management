@@ -152,6 +152,15 @@ class ReportesService:
         tiempos = [p.dias_transcurridos for p in puestos]
         promedio_dias_cobertura = round(sum(tiempos) / len(tiempos), 1) if tiempos else 0
         
+        # Candidatos en espera de entrevista con jefe (Lead Time crítico de RH)
+        from .models import Proceso
+        candidatos_esperando_jefe = sum(
+            len([pr for pr in p.procesos.all() if pr.estatus_proceso == Proceso.Estatus.ENTREVISTA_JEFE])
+            for p in vacantes_activas
+        )
+        indice_criticidad = round((len(vencidas) / total_activas * 100), 1) if total_activas > 0 else 0.0
+        tasa_efectividad_plazas = round((total_plazas_cubiertas / total_plazas_solicitadas * 100), 1) if total_plazas_solicitadas > 0 else 0.0
+
         return {
             'total_vacantes': len(puestos),
             'total_activas': total_activas,
@@ -162,7 +171,10 @@ class ReportesService:
             'total_plazas_solicitadas': total_plazas_solicitadas,
             'total_plazas_cubiertas': total_plazas_cubiertas,
             'cumplimiento_sla': cumplimiento_sla,
-            'promedio_dias_cobertura': promedio_dias_cobertura
+            'promedio_dias_cobertura': promedio_dias_cobertura,
+            'candidatos_esperando_jefe': candidatos_esperando_jefe,
+            'indice_criticidad': indice_criticidad,
+            'tasa_efectividad_plazas': tasa_efectividad_plazas
         }
     
     @staticmethod
@@ -178,7 +190,10 @@ class ReportesService:
             'total_plazas_solicitadas': 0,
             'total_plazas_cubiertas': 0,
             'cumplimiento_sla': 100.0,
-            'promedio_dias_cobertura': 0
+            'promedio_dias_cobertura': 0,
+            'candidatos_esperando_jefe': 0,
+            'indice_criticidad': 0.0,
+            'tasa_efectividad_plazas': 0.0
         }
     
     @staticmethod
@@ -284,6 +299,254 @@ class ReportesService:
         return sorted(puestos, key=orden_puesto)
     
     @staticmethod
+    def compute_agencias_scorecard(puestos):
+        """
+        Genera la matriz analítica consolidada por Marca, Agencia y Ciudad.
+        Permite a la Dirección evaluar el desempeño y cumplimiento de SLAs por centro de trabajo.
+        """
+        agencias_dict = {}
+        for p in puestos:
+            ag = (p.agencia or "Sin Agencia").strip()
+            marca_nom = p.marca.nombre if p.marca else "Sin Marca"
+            ciudad_nom = p.get_ciudad_display() if p.ciudad else "N/A"
+            key = (marca_nom, ag, ciudad_nom)
+            
+            if key not in agencias_dict:
+                agencias_dict[key] = {
+                    'marca': marca_nom,
+                    'agencia': ag,
+                    'ciudad': ciudad_nom,
+                    'total_vacantes': 0,
+                    'activas': 0,
+                    'en_tiempo': 0,
+                    'por_vencer': 0,
+                    'vencidas': 0,
+                    'cubiertas': 0,
+                    'plazas_solicitadas': 0,
+                    'plazas_cubiertas': 0,
+                    'dias_acumulados': 0,
+                    'vacantes_lista': []
+                }
+            
+            entry = agencias_dict[key]
+            entry['total_vacantes'] += 1
+            entry['plazas_solicitadas'] += p.cantidad_vacantes
+            entry['plazas_cubiertas'] += p.plazas_cubiertas
+            entry['dias_acumulados'] += p.dias_transcurridos
+            
+            if p.esta_abierto:
+                entry['activas'] += 1
+                if p.estatus_sla == 'VENCIDA':
+                    entry['vencidas'] += 1
+                elif p.estatus_sla == 'POR_VENCER':
+                    entry['por_vencer'] += 1
+                else:
+                    entry['en_tiempo'] += 1
+            else:
+                entry['cubiertas'] += 1
+                
+            entry['vacantes_lista'].append({
+                'id': p.id,
+                'titulo': p.titulo.nombre if p.titulo else "N/A",
+                'etapa': p.etapa_operativa,
+                'sla': p.estatus_sla,
+                'dias': p.dias_transcurridos,
+                'meta': p.dias_meta,
+                'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar"
+            })
+            
+        scorecard = []
+        for key, data in agencias_dict.items():
+            activas = data['activas']
+            cumplimiento = round(((data['en_tiempo'] + data['por_vencer']) / activas * 100), 1) if activas > 0 else 100.0
+            promedio_dias = round(data['dias_acumulados'] / data['total_vacantes'], 1) if data['total_vacantes'] > 0 else 0
+            tasa_cobertura = round((data['plazas_cubiertas'] / data['plazas_solicitadas'] * 100), 1) if data['plazas_solicitadas'] > 0 else 0.0
+            
+            scorecard.append({
+                'marca': data['marca'],
+                'agencia': data['agencia'],
+                'ciudad': data['ciudad'],
+                'total_vacantes': data['total_vacantes'],
+                'activas': data['activas'],
+                'en_tiempo': data['en_tiempo'],
+                'por_vencer': data['por_vencer'],
+                'vencidas': data['vencidas'],
+                'cubiertas': data['cubiertas'],
+                'plazas_solicitadas': data['plazas_solicitadas'],
+                'plazas_cubiertas': data['plazas_cubiertas'],
+                'cumplimiento_sla': cumplimiento,
+                'promedio_dias': promedio_dias,
+                'tasa_cobertura': tasa_cobertura,
+                'vacantes_lista': data['vacantes_lista']
+            })
+            
+        return sorted(scorecard, key=lambda x: (x['vencidas'], x['activas'], x['total_vacantes']), reverse=True)
+
+    @staticmethod
+    def compute_asesoras_scorecard(puestos):
+        """
+        Genera el monitor de desempeño, efectividad y carga de trabajo por Asesora/Reclutadora.
+        Evalúa el balance operativo y cumplimiento de SLAs individual.
+        """
+        asesoras_dict = {}
+        for p in puestos:
+            if p.asesora_encargada:
+                asesora_id = p.asesora_encargada.id
+                nombre = p.asesora_encargada.get_full_name() or p.asesora_encargada.username
+                email = p.asesora_encargada.email or ""
+            else:
+                asesora_id = 0
+                nombre = "Sin Asignar"
+                email = ""
+                
+            if asesora_id not in asesoras_dict:
+                asesoras_dict[asesora_id] = {
+                    'asesora_id': asesora_id,
+                    'nombre': nombre,
+                    'email': email,
+                    'total_asignadas': 0,
+                    'activas': 0,
+                    'en_tiempo': 0,
+                    'por_vencer': 0,
+                    'vencidas': 0,
+                    'cubiertas': 0,
+                    'plazas_solicitadas': 0,
+                    'plazas_cubiertas': 0,
+                    'dias_acumulados': 0,
+                    'candidatos_proceso_total': 0,
+                    'vacantes_lista': []
+                }
+                
+            entry = asesoras_dict[asesora_id]
+            entry['total_asignadas'] += 1
+            entry['plazas_solicitadas'] += p.cantidad_vacantes
+            entry['plazas_cubiertas'] += p.plazas_cubiertas
+            entry['dias_acumulados'] += p.dias_transcurridos
+            entry['candidatos_proceso_total'] += len(p.procesos.all())
+            
+            if p.esta_abierto:
+                entry['activas'] += 1
+                if p.estatus_sla == 'VENCIDA':
+                    entry['vencidas'] += 1
+                elif p.estatus_sla == 'POR_VENCER':
+                    entry['por_vencer'] += 1
+                else:
+                    entry['en_tiempo'] += 1
+            else:
+                entry['cubiertas'] += 1
+                
+            entry['vacantes_lista'].append({
+                'id': p.id,
+                'titulo': p.titulo.nombre if p.titulo else "N/A",
+                'marca': p.marca.nombre if p.marca else "N/A",
+                'agencia': p.agencia,
+                'etapa': p.etapa_operativa,
+                'sla': p.estatus_sla,
+                'dias': p.dias_transcurridos,
+                'meta': p.dias_meta
+            })
+            
+        scorecard = []
+        for a_id, data in asesoras_dict.items():
+            activas = data['activas']
+            cumplimiento = round(((data['en_tiempo'] + data['por_vencer']) / activas * 100), 1) if activas > 0 else 100.0
+            efectividad = round((data['plazas_cubiertas'] / data['plazas_solicitadas'] * 100), 1) if data['plazas_solicitadas'] > 0 else 0.0
+            promedio_dias = round(data['dias_acumulados'] / data['total_asignadas'], 1) if data['total_asignadas'] > 0 else 0
+            
+            # Nivel de saturación de capacidad
+            if activas <= 3:
+                nivel_carga = 'BAJA'
+                nivel_color = '#10b981'
+            elif activas <= 7:
+                nivel_carga = 'EQUILIBRADA'
+                nivel_color = '#3b82f6'
+            else:
+                nivel_carga = 'SOBRECARGA'
+                nivel_color = '#ef4444'
+                
+            scorecard.append({
+                'asesora_id': data['asesora_id'],
+                'nombre': data['nombre'],
+                'email': data['email'],
+                'total_asignadas': data['total_asignadas'],
+                'activas': data['activas'],
+                'en_tiempo': data['en_tiempo'],
+                'por_vencer': data['por_vencer'],
+                'vencidas': data['vencidas'],
+                'cubiertas': data['cubiertas'],
+                'plazas_solicitadas': data['plazas_solicitadas'],
+                'plazas_cubiertas': data['plazas_cubiertas'],
+                'cumplimiento_sla': cumplimiento,
+                'efectividad': efectividad,
+                'promedio_dias': promedio_dias,
+                'candidatos_proceso_total': data['candidatos_proceso_total'],
+                'nivel_carga': nivel_carga,
+                'nivel_color': nivel_color,
+                'vacantes_lista': data['vacantes_lista']
+            })
+            
+        return sorted(scorecard, key=lambda x: (x['activas'], x['vencidas']), reverse=True)
+
+    @staticmethod
+    def compute_solicitantes_scorecard(puestos):
+        """
+        Monitorea a los Gerentes Operativos y Jefes Solicitantes.
+        Identifica cuellos de botella por demoras en entrevistas técnicas con jefe.
+        """
+        from .models import Proceso
+        solicitantes_dict = {}
+        for p in puestos:
+            if p.solicitado_por:
+                s_id = p.solicitado_por.id
+                nombre = p.solicitado_por.get_full_name() or p.solicitado_por.username
+            else:
+                s_id = 0
+                nombre = p.nombre_jefe_inmediato or "Sin Registro"
+                
+            if s_id not in solicitantes_dict:
+                solicitantes_dict[s_id] = {
+                    'solicitante_id': s_id,
+                    'nombre': nombre,
+                    'puesto_jefe': p.puesto_jefe_inmediato or "Gerente",
+                    'agencias': set(),
+                    'total_requisiciones': 0,
+                    'activas': 0,
+                    'pendientes_entrevista_jefe': 0,
+                    'cubiertas': 0,
+                    'dias_acumulados': 0
+                }
+                
+            entry = solicitantes_dict[s_id]
+            entry['total_requisiciones'] += 1
+            if p.agencia:
+                entry['agencias'].add(p.agencia)
+            entry['dias_acumulados'] += p.dias_transcurridos
+            
+            if p.esta_abierto:
+                entry['activas'] += 1
+                procesos_ent_jf = [proc for proc in p.procesos.all() if proc.estatus_proceso == Proceso.Estatus.ENTREVISTA_JEFE]
+                entry['pendientes_entrevista_jefe'] += len(procesos_ent_jf)
+            else:
+                entry['cubiertas'] += 1
+                
+        scorecard = []
+        for s_id, data in solicitantes_dict.items():
+            promedio_dias = round(data['dias_acumulados'] / data['total_requisiciones'], 1) if data['total_requisiciones'] > 0 else 0
+            scorecard.append({
+                'solicitante_id': data['solicitante_id'],
+                'nombre': data['nombre'],
+                'puesto_jefe': data['puesto_jefe'],
+                'agencias_str': ", ".join(sorted(data['agencias'])) if data['agencias'] else "N/A",
+                'total_requisiciones': data['total_requisiciones'],
+                'activas': data['activas'],
+                'pendientes_entrevista_jefe': data['pendientes_entrevista_jefe'],
+                'cubiertas': data['cubiertas'],
+                'promedio_dias': promedio_dias
+            })
+            
+        return sorted(scorecard, key=lambda x: (x['pendientes_entrevista_jefe'], x['activas']), reverse=True)
+
+    @staticmethod
     def generate_reporte_data(usuario, filtros, use_cache=True):
         """
         Genera todos los datos necesarios para el reporte
@@ -328,12 +591,20 @@ class ReportesService:
         
         # Obtener catálogos
         catálogos = ReportesService.get_catalogos_optimizados(queryset)
+
+        # Generar Scorecards por Agencia, por Asesora y por Solicitante
+        agencias_scorecard = ReportesService.compute_agencias_scorecard(lista_puestos)
+        asesoras_scorecard = ReportesService.compute_asesoras_scorecard(lista_puestos)
+        solicitantes_scorecard = ReportesService.compute_solicitantes_scorecard(lista_puestos)
         
         resultado = {
             'puestos': lista_puestos,
             'kpis': kpis,
             'chart_data': chart_data,
             'catalogos': catálogos,
+            'agencias_scorecard': agencias_scorecard,
+            'asesoras_scorecard': asesoras_scorecard,
+            'solicitantes_scorecard': solicitantes_scorecard,
             'filtros_aplicados': filtros
         }
         

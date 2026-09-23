@@ -1,100 +1,507 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Dashboard Ejecutivo de Reclutamiento y BI{% endblock %}
+{% block title %}Suite Analítica Ejecutiva de Reclutamiento & BI | Premier Automotriz{% endblock %}
 
 {% block style %}
 <style>
-    .container { max-width: 96%; margin: 1.5em auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em; flex-wrap: wrap; gap: 1em; }
-    h1, h2, h3 { color: #1e293b; }
-    h1 { font-size: 1.85em; font-weight: 700; margin: 0; }
-    .header-actions { display: flex; gap: 10px; align-items: center; }
-    .boton-volver { text-decoration: none; background-color: #64748b; color: white; padding: 0.6em 1.2em; border-radius: 6px; font-weight: 600; font-size: 0.9em; }
-    .btn-export { text-decoration: none; background-color: #059669; color: white; padding: 0.6em 1.2em; border-radius: 6px; font-weight: 600; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-export:hover { background-color: #047857; }
+    /* Estilos Enterprise Estilo SAP SuccessFactors / Fiori */
+    :root {
+        --sap-primary: #0f172a;
+        --sap-accent: #0284c7;
+        --sap-bg: #f8fafc;
+        --sap-card-bg: #ffffff;
+        --sap-border: #e2e8f0;
+        --sap-text: #1e293b;
+        --sap-muted: #64748b;
+        --sap-green: #10b981;
+        --sap-yellow: #f59e0b;
+        --sap-red: #ef4444;
+    }
 
-    /* Barra de Filtros Ejecutivos */
-    .filter-panel { background: #ffffff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 2em; border: 1px solid #e2e8f0; }
-    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1em; align-items: flex-end; }
-    .filter-group label { display: block; font-size: 0.82em; font-weight: 600; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .filter-group select, .filter-group input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.9em; box-sizing: border-box; }
+    .container { max-width: 98%; margin: 1.2em auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    
+    /* Encabezado Corporativo */
+    .sap-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #ffffff;
+        padding: 1.5em 2em;
+        border-radius: 12px;
+        margin-bottom: 1.5em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.2em;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+    .sap-header h1 {
+        font-size: 1.85em;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0 0 0.3em 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .sap-header p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 0.95em;
+    }
+    .sap-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Menú Desplegable de Exportación */
+    .export-dropdown { position: relative; display: inline-block; }
+    .btn-export-main {
+        background-color: #059669;
+        color: white;
+        padding: 0.65em 1.2em;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9em;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+    .btn-export-main:hover { background-color: #047857; transform: translateY(-1px); }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #ffffff;
+        min-width: 260px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        z-index: 1000;
+        border: 1px solid var(--sap-border);
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    .dropdown-content a {
+        color: var(--sap-text);
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 0.88em;
+        font-weight: 500;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s ease;
+    }
+    .dropdown-content a:hover { background-color: #f8fafc; color: var(--sap-accent); }
+    .export-dropdown:hover .dropdown-content { display: block; }
+
+    .btn-volver-portal {
+        background-color: #334155;
+        color: #f8fafc;
+        text-decoration: none;
+        padding: 0.65em 1.2em;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9em;
+        transition: background 0.2s ease;
+    }
+    .btn-volver-portal:hover { background-color: #475569; }
+
+    /* Barra de Navegación por Pestañas SAP Fiori */
+    .sap-tabs-nav {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid var(--sap-border);
+        margin-bottom: 1.5em;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+    .sap-tab-btn {
+        background: none;
+        border: none;
+        padding: 12px 18px;
+        font-size: 0.95em;
+        font-weight: 600;
+        color: var(--sap-muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 8px 8px 0 0;
+        position: relative;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .sap-tab-btn:hover {
+        color: var(--sap-text);
+        background-color: #f1f5f9;
+    }
+    .sap-tab-btn.active {
+        color: #0284c7;
+        background-color: #ffffff;
+        border-bottom: 3px solid #0284c7;
+    }
+    .sap-tab-btn .tab-count {
+        background-color: #e2e8f0;
+        color: #334155;
+        font-size: 0.78em;
+        padding: 2px 7px;
+        border-radius: 12px;
+        font-weight: 700;
+    }
+    .sap-tab-btn.active .tab-count {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
+    /* Contenido de Pestañas */
+    .sap-tab-pane { display: none; animation: fadeIn 0.25s ease-in-out; }
+    .sap-tab-pane.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Panel de Filtros Corporativos */
+    .filter-panel {
+        background: #ffffff;
+        padding: 1.2em 1.5em;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin-bottom: 1.5em;
+        border: 1px solid var(--sap-border);
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 1em;
+        align-items: flex-end;
+    }
+    .filter-group label {
+        display: block;
+        font-size: 0.78em;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .filter-group select, .filter-group input {
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-family: inherit;
+        font-size: 0.88em;
+        box-sizing: border-box;
+        background-color: #ffffff;
+    }
     .filter-buttons { display: flex; gap: 8px; }
-    .btn-filter { background-color: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-    .btn-filter:hover { background-color: #1d4ed8; }
-    .btn-clear { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9em; }
+    .btn-filter {
+        background-color: #0284c7;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.88em;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .btn-filter:hover { background-color: #0369a1; }
+    .btn-clear {
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        padding: 8px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.88em;
+    }
 
-    /* Tarjetas de KPIs */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2em; margin-bottom: 2em; }
-    .kpi-card { background-color: #ffffff; border-radius: 10px; padding: 1.2em 1.5em; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; border-left: 5px solid #3b82f6; }
+    /* Tarjetas de KPIs Ejecutivos */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 1.2em;
+        margin-bottom: 1.8em;
+    }
+    .kpi-card {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 1.2em 1.4em;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid var(--sap-border);
+        border-left: 5px solid #0284c7;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
     .kpi-card.kpi-red { border-left-color: #ef4444; }
     .kpi-card.kpi-yellow { border-left-color: #f59e0b; }
     .kpi-card.kpi-green { border-left-color: #10b981; }
     .kpi-card.kpi-purple { border-left-color: #8b5cf6; }
-    .kpi-card h4 { margin: 0 0 0.3em 0; font-size: 0.82em; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .kpi-card .number { font-size: 2.2em; font-weight: 700; color: #0f172a; line-height: 1.1; }
-    .kpi-card .subtext { font-size: 0.82em; color: #64748b; margin-top: 5px; }
+    .kpi-card.kpi-slate { border-left-color: #475569; }
+    .kpi-card h4 {
+        margin: 0 0 0.4em 0;
+        font-size: 0.8em;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+    }
+    .kpi-card .number {
+        font-size: 2.1em;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+    .kpi-card .subtext {
+        font-size: 0.8em;
+        color: #64748b;
+        margin-top: 6px;
+    }
+    .progress-bar-container {
+        width: 100%;
+        background-color: #e2e8f0;
+        border-radius: 4px;
+        height: 6px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
 
     /* Gráficos */
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5em; margin-bottom: 2em; }
-    .chart-container { background: #ffffff; padding: 1.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-    .chart-container h3 { margin-top: 0; font-size: 1.1em; color: #334155; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.6em; }
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+        gap: 1.5em;
+        margin-bottom: 2em;
+    }
+    .chart-container {
+        background: #ffffff;
+        padding: 1.5em;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid var(--sap-border);
+    }
+    .chart-container h3 {
+        margin-top: 0;
+        font-size: 1.05em;
+        font-weight: 700;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 0.6em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-    /* Sábana de Datos */
-    .table-container { background: #ffffff; padding: 1.8em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-    table.dataTable thead th { background-color: #1e293b; color: #ffffff; font-size: 0.88em; padding: 10px 8px; }
-    table.dataTable tbody td { font-size: 0.9em; padding: 8px 8px; vertical-align: middle; }
+    /* Tablas Corporativas Enterprise */
+    .table-container {
+        background: #ffffff;
+        padding: 1.6em;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid var(--sap-border);
+        margin-bottom: 2em;
+    }
+    .table-header-desc {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.2em;
+        flex-wrap: wrap;
+        gap: 1em;
+    }
+    .table-header-desc h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.25em;
+        font-weight: 700;
+    }
+    .table-header-desc p {
+        margin: 0.3em 0 0;
+        color: #64748b;
+        font-size: 0.88em;
+    }
 
-    .sla-pill { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; display: inline-block; white-space: nowrap; }
+    table.sap-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88em;
+    }
+    table.sap-table thead th {
+        background-color: #0f172a;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 10px 12px;
+        text-align: left;
+        white-space: nowrap;
+    }
+    table.sap-table tbody td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+        color: #1e293b;
+    }
+    table.sap-table tbody tr:hover { background-color: #f8fafc; }
+
+    /* Semáforos y Badges */
+    .sla-pill {
+        padding: 4px 9px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.82em;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
     .sla-pill.red { background-color: #fee2e2; color: #991b1b; }
     .sla-pill.yellow { background-color: #fef3c7; color: #92400e; }
     .sla-pill.green { background-color: #dcfce7; color: #166534; }
     .sla-pill.gray { background-color: #f1f5f9; color: #475569; }
 
-    .etapa-badge { font-weight: 600; font-size: 0.85em; color: #1e293b; display: inline-block; background-color: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; }
-
-    /* Paginación mejorada */
-    .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5em; padding-top: 1em; border-top: 1px solid #e2e8f0; }
-    .pagination-info { font-size: 0.9em; color: #64748b; }
-    .pagination-links { display: flex; gap: 5px; }
-    .pagination-links a, .pagination-links span { 
-        padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; 
-        text-decoration: none; color: #1e293b; font-size: 0.9em; 
+    .capacity-badge {
+        padding: 4px 9px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.8em;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
     }
-    .pagination-links a:hover { background-color: #f1f5f9; }
-    .pagination-links .current { background-color: #2563eb; color: white; border-color: #2563eb; font-weight: 600; }
-    .pagination-links .disabled { color: #94a3b8; pointer-events: none; }
+    .capacity-badge.baja { background-color: #dcfce7; color: #166534; }
+    .capacity-badge.equilibrada { background-color: #e0f2fe; color: #0369a1; }
+    .capacity-badge.sobrecarga { background-color: #fee2e2; color: #991b1b; }
 
-    /* Indicador de carga */
-    .loading-indicator { 
-        display: none; 
-        text-align: center; 
-        padding: 2em; 
-        color: #64748b; 
-        font-weight: 600; 
+    .etapa-badge {
+        font-weight: 600;
+        font-size: 0.82em;
+        color: #0f172a;
+        display: inline-block;
+        background-color: #f1f5f9;
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
     }
-    .loading-indicator.active { display: block; }
+
+    .btn-action-drill {
+        background-color: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.82em;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.15s ease;
+    }
+    .btn-action-drill:hover { background-color: #dcfce7; transform: translateY(-1px); }
+
+    .btn-action-blue {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.82em;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.15s ease;
+    }
+    .btn-action-blue:hover { background-color: #dbeafe; transform: translateY(-1px); }
+
+    /* Alerta Temprana */
+    .alert-panel {
+        background-color: #fffbeb;
+        border: 1px solid #fef3c7;
+        border-left: 5px solid #f59e0b;
+        border-radius: 8px;
+        padding: 1.2em 1.5em;
+        margin-bottom: 2em;
+    }
+    .alert-panel h4 { margin: 0 0 0.5em 0; color: #92400e; font-size: 1.05em; display: flex; align-items: center; gap: 8px; }
+    .alert-panel p { margin: 0; color: #78350f; font-size: 0.9em; }
+
+    /* Paginación */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5em;
+        padding-top: 1em;
+        border-top: 1px solid var(--sap-border);
+        flex-wrap: wrap;
+        gap: 1em;
+    }
+    .pagination-links { display: flex; gap: 5px; flex-wrap: wrap; }
+    .pagination-links a, .pagination-links span {
+        padding: 6px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #1e293b;
+        font-size: 0.88em;
+    }
+    .pagination-links .current { background-color: #0284c7; color: white; border-color: #0284c7; font-weight: 600; }
+    .pagination-links .disabled { color: #94a3b8; pointer-events: none; background-color: #f8fafc; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="header">
+    <!-- ENCABEZADO SAP ENTERPRISE -->
+    <div class="sap-header">
         <div>
-            <h1>Dashboard Ejecutivo de Reclutamiento y BI</h1>
-            <p style="margin: 0; color: #64748b;">Visión 360° en tiempo real del embudo de talento, cumplimiento de SLAs y trazabilidad por vacante.</p>
+            <h1>📊 Suite Analítica Ejecutiva & BI | Dashboard Ejecutivo</h1>
+            <p>Monitoreo 360° en tiempo real del embudo de talento, Acuerdos de Nivel de Servicio (SLAs) y rendimiento por Centro de Trabajo y Usuario.</p>
         </div>
-        <div class="header-actions">
-            <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv" class="btn-export">
-                📥 Descargar Sábana Excel (CSV)
-            </a>
-            <a href="{% url 'dashboard' %}" class="boton-volver">← Portal Principal</a>
+        <div class="sap-header-actions">
+            <!-- Menú Desplegable de Exportación Multicriterio -->
+            <div class="export-dropdown">
+                <button type="button" class="btn-export-main">
+                    📥 Exportar a Excel (CSV) ▼
+                </button>
+                <div class="dropdown-content">
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_master">
+                        📑 Sábana Maestra de Vacantes (Completa)
+                    </a>
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias">
+                        🏢 Matriz Consolidada por Agencia
+                    </a>
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras">
+                        👥 Monitor de Desempeño por Asesora
+                    </a>
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes">
+                        👔 Seguimiento a Jefes Solicitantes
+                    </a>
+                </div>
+            </div>
+            <a href="{% url 'dashboard' %}" class="btn-volver-portal">← Portal Principal</a>
         </div>
     </div>
 
-    <!-- PANEL DE FILTROS EJECUTIVOS -->
+    <!-- PANEL DE FILTROS CORPORATIVOS (Persistentes entre vistas) -->
     <div class="filter-panel">
         <form method="get" id="filterForm">
+            <input type="hidden" name="tab" id="activeTabInput" value="{{ active_tab }}">
             <div class="filter-grid">
                 <div class="filter-group">
                     <label>Fecha Desde</label>
@@ -106,7 +513,7 @@
                 </div>
                 <div class="filter-group">
                     <label>Marca</label>
-                    <select name="marca">
+                    <select name="marca" id="filtroMarca">
                         <option value="">Todas las Marcas</option>
                         {% for m in marcas_disponibles %}
                         <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>
@@ -115,7 +522,7 @@
                 </div>
                 <div class="filter-group">
                     <label>Agencia</label>
-                    <select name="agencia">
+                    <select name="agencia" id="filtroAgencia">
                         <option value="">Todas las Agencias</option>
                         {% for ag in agencias_disponibles %}
                         <option value="{{ ag }}" {% if filtros_aplicados.agencia == ag %}selected{% endif %}>{{ ag }}</option>
@@ -132,8 +539,8 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Asesora Encargada</label>
-                    <select name="asesora">
+                    <label>Asesora Asignada</label>
+                    <select name="asesora" id="filtroAsesora">
                         <option value="">Todas las Asesoras</option>
                         {% for as in asesoras_disponibles %}
                         <option value="{{ as.id }}" {% if filtros_aplicados.asesora == as.id|stringformat:"s" %}selected{% endif %}>{{ as.get_full_name|default:as.username }}</option>
@@ -141,7 +548,7 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Semáforo SLA</label>
+                    <label>Estatus SLA</label>
                     <select name="sla">
                         <option value="">Todos los Estados</option>
                         <option value="EN_TIEMPO" {% if filtros_aplicados.sla == 'EN_TIEMPO' %}selected{% endif %}>🟢 En Tiempo</option>
@@ -160,204 +567,566 @@
                     </select>
                 </div>
                 <div class="filter-buttons">
-                    <button type="submit" class="btn-filter">Filtrar</button>
+                    <button type="submit" class="btn-filter">Aplicar Filtros</button>
                     <a href="{% url 'vista_reportes' %}" class="btn-clear">Limpiar</a>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- TARJETAS DE KPIS EJECUTIVOS -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <h4>Vacantes Activas</h4>
-            <div class="number">{{ total_activas }}</div>
-            <div class="subtext">De un total de {{ total_vacantes }} requisiciones</div>
-        </div>
-        <div class="kpi-card kpi-red">
-            <h4>Vacantes Vencidas (🔴)</h4>
-            <div class="number" style="color: #dc2626;">{{ vencidas_count }}</div>
-            <div class="subtext">Fuera de tiempo meta de cobertura</div>
-        </div>
-        <div class="kpi-card kpi-yellow">
-            <h4>Por Vencer (🟡)</h4>
-            <div class="number" style="color: #d97706;">{{ por_vencer_count }}</div>
-            <div class="subtext">Faltan ≤ 3 días para su límite</div>
-        </div>
-        <div class="kpi-card kpi-green">
-            <h4>En Tiempo (🟢)</h4>
-            <div class="number" style="color: #16a34a;">{{ en_tiempo_count }}</div>
-            <div class="subtext">{{ cumplimiento_sla }}% de cumplimiento SLA</div>
-        </div>
-        <div class="kpi-card kpi-purple">
-            <h4>Plazas Cubiertas</h4>
-            <div class="number" style="color: #7c3aed;">{{ total_plazas_cubiertas }} <span style="font-size: 0.5em; color: #64748b;">/ {{ total_plazas_solicitadas }}</span></div>
-            <div class="subtext">Promedio: {{ promedio_dias_cobertura }} días por vacante</div>
-        </div>
+    <!-- BARRA DE NAVEGACIÓN POR PESTAÑAS (SAP FIORI COCKPIT) -->
+    <div class="sap-tabs-nav">
+        <button type="button" class="sap-tab-btn {% if active_tab == 'cockpit' %}active{% endif %}" onclick="cambiarPestana('cockpit')">
+            📊 Cockpit Ejecutivo 360°
+        </button>
+        <button type="button" class="sap-tab-btn {% if active_tab == 'agencias' %}active{% endif %}" onclick="cambiarPestana('agencias')">
+            🏢 Matriz por Agencia <span class="tab-count">{{ agencias_scorecard|length }}</span>
+        </button>
+        <button type="button" class="sap-tab-btn {% if active_tab == 'asesoras' %}active{% endif %}" onclick="cambiarPestana('asesoras')">
+            👥 Monitor por Asesora <span class="tab-count">{{ asesoras_scorecard|length }}</span>
+        </button>
+        <button type="button" class="sap-tab-btn {% if active_tab == 'solicitantes' %}active{% endif %}" onclick="cambiarPestana('solicitantes')">
+            👔 Solicitantes y Jefes <span class="tab-count">{{ solicitantes_scorecard|length }}</span>
+        </button>
+        <button type="button" class="sap-tab-btn {% if active_tab == 'sabana' %}active{% endif %}" onclick="cambiarPestana('sabana')">
+            📋 Sábana Maestra de Vacantes <span class="tab-count">{{ total_vacantes }}</span>
+        </button>
     </div>
 
-    <!-- GRÁFICOS INTERACTIVOS (CHART.JS) -->
-    <div class="charts-grid">
-        <div class="chart-container">
-            <h3>Embudo de Vacantes por Etapa Operativa</h3>
-            <canvas id="chartEmbudo" height="220"></canvas>
-        </div>
-        <div class="chart-container">
-            <h3>Estado de SLA por Agencia (Top Agencias)</h3>
-            <canvas id="chartAgencias" height="220"></canvas>
-        </div>
-        <div class="chart-container" style="grid-column: 1 / -1;">
-            <h3>Carga y Cobertura por Asesora (Activas vs Cubiertas)</h3>
-            <canvas id="chartAsesoras" height="120"></canvas>
-        </div>
-    </div>
-
-    <!-- SÁBANA DE DATOS Y TRAZABILIDAD VACANTE POR VACANTE -->
-    <div class="table-container">
-        <h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.6em;">
-            Sábana de Trazabilidad Vacante por Vacante
-        </h3>
-        <p style="color: #64748b; font-size: 0.9em; margin-bottom: 1.5em;">
-            Consulta la posición exacta de cada vacante en el proceso, días transcurridos vs meta y el candidato más avanzado.
-            <strong>Mostrando {{ puestos.start_index }}-{{ puestos.end_index }} de {{ paginator.count }} vacantes</strong>
-        </p>
-
-        <div class="loading-indicator" id="loadingIndicator">
-            <div style="font-size: 2em; margin-bottom: 10px;">⏳</div>
-            <div>Cargando datos...</div>
-        </div>
-
-        <table id="puestosReportTable" class="display" style="width:100%">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Puesto</th>
-                    <th>Marca / Agencia</th>
-                    <th>Asesora</th>
-                    <th>Etapa Operativa</th>
-                    <th>Plazas</th>
-                    <th>SLA (Transcurrido / Meta)</th>
-                    <th>Candidato Más Avanzado</th>
-                    <th>Última Observación</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for puesto in puestos %}
-                <tr>
-                    <td><strong>#{{ puesto.id }}</strong></td>
-                    <td>
-                        <a href="{% url 'puesto_detalle' puesto.id %}" target="_blank" style="font-weight: 700; color: #1e40af; text-decoration: none;">
-                            {{ puesto.titulo.nombre|default:"N/A" }}
-                        </a>
-                        <small style="display: block; color: #64748b;">Req: {{ puesto.fecha_solicitud|date:"d/m/Y" }}</small>
-                    </td>
-                    <td>
-                        <strong>{{ puesto.marca.nombre }}</strong>
-                        <small style="display: block; color: #64748b;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
-                    </td>
-                    <td>
-                        {% if puesto.asesora_encargada %}
-                            {{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username }}
-                        {% else %}
-                            <span style="color:#94a3b8;">Sin Asignar</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="etapa-badge">{{ puesto.etapa_operativa }}</span>
-                    </td>
-                    <td style="text-align: center;">
-                        <strong>{{ puesto.plazas_cubiertas }}</strong> / {{ puesto.cantidad_vacantes }}
-                    </td>
-                    <td>
-                        {% if puesto.esta_abierto %}
-                            {% if puesto.estatus_sla == 'VENCIDA' %}
-                                <span class="sla-pill red">🔴 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Vencida)</span>
-                            {% elif puesto.estatus_sla == 'POR_VENCER' %}
-                                <span class="sla-pill yellow">🟡 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Por Vencer)</span>
-                            {% else %}
-                                <span class="sla-pill green">🟢 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (En Tiempo)</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="sla-pill gray">⚪ Cerrada ({{ puesto.dias_transcurridos }}d)</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% with cand=puesto.candidato_mas_avanzado %}
-                            {% if cand %}
-                                <a href="{% url 'candidato_detalle' cand.id %}" target="_blank" style="font-weight: 600; color: #0284c7; text-decoration: underline;">
-                                    {{ cand.nombre_completo }}
-                                </a>
-                            {% else %}
-                                <span style="color: #94a3b8; font-style: italic;">Sin postulantes</span>
-                            {% endif %}
-                        {% endwith %}
-                    </td>
-                    <td style="max-width: 220px; font-size: 0.85em; color: #475569;" title="{{ puesto.ultima_observacion }}">
-                        {{ puesto.ultima_observacion|truncatechars:70 }}
-                    </td>
-                    <td>
-                        <a href="{% url 'historial_puesto' puesto.id %}" style="font-size: 0.85em; font-weight: 600; color: #2563eb; text-decoration: none;">
-                            📜 Historial
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- Paginación mejorada -->
-        {% if paginator.num_pages > 1 %}
-        <div class="pagination-container">
-            <div class="pagination-info">
-                Página {{ puestos.number }} de {{ paginator.num_pages }} ({{ paginator.count }} registros totales)
+    <!-- ========================================== -->
+    <!-- PESTAÑA 1: COCKPIT EJECUTIVO 360° -->
+    <!-- ========================================== -->
+    <div id="pane-cockpit" class="sap-tab-pane {% if active_tab == 'cockpit' %}active{% endif %}">
+        <!-- Tarjetas de KPIs Ejecutivos -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <h4>Vacantes Activas</h4>
+                <div class="number">{{ total_activas }}</div>
+                <div class="subtext">De un total de {{ total_vacantes }} requisiciones</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {% if total_vacantes > 0 %}{{ total_activas|floatformat:0 }}{% else %}0{% endif %}%; background-color: #0284c7;"></div>
+                </div>
             </div>
-            <div class="pagination-links">
-                {% if puestos.has_previous %}
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.previous_page_number }}">« Anterior</a>
-                {% else %}
-                    <span class="disabled">« Anterior</span>
-                {% endif %}
 
-                {% for page_num in paginator.page_range %}
-                    {% if page_num == puestos.number %}
-                        <span class="current">{{ page_num }}</span>
-                    {% else %}
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
-                    {% endif %}
-                {% endfor %}
-
-                {% if puestos.has_next %}
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.next_page_number }}">Siguiente »</a>
-                {% else %}
-                    <span class="disabled">Siguiente »</span>
-                {% endif %}
+            <div class="kpi-card kpi-green">
+                <h4>Cumplimiento Global SLA</h4>
+                <div class="number" style="color: #10b981;">{{ cumplimiento_sla }}%</div>
+                <div class="subtext">{{ en_tiempo_count }} vacantes en tiempo meta</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {{ cumplimiento_sla }}%; background-color: #10b981;"></div>
+                </div>
             </div>
+
+            <div class="kpi-card kpi-red">
+                <h4>Vacantes Vencidas (🔴)</h4>
+                <div class="number" style="color: #ef4444;">{{ vencidas_count }}</div>
+                <div class="subtext">Criticidad: {{ indice_criticidad }}% de vacantes activas</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {{ indice_criticidad }}%; background-color: #ef4444;"></div>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-yellow">
+                <h4>Por Vencer (🟡 ≤ 3 días)</h4>
+                <div class="number" style="color: #f59e0b;">{{ por_vencer_count }}</div>
+                <div class="subtext">Riesgo inminente de incumplimiento SLA</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 100%; background-color: #f59e0b;"></div>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-purple">
+                <h4>Plazas Cubiertas</h4>
+                <div class="number" style="color: #8b5cf6;">{{ total_plazas_cubiertas }} <span style="font-size: 0.5em; color: #64748b;">/ {{ total_plazas_solicitadas }}</span></div>
+                <div class="subtext">Efectividad de cobertura: {{ tasa_efectividad_plazas }}%</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {{ tasa_efectividad_plazas }}%; background-color: #8b5cf6;"></div>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-slate">
+                <h4>Tiempo Medio de Cobertura</h4>
+                <div class="number" style="color: #334155;">{{ promedio_dias_cobertura }} <span style="font-size: 0.5em; color: #64748b;">días</span></div>
+                <div class="subtext">Promedio general de permanencia activa</div>
+            </div>
+
+            <div class="kpi-card {% if candidatos_esperando_jefe > 0 %}kpi-yellow{% else %}kpi-green{% endif %}">
+                <h4>En Espera de Jefe Operativo</h4>
+                <div class="number" style="color: {% if candidatos_esperando_jefe > 0 %}#d97706{% else %}#10b981{% endif %};">{{ candidatos_esperando_jefe }}</div>
+                <div class="subtext">Candidatos esperando evaluación técnica</div>
+            </div>
+        </div>
+
+        {% if vencidas_count > 0 %}
+        <!-- Alerta Ejecutiva de Vacantes Vencidas -->
+        <div class="alert-panel">
+            <h4>⚠️ Atención Requerida por la Dirección ({{ vencidas_count }} Vacantes Vencidas)</h4>
+            <p>Existen requisiciones fuera de tiempo de servicio. Consulta la pestaña <strong>"🏢 Matriz por Agencia"</strong> o <strong>"👥 Monitor por Asesora"</strong> para identificar centros de trabajo y analistas con saturación operativa.</p>
         </div>
         {% endif %}
+
+        <!-- Gráficos Interactivos Chart.js -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Embudo Operativo de Vacantes por Etapa</h3>
+                <canvas id="chartEmbudo" height="230"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Cumplimiento SLA por Agencia (Top Agencias)</h3>
+                <canvas id="chartAgencias" height="230"></canvas>
+            </div>
+            <div class="chart-container" style="grid-column: 1 / -1;">
+                <h3>Carga y Capacidad Operativa por Asesora (Activas vs Concluidas)</h3>
+                <canvas id="chartAsesoras" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 2: MATRIZ Y SCORECARD POR AGENCIA -->
+    <!-- ========================================== -->
+    <div id="pane-agencias" class="sap-tab-pane {% if active_tab == 'agencias' %}active{% endif %}">
+        <div class="table-container">
+            <div class="table-header-desc">
+                <div>
+                    <h3>🏢 Matriz de Seguimiento y Cumplimiento por Agencia</h3>
+                    <p>Monitoreo consolidado de requisiciones, porcentaje de cumplimiento SLA y plazas por cada centro de trabajo.</p>
+                </div>
+                <div>
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias" class="btn-action-drill">
+                        📥 Exportar Matriz Agencias (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="tablaAgencias" class="sap-table display" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Agencia / Centro</th>
+                            <th>Ciudad</th>
+                            <th style="text-align: center;">Total Vacantes</th>
+                            <th style="text-align: center;">Activas</th>
+                            <th>Semáforo SLA (🟢 / 🟡 / 🔴)</th>
+                            <th style="text-align: center;">Plazas (Cub / Sol)</th>
+                            <th>Cumplimiento SLA</th>
+                            <th style="text-align: center;">Días Promedio</th>
+                            <th style="text-align: center;">Tasa Cobertura</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ag in agencias_scorecard %}
+                        <tr>
+                            <td><strong>{{ ag.marca }}</strong></td>
+                            <td><span style="font-weight: 700; color: #0f172a;">{{ ag.agencia }}</span></td>
+                            <td>{{ ag.ciudad }}</td>
+                            <td style="text-align: center;"><strong>{{ ag.total_vacantes }}</strong></td>
+                            <td style="text-align: center;">
+                                {% if ag.activas > 0 %}
+                                    <span style="background-color: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 10px; font-weight: 700;">{{ ag.activas }}</span>
+                                {% else %}
+                                    <span style="color: #94a3b8;">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span title="En Tiempo" style="color: #10b981; font-weight: 700;">🟢 {{ ag.en_tiempo }}</span> &nbsp;
+                                <span title="Por Vencer" style="color: #f59e0b; font-weight: 700;">🟡 {{ ag.por_vencer }}</span> &nbsp;
+                                <span title="Vencidas" style="color: #ef4444; font-weight: 700;">🔴 {{ ag.vencidas }}</span>
+                            </td>
+                            <td style="text-align: center;"><strong>{{ ag.plazas_cubiertas }}</strong> / {{ ag.plazas_solicitadas }}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <strong style="color: {% if ag.cumplimiento_sla >= 80 %}#10b981{% elif ag.cumplimiento_sla >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+                                        {{ ag.cumplimiento_sla }}%
+                                    </strong>
+                                    <div class="progress-bar-container" style="width: 60px; margin: 0;">
+                                        <div class="progress-bar-fill" style="width: {{ ag.cumplimiento_sla }}%; background-color: {% if ag.cumplimiento_sla >= 80 %}#10b981{% elif ag.cumplimiento_sla >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="text-align: center;">{{ ag.promedio_dias }}d</td>
+                            <td style="text-align: center;">{{ ag.tasa_cobertura }}%</td>
+                            <td>
+                                <button type="button" class="btn-action-drill" onclick="filtrarPorAgencia('{{ ag.agencia|escapejs }}')">
+                                    🔍 Ver Vacantes
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" style="text-align: center; padding: 2em; color: #64748b;">No hay agencias con registros para los filtros seleccionados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 3: MONITOR DE DESEMPEÑO POR ASESORA -->
+    <!-- ========================================== -->
+    <div id="pane-asesoras" class="sap-tab-pane {% if active_tab == 'asesoras' %}active{% endif %}">
+        <div class="table-container">
+            <div class="table-header-desc">
+                <div>
+                    <h3>👥 Monitor de Productividad y Balance de Carga por Asesora</h3>
+                    <p>Seguimiento individual a cada especialista de reclutamiento: capacidad de carga, efectividad y cumplimiento de acuerdos.</p>
+                </div>
+                <div>
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras" class="btn-action-drill">
+                        📥 Exportar Monitor Asesoras (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="tablaAsesoras" class="sap-table display" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Asesora / Reclutadora</th>
+                            <th>Nivel de Carga</th>
+                            <th style="text-align: center;">Total Asignadas</th>
+                            <th style="text-align: center;">Activas</th>
+                            <th>Semáforo SLA (🟢 / 🟡 / 🔴)</th>
+                            <th style="text-align: center;">Cubiertas</th>
+                            <th style="text-align: center;">Plazas (Cub / Sol)</th>
+                            <th>Cumplimiento SLA</th>
+                            <th>Tasa Efectividad</th>
+                            <th style="text-align: center;">Tiempo Medio</th>
+                            <th style="text-align: center;">Postulantes Activos</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for as_item in asesoras_scorecard %}
+                        <tr>
+                            <td>
+                                <strong>{{ as_item.nombre }}</strong>
+                                {% if as_item.email %}<small style="display: block; color: #64748b;">{{ as_item.email }}</small>{% endif %}
+                            </td>
+                            <td>
+                                {% if as_item.nivel_carga == 'BAJA' %}
+                                    <span class="capacity-badge baja">● Disponible (≤3)</span>
+                                {% elif as_item.nivel_carga == 'EQUILIBRADA' %}
+                                    <span class="capacity-badge equilibrada">● Equilibrada (4-7)</span>
+                                {% else %}
+                                    <span class="capacity-badge sobrecarga">● Sobrecarga (8+)</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;"><strong>{{ as_item.total_asignadas }}</strong></td>
+                            <td style="text-align: center;">
+                                <span style="background-color: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px; font-weight: 700;">{{ as_item.activas }}</span>
+                            </td>
+                            <td>
+                                <span title="En Tiempo" style="color: #10b981; font-weight: 700;">🟢 {{ as_item.en_tiempo }}</span> &nbsp;
+                                <span title="Por Vencer" style="color: #f59e0b; font-weight: 700;">🟡 {{ as_item.por_vencer }}</span> &nbsp;
+                                <span title="Vencidas" style="color: #ef4444; font-weight: 700;">🔴 {{ as_item.vencidas }}</span>
+                            </td>
+                            <td style="text-align: center; color: #10b981; font-weight: 700;">{{ as_item.cubiertas }}</td>
+                            <td style="text-align: center;"><strong>{{ as_item.plazas_cubiertas }}</strong> / {{ as_item.plazas_solicitadas }}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <strong style="color: {% if as_item.cumplimiento_sla >= 80 %}#10b981{% elif as_item.cumplimiento_sla >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+                                        {{ as_item.cumplimiento_sla }}%
+                                    </strong>
+                                </div>
+                            </td>
+                            <td>
+                                <strong style="color: #0284c7;">{{ as_item.efectividad }}%</strong>
+                            </td>
+                            <td style="text-align: center;">{{ as_item.promedio_dias }}d</td>
+                            <td style="text-align: center;">
+                                <span style="background-color: #f1f5f9; padding: 2px 7px; border-radius: 6px; font-weight: 600;">{{ as_item.candidatos_proceso_total }}</span>
+                            </td>
+                            <td>
+                                {% if as_item.asesora_id > 0 %}
+                                <button type="button" class="btn-action-blue" onclick="filtrarPorAsesora('{{ as_item.asesora_id }}')">
+                                    📂 Ver Cartera
+                                </button>
+                                {% else %}
+                                <span style="color: #94a3b8; font-style: italic;">Sin asignar</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="12" style="text-align: center; padding: 2em; color: #64748b;">No hay asesoras registradas con vacantes para los filtros actuales.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 4: SEGUIMIENTO A SOLICITANTES Y JEFES -->
+    <!-- ========================================== -->
+    <div id="pane-solicitantes" class="sap-tab-pane {% if active_tab == 'solicitantes' %}active{% endif %}">
+        <div class="table-container">
+            <div class="table-header-desc">
+                <div>
+                    <h3>👔 Seguimiento a Solicitantes y Cuellos de Botella en Jefaturas</h3>
+                    <p>Mapeo de requisiciones por gerente operativo y monitoreo estricto de tiempos de respuesta en entrevistas con jefe.</p>
+                </div>
+                <div>
+                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes" class="btn-action-drill">
+                        📥 Exportar Solicitantes (CSV)
+                    </a>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="tablaSolicitantes" class="sap-table display" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Jefe / Solicitante</th>
+                            <th>Puesto del Jefe</th>
+                            <th>Agencias Vinculadas</th>
+                            <th style="text-align: center;">Total Requisiciones</th>
+                            <th style="text-align: center;">Vacantes Activas</th>
+                            <th style="text-align: center;">Esperando Entrevista con Jefe (⚠️ Cuello de Botella)</th>
+                            <th style="text-align: center;">Vacantes Cubiertas</th>
+                            <th style="text-align: center;">Antigüedad Media</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in solicitantes_scorecard %}
+                        <tr>
+                            <td><strong>{{ s.nombre }}</strong></td>
+                            <td>{{ s.puesto_jefe }}</td>
+                            <td><small style="color: #475569;">{{ s.agencias_str }}</small></td>
+                            <td style="text-align: center;"><strong>{{ s.total_requisiciones }}</strong></td>
+                            <td style="text-align: center;">
+                                <span style="background-color: #e0f2fe; color: #0369a1; padding: 2px 7px; border-radius: 8px; font-weight: 700;">{{ s.activas }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                {% if s.pendientes_entrevista_jefe > 0 %}
+                                    <span style="background-color: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 8px; font-weight: 700; border: 1px solid #fde68a;">
+                                        ⚠️ {{ s.pendientes_entrevista_jefe }} pendiente(s)
+                                    </span>
+                                {% else %}
+                                    <span style="color: #10b981; font-weight: 600;">✓ Al día (0)</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; color: #10b981; font-weight: 700;">{{ s.cubiertas }}</td>
+                            <td style="text-align: center;">{{ s.promedio_dias }}d</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2em; color: #64748b;">No hay solicitantes con requisiciones en el periodo seleccionado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 5: SÁBANA MAESTRA DE REQUISICIONES -->
+    <!-- ========================================== -->
+    <div id="pane-sabana" class="sap-tab-pane {% if active_tab == 'sabana' %}active{% endif %}">
+        <div class="table-container">
+            <div class="table-header-desc">
+                <div>
+                    <h3>📋 Sábana Maestra de Requisiciones y Candidatos</h3>
+                    <p>Trazabilidad individual con detalle de etapa operativa, semáforo SLA y postulación más avanzada.</p>
+                </div>
+                <div style="background: #f8fafc; padding: 0.6em 1em; border-radius: 8px; border: 1px solid var(--sap-border);">
+                    <span style="color: #64748b; font-size: 0.85em;">Mostrando</span>
+                    <strong style="color: #0f172a; font-size: 1.05em; margin: 0 0.2em;">{{ puestos.start_index }}-{{ puestos.end_index }}</strong>
+                    <span style="color: #64748b; font-size: 0.85em;">de</span>
+                    <strong style="color: #0f172a; font-size: 1.05em; margin: 0 0.2em;">{{ paginator.count }}</strong>
+                    <span style="color: #64748b; font-size: 0.85em;">vacantes</span>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="puestosReportTable" class="sap-table display" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Puesto</th>
+                            <th>Marca / Agencia</th>
+                            <th>Asesora</th>
+                            <th>Etapa Operativa</th>
+                            <th style="text-align: center;">Plazas</th>
+                            <th>SLA (Transcurrido / Meta)</th>
+                            <th>Candidato Más Avanzado</th>
+                            <th>Última Observación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for puesto in puestos %}
+                        <tr>
+                            <td><strong>#{{ puesto.id }}</strong></td>
+                            <td>
+                                <a href="{% url 'puesto_detalle' puesto.id %}" target="_blank" style="font-weight: 700; color: #0284c7; text-decoration: none;">
+                                    {{ puesto.titulo.nombre|default:"N/A" }}
+                                </a>
+                                <small style="display: block; color: #64748b; margin-top: 2px;">Req: {{ puesto.fecha_solicitud|date:"d/m/Y" }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ puesto.marca.nombre }}</strong>
+                                <small style="display: block; color: #64748b; margin-top: 2px;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
+                            </td>
+                            <td>
+                                {% if puesto.asesora_encargada %}
+                                    <span style="font-weight: 600;">{{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username }}</span>
+                                {% else %}
+                                    <span style="color:#94a3b8; font-style: italic;">Sin Asignar</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="etapa-badge">{{ puesto.etapa_operativa }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong>{{ puesto.plazas_cubiertas }}</strong> / {{ puesto.cantidad_vacantes }}
+                            </td>
+                            <td>
+                                {% if puesto.esta_abierto %}
+                                    {% if puesto.estatus_sla == 'VENCIDA' %}
+                                        <span class="sla-pill red">🔴 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Vencida)</span>
+                                    {% elif puesto.estatus_sla == 'POR_VENCER' %}
+                                        <span class="sla-pill yellow">🟡 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (Por Vencer)</span>
+                                    {% else %}
+                                        <span class="sla-pill green">🟢 {{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d (En Tiempo)</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="sla-pill gray">⚪ Cerrada ({{ puesto.dias_transcurridos }}d)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% with cand=puesto.candidato_mas_avanzado %}
+                                    {% if cand %}
+                                        <a href="{% url 'candidato_detalle' cand.id %}" target="_blank" style="font-weight: 600; color: #0284c7; text-decoration: underline;">
+                                            {{ cand.nombre_completo }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color: #94a3b8; font-style: italic;">Sin postulantes</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td style="max-width: 220px; font-size: 0.85em; color: #475569;" title="{{ puesto.ultima_observacion }}">
+                                {{ puesto.ultima_observacion|truncatechars:65 }}
+                            </td>
+                            <td>
+                                <a href="{% url 'historial_puesto' puesto.id %}" class="btn-action-blue">
+                                    📜 Historial
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if paginator.num_pages > 1 %}
+            <div class="pagination-container">
+                <div style="font-size: 0.88em; color: #64748b;">
+                    <span>Página <strong>{{ puestos.number }}</strong> de <strong>{{ paginator.num_pages }}</strong> ({{ paginator.count }} vacantes en total)</span>
+                </div>
+                <div class="pagination-links">
+                    {% if puestos.has_previous %}
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.previous_page_number }}">« Anterior</a>
+                    {% endif %}
+
+                    {% for page_num in paginator.page_range %}
+                        {% if page_num == puestos.number %}
+                            <span class="current">{{ page_num }}</span>
+                        {% else %}
+                            <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if puestos.has_next %}
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.next_page_number }}">Siguiente »</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-$(document).ready(function() {
-    // Mostrar indicador de carga cuando se aplican filtros
-    $('#filterForm').on('submit', function() {
-        $('#loadingIndicator').addClass('active');
-        $('#puestosReportTable').hide();
-    });
+// Cambio de Pestañas SAP Fiori
+function cambiarPestana(tabId) {
+    // Desactivar todos los botones y paneles
+    $('.sap-tab-btn').removeClass('active');
+    $('.sap-tab-pane').removeClass('active');
 
-    // Inicializar DataTables pero deshabilitar paginación nativa (usamos la nuestra)
-    $('#puestosReportTable').DataTable({
+    // Activar seleccionado
+    $(`button[onclick="cambiarPestana('${tabId}')"]`).addClass('active');
+    $(`#pane-${tabId}`).addClass('active');
+
+    // Sincronizar input oculto de tab
+    $('#activeTabInput').val(tabId);
+
+    // Actualizar hash en URL sin recargar
+    history.replaceState(null, null, `?tab=${tabId}`);
+}
+
+// Acciones de Drill-Down Inmediatas
+function filtrarPorAgencia(nombreAgencia) {
+    $('#filtroAgencia').val(nombreAgencia);
+    cambiarPestana('sabana');
+    $('#filterForm').submit();
+}
+
+function filtrarPorAsesora(asesoraId) {
+    $('#filtroAsesora').val(asesoraId);
+    cambiarPestana('sabana');
+    $('#filterForm').submit();
+}
+
+$(document).ready(function() {
+    // Revisar parámetro de URL si existe para activar pestaña
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['cockpit', 'agencias', 'asesoras', 'solicitantes', 'sabana'].includes(tabParam)) {
+        cambiarPestana(tabParam);
+    }
+
+    // Inicializar DataTables con localización en Español para todas las vistas
+    const dtConfig = {
         "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
         "ordering": true,
         "searching": true,
-        "paging": false,  // Deshabilitamos paginación de DataTables para usar la de Django
-        "info": false     // Deshabilitamos info de DataTables
-    });
+        "paging": true,
+        "pageLength": 15,
+        "info": true
+    };
 
-    // 1. Gráfico Embudo de Vacantes
+    if ($('#tablaAgencias').length) {
+        $('#tablaAgencias').DataTable(dtConfig);
+    }
+    if ($('#tablaAsesoras').length) {
+        $('#tablaAsesoras').DataTable(dtConfig);
+    }
+    if ($('#tablaSolicitantes').length) {
+        $('#tablaSolicitantes').DataTable(dtConfig);
+    }
+    if ($('#puestosReportTable').length) {
+        // La sábana maestra maneja paginación nativa de Django
+        $('#puestosReportTable').DataTable({
+            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+            "ordering": true,
+            "searching": true,
+            "paging": false,
+            "info": false
+        });
+    }
+
+    // 1. Gráfico Embudo Operativo
     const embudoLabels = JSON.parse('{{ chart_embudo_labels_json|safe }}');
     const embudoData = JSON.parse('{{ chart_embudo_data_json|safe }}');
     const ctxEmbudo = document.getElementById('chartEmbudo').getContext('2d');
@@ -366,14 +1135,14 @@ $(document).ready(function() {
         data: {
             labels: embudoLabels,
             datasets: [{
-                label: 'Cantidad de Vacantes',
+                label: 'Vacantes en Etapa',
                 data: embudoData,
                 backgroundColor: [
                     '#94a3b8', '#38bdf8', '#818cf8',
                     '#f59e0b', '#ec4899', '#f97316',
                     '#10b981', '#64748b'
                 ],
-                borderRadius: 5
+                borderRadius: 4
             }]
         },
         options: {
@@ -386,7 +1155,7 @@ $(document).ready(function() {
         }
     });
 
-    // 2. Gráfico SLA por Agencia
+    // 2. Gráfico SLA por Agencia (Stacked)
     const agenciasLabels = JSON.parse('{{ chart_agencias_labels_json|safe }}');
     const agenciasEnTiempo = JSON.parse('{{ chart_agencias_en_tiempo_json|safe }}');
     const agenciasVencidas = JSON.parse('{{ chart_agencias_vencidas_json|safe }}');
@@ -430,9 +1199,9 @@ $(document).ready(function() {
             labels: asesorasLabels,
             datasets: [
                 {
-                    label: 'Vacantes Activas en Proceso',
+                    label: 'Vacantes Activas a su Cargo',
                     data: asesorasActivas,
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: '#0284c7',
                     borderRadius: 4
                 },
                 {

@@ -136,7 +136,7 @@ class HRManagementTests(TestCase):
         self.assertFalse(puesto.esta_completamente_cubierta)
 
     def test_reportes_view_permissions_and_csv_export(self):
-        """Verifica que reportes_view sea accesible por staff y soporte exportación a CSV."""
+        """Verifica que reportes_view sea accesible por staff y soporte exportaciones multicriterio a CSV."""
         self.user.is_staff = True
         self.user.save()
         self.client.login(username='testuser', password='password123')
@@ -144,12 +144,30 @@ class HRManagementTests(TestCase):
         response = self.client.get(reverse('vista_reportes'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Dashboard Ejecutivo')
+        self.assertIn('agencias_scorecard', response.context)
+        self.assertIn('asesoras_scorecard', response.context)
+        self.assertIn('solicitantes_scorecard', response.context)
 
-        # Probar exportación a CSV
+        # 1. Probar exportación a CSV Maestro
         response_csv = self.client.get(reverse('vista_reportes') + '?export=csv')
         self.assertEqual(response_csv.status_code, 200)
         self.assertEqual(response_csv['Content-Type'], 'text/csv; charset=utf-8-sig')
         self.assertIn('ID Vacante', response_csv.content.decode('utf-8-sig'))
+
+        # 2. Probar exportación a CSV Agencias
+        response_agencias = self.client.get(reverse('vista_reportes') + '?export=csv_agencias')
+        self.assertEqual(response_agencias.status_code, 200)
+        self.assertIn('Agencia', response_agencias.content.decode('utf-8-sig'))
+
+        # 3. Probar exportación a CSV Asesoras
+        response_asesoras = self.client.get(reverse('vista_reportes') + '?export=csv_asesoras')
+        self.assertEqual(response_asesoras.status_code, 200)
+        self.assertIn('Asesora', response_asesoras.content.decode('utf-8-sig'))
+
+        # 4. Probar exportación a CSV Solicitantes
+        response_solicitantes = self.client.get(reverse('vista_reportes') + '?export=csv_solicitantes')
+        self.assertEqual(response_solicitantes.status_code, 200)
+        self.assertIn('Jefe Solicitante', response_solicitantes.content.decode('utf-8-sig'))
 
     def test_evaluacion_entrevista_jefe_operativo(self):
         """Verifica que el gerente operativo pueda evaluar a un candidato en ENT_JF desde su portal."""

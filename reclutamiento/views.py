@@ -212,44 +212,99 @@ def reportes_view(request):
     # Generar datos usando el service layer
     datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
     
-    # 3. Exportación a CSV si se solicita (antes de paginación)
-    if request.GET.get('export') == 'csv':
+    # 3. Exportación a CSV según tipo solicitado
+    export_type = request.GET.get('export')
+    if export_type:
+        timestamp_str = timezone.now().strftime("%Y%m%d_%H%M")
         response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-        response['Content-Disposition'] = f'attachment; filename="reporte_vacantes_{timezone.now().strftime("%Y%m%d_%H%M")}.csv"'
         writer = csv.writer(response)
-        writer.writerow([
-            'ID Vacante', 'Puesto', 'Marca', 'Agencia', 'Ciudad',
-            'Solicitado Por', 'Asesora Encargada', 'Fecha Requisición',
-            'Días Transcurridos', 'Días Meta', 'Estatus SLA',
-            'Etapa Operativa', 'Plazas Solicitadas', 'Plazas Cubiertas',
-            'Candidato Más Avanzado', 'Última Observación'
-        ])
-        for p in datos_reporte['puestos']:
-            cand = p.candidato_mas_avanzado
+
+        if export_type in ['csv', 'csv_master']:
+            response['Content-Disposition'] = f'attachment; filename="reporte_vacantes_maestro_{timestamp_str}.csv"'
             writer.writerow([
-                p.id,
-                p.titulo.nombre if p.titulo else "N/A",
-                p.marca.nombre if p.marca else "N/A",
-                p.agencia,
-                p.get_ciudad_display(),
-                p.solicitado_por.get_full_name() or p.solicitado_por.username if p.solicitado_por else "N/A",
-                p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
-                p.fecha_solicitud.strftime('%Y-%m-%d'),
-                p.dias_transcurridos,
-                p.dias_meta,
-                p.estatus_sla,
-                p.etapa_operativa,
-                p.cantidad_vacantes,
-                p.plazas_cubiertas,
-                cand.nombre_completo if cand else "Sin candidatos",
-                p.ultima_observacion
+                'ID Vacante', 'Puesto', 'Marca', 'Agencia', 'Ciudad',
+                'Solicitado Por', 'Asesora Encargada', 'Fecha Requisición',
+                'Días Transcurridos', 'Días Meta', 'Estatus SLA',
+                'Etapa Operativa', 'Plazas Solicitadas', 'Plazas Cubiertas',
+                'Candidato Más Avanzado', 'Última Observación'
             ])
-        return response
+            for p in datos_reporte['puestos']:
+                cand = p.candidato_mas_avanzado
+                writer.writerow([
+                    p.id,
+                    p.titulo.nombre if p.titulo else "N/A",
+                    p.marca.nombre if p.marca else "N/A",
+                    p.agencia,
+                    p.get_ciudad_display(),
+                    p.solicitado_por.get_full_name() or p.solicitado_por.username if p.solicitado_por else "N/A",
+                    p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
+                    p.fecha_solicitud.strftime('%Y-%m-%d'),
+                    p.dias_transcurridos,
+                    p.dias_meta,
+                    p.estatus_sla,
+                    p.etapa_operativa,
+                    p.cantidad_vacantes,
+                    p.plazas_cubiertas,
+                    cand.nombre_completo if cand else "Sin candidatos",
+                    p.ultima_observacion
+                ])
+            return response
+
+        elif export_type == 'csv_agencias':
+            response['Content-Disposition'] = f'attachment; filename="scorecard_agencias_{timestamp_str}.csv"'
+            writer.writerow([
+                'Marca', 'Agencia', 'Ciudad', 'Total Vacantes', 'Vacantes Activas',
+                'En Tiempo', 'Por Vencer', 'Vencidas', 'Cubiertas',
+                'Plazas Solicitadas', 'Plazas Cubiertas', '% Cumplimiento SLA',
+                'Días Promedio', '% Tasa Cobertura'
+            ])
+            for ag in datos_reporte['agencias_scorecard']:
+                writer.writerow([
+                    ag['marca'], ag['agencia'], ag['ciudad'], ag['total_vacantes'],
+                    ag['activas'], ag['en_tiempo'], ag['por_vencer'], ag['vencidas'],
+                    ag['cubiertas'], ag['plazas_solicitadas'], ag['plazas_cubiertas'],
+                    f"{ag['cumplimiento_sla']}%", ag['promedio_dias'], f"{ag['tasa_cobertura']}%"
+                ])
+            return response
+
+        elif export_type == 'csv_asesoras':
+            response['Content-Disposition'] = f'attachment; filename="monitor_asesoras_{timestamp_str}.csv"'
+            writer.writerow([
+                'Asesora', 'Email', 'Nivel de Carga', 'Vacantes Asignadas', 'Activas',
+                'En Tiempo', 'Por Vencer', 'Vencidas', 'Cubiertas',
+                'Plazas Solicitadas', 'Plazas Cubiertas', '% Efectividad',
+                '% Cumplimiento SLA', 'Días Promedio', 'Candidatos en Proceso'
+            ])
+            for as_data in datos_reporte['asesoras_scorecard']:
+                writer.writerow([
+                    as_data['nombre'], as_data['email'], as_data['nivel_carga'],
+                    as_data['total_asignadas'], as_data['activas'], as_data['en_tiempo'],
+                    as_data['por_vencer'], as_data['vencidas'], as_data['cubiertas'],
+                    as_data['plazas_solicitadas'], as_data['plazas_cubiertas'],
+                    f"{as_data['efectividad']}%", f"{as_data['cumplimiento_sla']}%",
+                    as_data['promedio_dias'], as_data['candidatos_proceso_total']
+                ])
+            return response
+
+        elif export_type == 'csv_solicitantes':
+            response['Content-Disposition'] = f'attachment; filename="seguimiento_jefes_solicitantes_{timestamp_str}.csv"'
+            writer.writerow([
+                'Jefe Solicitante', 'Puesto del Jefe', 'Agencias', 'Total Requisiciones',
+                'Vacantes Activas', 'Candidatos Esperando Entrevista con Jefe', 'Cubiertas', 'Días Promedio'
+            ])
+            for s_data in datos_reporte['solicitantes_scorecard']:
+                writer.writerow([
+                    s_data['nombre'], s_data['puesto_jefe'], s_data['agencias_str'],
+                    s_data['total_requisiciones'], s_data['activas'],
+                    s_data['pendientes_entrevista_jefe'], s_data['cubiertas'],
+                    s_data['promedio_dias']
+                ])
+            return response
     
-    # Implementar paginación para la tabla de resultados
+    # Implementar paginación para la sábana maestra
     puestos_paginados = datos_reporte['puestos']
     page = request.GET.get('page', 1)
-    paginator = Paginator(puestos_paginados, 25)  # 25 items por página
+    paginator = Paginator(puestos_paginados, 25)
     
     try:
         puestos_page = paginator.page(page)
@@ -258,13 +313,21 @@ def reportes_view(request):
     except EmptyPage:
         puestos_page = paginator.page(paginator.num_pages)
     
+    # Pestaña activa por defecto o solicitada
+    active_tab = request.GET.get('tab', 'cockpit')
+    if filtros.get('agencia') and not request.GET.get('tab'):
+        active_tab = 'agencias'
+    elif filtros.get('asesora') and not request.GET.get('tab'):
+        active_tab = 'asesoras'
+
     # Preparar contexto para el template
     contexto = {
-        'puestos': puestos_page,  # Ahora es la página paginada
+        'puestos': puestos_page,
         'paginator': paginator,
         'page_obj': puestos_page,
+        'active_tab': active_tab,
         
-        # KPIs (calculados sobre todos los datos, no solo la página)
+        # KPIs corporativos y ejecutivos
         'total_vacantes': datos_reporte['kpis']['total_vacantes'],
         'total_activas': datos_reporte['kpis']['total_activas'],
         'vencidas_count': datos_reporte['kpis']['vencidas_count'],
@@ -275,8 +338,16 @@ def reportes_view(request):
         'total_plazas_cubiertas': datos_reporte['kpis']['total_plazas_cubiertas'],
         'cumplimiento_sla': datos_reporte['kpis']['cumplimiento_sla'],
         'promedio_dias_cobertura': datos_reporte['kpis']['promedio_dias_cobertura'],
+        'candidatos_esperando_jefe': datos_reporte['kpis'].get('candidatos_esperando_jefe', 0),
+        'indice_criticidad': datos_reporte['kpis'].get('indice_criticidad', 0.0),
+        'tasa_efectividad_plazas': datos_reporte['kpis'].get('tasa_efectividad_plazas', 0.0),
 
-        # Filtros
+        # Scorecards por Agencia y por Usuario
+        'agencias_scorecard': datos_reporte['agencias_scorecard'],
+        'asesoras_scorecard': datos_reporte['asesoras_scorecard'],
+        'solicitantes_scorecard': datos_reporte['solicitantes_scorecard'],
+
+        # Filtros y Catálogos
         'marcas_disponibles': datos_reporte['catalogos']['marcas'],
         'agencias_disponibles': datos_reporte['catalogos']['agencias'],
         'ciudades_disponibles': datos_reporte['catalogos']['ciudades'],
