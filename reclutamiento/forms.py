@@ -142,7 +142,6 @@ class RegistroCandidatoForm(forms.ModelForm):
         widgets = {
             'nombres': forms.TextInput(attrs={'placeholder': 'Ej: Ana Sofía'}),
             'apellidos': forms.TextInput(attrs={'placeholder': 'Ej: García López'}),
-            'motivo_busqueda': forms.Textarea(attrs={'rows': 3}),
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
             'motivo_busqueda': forms.Select(),
         }

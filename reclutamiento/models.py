@@ -2,9 +2,11 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-# Ya no hay 'from .models import Puesto'
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.cache import cache
+
 class Marca(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
 
@@ -32,21 +34,9 @@ class CatalogoPuesto(models.Model):
 @receiver(post_save, sender=User)
 def ensure_user_profile(sender, instance, **kwargs):
     """
-    Asegura que cada User tenga un PerfilUsuario asociado.
-    Si el usuario es nuevo, crea el perfil.
-    Si el usuario ya existe pero no tiene perfil, se lo crea.
-    Si ya existe el perfil, no hace nada.
+    Asegura que cada User tenga un PerfilUsuario asociado sin duplicación ni doble save().
     """
     PerfilUsuario.objects.get_or_create(usuario=instance)
-
-    # Para usuarios existentes, nos aseguramos de que el perfil se guarde.
-    # El related_name por defecto es el nombre del modelo en minúsculas.
-    # hasattr comprueba si el atributo existe antes de intentar acceder a él.
-    if hasattr(instance, 'perfilusuario'):
-        instance.perfilusuario.save()
-    else:
-        # Si no tiene perfil (porque es un usuario antiguo), se lo creamos.
-        PerfilUsuario.objects.create(usuario=instance)
 
 
 class Puesto(models.Model):
@@ -90,7 +80,7 @@ class Puesto(models.Model):
     fecha_aprobacion_director = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Aprobación Director")
     # --- Campos del Puesto ---
     titulo = models.ForeignKey(CatalogoPuesto, on_delete=models.PROTECT, verbose_name="Nombre del Puesto Vacante", null=True)
-    agencia = models.CharField(max_length=100, verbose_name="Agencia")
+    agencia = models.CharField(max_length=100, verbose_name="Agencia", db_index=True)
     area = models.CharField(max_length=4, choices=Area.choices, verbose_name="Área")
     ciudad = models.CharField(max_length=100, verbose_name="Ciudad de la Vacante", choices=CIUDADES_CHOICES)
     cantidad_vacantes = models.PositiveIntegerField(default=1, verbose_name="Cantidad de Vacantes Solicitadas")
@@ -127,7 +117,7 @@ class Puesto(models.Model):
     motivo_rechazo = models.TextField(null=True, blank=True, verbose_name="Motivo de Rechazo")
 
     # --- Flujo de Aprobación y Asignación (campos que ya teníamos) ---
-    estatus_autorizacion = models.CharField(max_length=20, choices=EstatusAutorizacion.choices, default=EstatusAutorizacion.PENDIENTE)
+    estatus_autorizacion = models.CharField(max_length=20, choices=EstatusAutorizacion.choices, default=EstatusAutorizacion.PENDIENTE, db_index=True)
     solicitado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='puestos_solicitados')
     fecha_solicitud = models.DateTimeField(default=timezone.now)
     autorizado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='puestos_autorizados')
@@ -136,7 +126,7 @@ class Puesto(models.Model):
                                                related_name='puestos_segunda_autorizacion',
                                                verbose_name="Segunda Aprobación Por")
     fecha_segunda_autorizacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Segunda Aprobación")
-    esta_abierto = models.BooleanField(default=False)
+    esta_abierto = models.BooleanField(default=False, db_index=True)
     asesora_encargada = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='puestos_asignados')
 
     METAS_POR_PUESTO_DEFAULT = {
@@ -174,7 +164,7 @@ class Puesto(models.Model):
         'Encargado de Sistemas': 20, 'Coordinador de Seguridad': 20, 'Supervisor de seguridad': 20,
         'Coordinador(a) de Hospitalidad y Responding': 20, 'Coordinador(a) de Publicidad': 20,
         'Coordinador(a) ETA': 20, 'Coordinador(a) Digital': 20, 'Jefe de taller HyP': 20,
-        'Jefe de taller ': 20, 'Coordinador de HYP': 20, 'Encargado de compras': 20,
+        'Jefe de taller': 20, 'Coordinador de HYP': 20, 'Encargado de compras': 20,
         'Jefe de almacén': 20, 'Jefe de Mayoreo de Colisión': 20, 'Jefe de Mayoreo Partes': 20,
         'Jefe de ventas Mostrador': 20, 'Subgerente de refacciones': 20, 'Subgerente de Sistemas': 20,
         'Coordinador(a) de Leds': 20, 'Encargado(a) de Inventarios': 20,
@@ -186,6 +176,8 @@ class Puesto(models.Model):
 
     @property
     def plazas_cubiertas(self):
+        if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache:
+            return sum(1 for pr in self.procesos.all() if pr.estatus_proceso == Proceso.Estatus.CONTRATADO_CERRADO)
         return self.procesos.filter(estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO).count()
 
     @property
@@ -198,25 +190,36 @@ class Puesto(models.Model):
 
     @property
     def dias_meta(self):
-        puesto_nom = self.titulo.nombre if self.titulo else ""
+        puesto_nom = self.titulo.nombre.strip() if self.titulo and self.titulo.nombre else ""
         return self.METAS_POR_PUESTO_DEFAULT.get(puesto_nom, 20)
 
     @property
+    def fecha_inicio_sla(self):
+        """El reloj de SLA inicia formalmente cuando la vacante es autorizada (o fecha_solicitud si sigue en proceso de aprobación)."""
+        return self.fecha_aprobacion_director or self.fecha_aprobacion_gerente_marca or self.fecha_solicitud
+
+    @property
     def dias_transcurridos(self):
+        fecha_inicio = self.fecha_inicio_sla
         if not self.esta_abierto:
             if self.estatus_autorizacion == self.EstatusAutorizacion.RECHAZADO:
                 fecha_fin = self.fecha_aprobacion_director or self.fecha_aprobacion_gerente_marca or self.fecha_solicitud
             else:
-                ultimo_contratado = self.procesos.filter(
-                    estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO
-                ).order_by('-fecha_inicio_etapa').first()
+                if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache:
+                    contratados = [pr for pr in self.procesos.all() if pr.estatus_proceso == Proceso.Estatus.CONTRATADO_CERRADO]
+                    contratados.sort(key=lambda pr: pr.fecha_inicio_etapa or timezone.now(), reverse=True)
+                    ultimo_contratado = contratados[0] if contratados else None
+                else:
+                    ultimo_contratado = self.procesos.filter(
+                        estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO
+                    ).order_by('-fecha_inicio_etapa').first()
                 fecha_fin = ultimo_contratado.fecha_inicio_etapa if ultimo_contratado else timezone.now()
-            return max(0, (fecha_fin - self.fecha_solicitud).days)
-        return max(0, (timezone.now() - self.fecha_solicitud).days)
+            return max(0, (fecha_fin - fecha_inicio).days)
+        return max(0, (timezone.now() - fecha_inicio).days)
 
     @property
     def fecha_limite_sla(self):
-        return self.fecha_solicitud + timezone.timedelta(days=self.dias_meta)
+        return self.fecha_inicio_sla + timezone.timedelta(days=self.dias_meta)
 
     @property
     def estatus_sla(self):
@@ -242,16 +245,27 @@ class Puesto(models.Model):
             return '8. Cubierta / Cerrada'
         if not self.asesora_encargada:
             return '2. Por Asignar Asesora'
-        if not hasattr(self, 'perfil_detallado'):
+        try:
+            _ = self.perfil_detallado
+        except ObjectDoesNotExist:
             return '3. Por Definir Perfil'
 
-        procesos_activos = self.procesos.exclude(
-            estatus_proceso__in=[Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
-        )
-        if not procesos_activos.exists():
-            return '4. En Búsqueda'
+        if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache:
+            procesos_activos = [
+                pr for pr in self.procesos.all()
+                if pr.estatus_proceso not in (Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA)
+            ]
+            if not procesos_activos:
+                return '4. En Búsqueda'
+            estatus_set = {pr.estatus_proceso for pr in procesos_activos}
+        else:
+            procesos_activos = self.procesos.exclude(
+                estatus_proceso__in=[Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
+            )
+            if not procesos_activos.exists():
+                return '4. En Búsqueda'
+            estatus_set = set(procesos_activos.values_list('estatus_proceso', flat=True))
 
-        estatus_set = set(procesos_activos.values_list('estatus_proceso', flat=True))
         tramites = [
             Proceso.Estatus.EXAMENES_MEDICOS, Proceso.Estatus.SOLICITUD_DOCS,
             Proceso.Estatus.FIRMA_CONTRATO, Proceso.Estatus.ALTA_SISTEMAS, Proceso.Estatus.FECHA_INGRESO
@@ -272,10 +286,33 @@ class Puesto(models.Model):
 
     @property
     def candidato_mas_avanzado(self):
-        proc = self.procesos.exclude(
-            estatus_proceso__in=[Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
-        ).order_by('-fecha_inicio_etapa').first()
-        return proc.candidato if proc else None
+        if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache:
+            activos = [
+                pr for pr in self.procesos.all()
+                if pr.estatus_proceso not in (Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA)
+            ]
+        else:
+            activos = list(self.procesos.exclude(
+                estatus_proceso__in=[Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
+            ))
+        if not activos:
+            return None
+        etapa_pesos = {
+            Proceso.Estatus.NUEVO: 1,
+            Proceso.Estatus.INTEGRIDAD: 2,
+            Proceso.Estatus.PSICOMETRICOS: 3,
+            Proceso.Estatus.REFERENCIAS: 4,
+            Proceso.Estatus.ENTREVISTA_ASESORA: 5,
+            Proceso.Estatus.ENTREVISTA_JEFE: 6,
+            Proceso.Estatus.EXAMENES_MEDICOS: 7,
+            Proceso.Estatus.SOLICITUD_DOCS: 8,
+            Proceso.Estatus.FIRMA_CONTRATO: 9,
+            Proceso.Estatus.ALTA_SISTEMAS: 10,
+            Proceso.Estatus.FECHA_INGRESO: 11,
+            Proceso.Estatus.CONTRATADO_CERRADO: 12,
+        }
+        activos.sort(key=lambda p: (etapa_pesos.get(p.estatus_proceso, 0), p.fecha_inicio_etapa or timezone.now()), reverse=True)
+        return activos[0].candidato
 
     @property
     def ultima_observacion(self):
@@ -373,7 +410,12 @@ class Candidato(models.Model):
     # La propiedad proceso_activo no cambia
     @property
     def proceso_activo(self):
-        estados_finalizados = ['NO_APROBADO_PSICO', 'EN_BOLSA', 'FECHA_INGRESO']
+        estados_finalizados = [
+            Proceso.Estatus.NO_APROBADO_PSICO,
+            Proceso.Estatus.EN_BOLSA,
+            Proceso.Estatus.FECHA_INGRESO,
+            Proceso.Estatus.CONTRATADO_CERRADO,
+        ]
         return self.procesos.exclude(estatus_proceso__in=estados_finalizados).first()
 
     def __str__(self):
@@ -414,6 +456,16 @@ class Proceso(models.Model):
     def __str__(self):
         puesto_titulo = self.puesto.titulo if self.puesto else "N/A"
         return f"{self.candidato.nombre_completo} para {puesto_titulo}"
+
+
+@receiver([post_save, post_delete], sender=Puesto)
+def invalidar_cache_puesto(sender, instance, **kwargs):
+    cache.clear()
+
+
+@receiver([post_save, post_delete], sender=Proceso)
+def invalidar_cache_proceso(sender, instance, **kwargs):
+    cache.clear()
 
 
 class RegistroActividad(models.Model):

@@ -239,12 +239,15 @@
                         <td><span class="sap-badge sap-badge-neutral">{{ solicitud.get_motivo_requisicion_display }}</span></td>
                         <td style="text-align: right;">
                             <div class="action-group">
-                                <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="sap-btn sap-btn-positive" onclick="return confirm('¿Aprobar la fase inicial de esta vacante? Pasará a autorización de Dirección.');">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                    Aprobar (1/2)
-                                </a>
+                                <form method="post" action="{% url 'aprobar_solicitud' solicitud.id %}" style="display: inline-block; margin: 0;" onsubmit="return confirm('¿Aprobar la fase inicial de esta vacante? Pasará a autorización de Dirección.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="sap-btn sap-btn-positive">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Aprobar (1/2)
+                                    </button>
+                                </form>
                                 <button type="button" class="sap-btn sap-btn-negative" onclick="abrirModalRechazo('{{ solicitud.id }}', '{{ solicitud.titulo.nombre }}');">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -311,12 +314,15 @@
                         <td><span class="sap-badge sap-badge-neutral">{{ solicitud.get_motivo_requisicion_display }}</span></td>
                         <td style="text-align: right;">
                             <div class="action-group">
-                                <a href="{% url 'aprobar_solicitud' solicitud.id %}" class="sap-btn sap-btn-positive" onclick="return confirm('¿Aprobar definitivamente esta vacante? Quedará disponible para asignación.');">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                    Aprobar (Final)
-                                </a>
+                                <form method="post" action="{% url 'aprobar_solicitud' solicitud.id %}" style="display: inline-block; margin: 0;" onsubmit="return confirm('¿Aprobar definitivamente esta vacante? Quedará disponible para asignación.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="sap-btn sap-btn-positive">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        Aprobar (Final)
+                                    </button>
+                                </form>
                                 <button type="button" class="sap-btn sap-btn-negative" onclick="abrirModalRechazo('{{ solicitud.id }}', '{{ solicitud.titulo.nombre }}');">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>

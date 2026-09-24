@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.contrib.admin.sites import site
 from django.urls import reverse
+from django.utils import timezone
 from reclutamiento.models import (
     Marca, CatalogoPuesto, Puesto, Candidato, Proceso, PerfilDePuesto, PerfilUsuario
 )
@@ -237,5 +238,179 @@ class HRManagementTests(TestCase):
         self.assertEqual(puesto.estatus_autorizacion, Puesto.EstatusAutorizacion.RECHAZADO)
         self.assertFalse(puesto.esta_abierto)
         self.assertEqual(puesto.motivo_rechazo, 'Plantilla congelada por Dirección General.')
+
+    def test_require_post_en_aprobacion_y_rechazo(self):
+        """BUG-02 y BUG-03: Verifica que GET a aprobar o rechazar devuelva 405 Method Not Allowed."""
+        self.user.is_superuser = True
+        self.user.save()
+        self.client.login(username='testuser', password='password123')
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            solicitado_por=self.user,
+            estatus_autorizacion=Puesto.EstatusAutorizacion.PENDIENTE,
+            nombre_jefe_inmediato='Juan Pérez',
+            puesto_jefe_inmediato='Gerente',
+            motivo_requisicion='ROT',
+            sueldo_base=15000.00
+        )
+
+        # GET debe ser rechazado con 405 Method Not Allowed
+        response_get_aprobar = self.client.get(reverse('aprobar_solicitud', args=[puesto.id]))
+        self.assertEqual(response_get_aprobar.status_code, 405)
+
+        response_get_rechazar = self.client.get(reverse('rechazar_solicitud', args=[puesto.id]))
+        self.assertEqual(response_get_rechazar.status_code, 405)
+
+    def test_contratado_cerrado_excluido_de_mis_procesos(self):
+        """LN-02: Verifica que candidatos en CONTRATADO_CERRADO no aparezcan en mis_procesos."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            nombre_jefe_inmediato='Juan Pérez',
+            puesto_jefe_inmediato='Gerente',
+            motivo_requisicion='ROT',
+            sueldo_base=12000.00
+        )
+        cand1 = Candidato.objects.create(nombres='Ana', apellidos='Soto', email='ana@example.com')
+        cand2 = Candidato.objects.create(nombres='Beto', apellidos='Ríos', email='beto@example.com')
+
+        # Proceso 1: Contratado
+        proc1 = Proceso.objects.create(
+            candidato=cand1, puesto=puesto, asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO
+        )
+        # Proceso 2: En Entrevista
+        proc2 = Proceso.objects.create(
+            candidato=cand2, puesto=puesto, asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.ENTREVISTA_ASESORA
+        )
+
+        self.client.login(username='testuser', password='password123')
+        response = self.client.get(reverse('mis_procesos'))
+        self.assertEqual(response.status_code, 200)
+
+        procesos_en_contexto = list(response.context['procesos'])
+        self.assertIn(proc2, procesos_en_contexto)
+        self.assertNotIn(proc1, procesos_en_contexto)
+
+    def test_candidato_mas_avanzado_ponderado(self):
+        """LN-03: Verifica que candidato_mas_avanzado ordene por peso de etapa y no solo por fecha."""
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            nombre_jefe_inmediato='Juan Pérez',
+            puesto_jefe_inmediato='Gerente',
+            motivo_requisicion='ROT',
+            sueldo_base=12000.00
+        )
+        cand_nuevo = Candidato.objects.create(nombres='Reciente', apellidos='Nuevo', email='reciente@example.com')
+        cand_avanzado = Candidato.objects.create(nombres='Avanzado', apellidos='Jefe', email='avanzado@example.com')
+
+        # El candidato avanzado entró antes a entrevista jefe
+        Proceso.objects.create(
+            candidato=cand_avanzado, puesto=puesto,
+            estatus_proceso=Proceso.Estatus.ENTREVISTA_JEFE,
+            fecha_inicio_etapa=timezone.now() - timezone.timedelta(days=3)
+        )
+        # El candidato nuevo entró hoy a integridad (más reciente en fecha)
+        Proceso.objects.create(
+            candidato=cand_nuevo, puesto=puesto,
+            estatus_proceso=Proceso.Estatus.INTEGRIDAD,
+            fecha_inicio_etapa=timezone.now()
+        )
+
+        # A pesar de que cand_nuevo tiene fecha_inicio_etapa más reciente, cand_avanzado está más avanzado
+        self.assertEqual(puesto.candidato_mas_avanzado, cand_avanzado)
+
+    def test_asignar_candidato_evita_duplicados_y_asigna_nuevo(self):
+        """LN-04 y LN-06: Verifica estatus inicial NUEVO y prevención de duplicidad de procesos activos."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            nombre_jefe_inmediato='Juan Pérez',
+            puesto_jefe_inmediato='Gerente',
+            motivo_requisicion='ROT',
+            sueldo_base=12000.00
+        )
+        cand = Candidato.objects.create(nombres='Daniel', apellidos='Castro', email='daniel@example.com')
+
+        self.client.login(username='testuser', password='password123')
+
+        # Primera asignación
+        resp1 = self.client.post(reverse('asignar_candidato', args=[puesto.id]), {'candidato_id': cand.id})
+        self.assertEqual(resp1.status_code, 302)
+
+        proc = Proceso.objects.get(candidato=cand, puesto=puesto)
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.NUEVO)
+
+        # Segunda asignación para el mismo puesto debe ser prevenida
+        resp2 = self.client.post(reverse('asignar_candidato', args=[puesto.id]), {'candidato_id': cand.id})
+        self.assertEqual(resp2.status_code, 302)
+        # Solo debe existir un proceso
+        self.assertEqual(Proceso.objects.filter(candidato=cand, puesto=puesto).count(), 1)
+
+    def test_service_layer_reportes_completo(self):
+        """QA-05: Prueba formal de ReportesService en TestCase de Django."""
+        from reclutamiento.services import ReportesService
+
+        self.user.is_staff = True
+        self.user.save()
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            solicitado_por=self.user,
+            nombre_jefe_inmediato='Juan Pérez',
+            puesto_jefe_inmediato='Gerente',
+            motivo_requisicion='ROT',
+            sueldo_base=12000.00
+        )
+
+        filtros = {
+            'fecha_desde': '', 'fecha_hasta': '', 'marca': '', 'agencia': '',
+            'ciudad': '', 'asesora': '', 'sla': '', 'etapa': ''
+        }
+
+        datos = ReportesService.generate_reporte_data(self.user, filtros, use_cache=False)
+        self.assertIn('kpis', datos)
+        self.assertIn('agencias_scorecard', datos)
+        self.assertIn('asesoras_scorecard', datos)
+        self.assertIn('solicitantes_scorecard', datos)
+        self.assertEqual(datos['kpis']['total_vacantes'], 1)
+        self.assertEqual(datos['kpis']['total_activas'], 1)
+
 
 

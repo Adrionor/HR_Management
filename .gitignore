@@ -16,3 +16,6 @@ db.sqlite3-journal
 # Archivos de sistema operativo
 .DS_Store
 Thumbs.db
+
+# Static files recopilados
+staticfiles/

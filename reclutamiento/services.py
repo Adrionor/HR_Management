@@ -28,7 +28,7 @@ class ReportesService:
         Implementa scoping por rol para seguridad de datos
         """
         from .models import Puesto, Marca
-        from .views import es_gerente_ch, es_gerente_general, es_asesora
+        from .permissions import es_gerente_ch, es_gerente_general, es_asesora
         
         if usuario.is_superuser or usuario.is_staff or es_gerente_ch(usuario):
             return Puesto.objects.all()
@@ -615,8 +615,6 @@ class ReportesService:
         return resultado
     
     @staticmethod
-    def invalidate_user_cache(usuario_id):
-        """Invalida toda la caché de reportes para un usuario específico"""
-        # En una implementación más robusta, usaríamos cache.keys() con patrón
-        # Por ahora, simplemente no implementamos invalidación granular
-        pass
+    def invalidate_user_cache(usuario_id=None):
+        """Invalida la caché de reportes para reflejar cambios inmediatos"""
+        cache.clear()
