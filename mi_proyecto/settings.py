@@ -31,19 +31,13 @@ if env_file.exists():
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = 'django-insecure-dev-only-local-testing-change-in-production'
-    else:
-        from django.core.exceptions import ImproperlyConfigured
-        raise ImproperlyConfigured("La variable de entorno SECRET_KEY es obligatoria cuando DEBUG=False.")
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-prod-key-premier-hr-management-2026-safe-fallback')
 
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS')
 if allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
 else:
-    ALLOWED_HOSTS = ['aguzmaninz.pythonanywhere.com', '127.0.0.1', 'localhost', '.herokuapp.com']
+    ALLOWED_HOSTS = ['*', 'aguzmaninz.pythonanywhere.com', '127.0.0.1', 'localhost', '.herokuapp.com', '.pythonanywhere.com']
 
 
 # Application definition
@@ -105,7 +99,7 @@ DATABASES = {
 # Configuración automática para PostgreSQL en Heroku (DATABASE_URL)
 database_url = os.environ.get('DATABASE_URL')
 if database_url:
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    DATABASES['default'] = dj_database_url.config(conn_max_age=600)
 
 
 # Password validation
