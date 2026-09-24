@@ -33,11 +33,31 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-prod-key-premier-hr-management-2026-safe-fallback')
 
-allowed_hosts_env = os.environ.get('ALLOWED_HOSTS')
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+parsed_hosts = []
 if allowed_hosts_env:
-    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
-else:
-    ALLOWED_HOSTS = ['*', 'aguzmaninz.pythonanywhere.com', '127.0.0.1', 'localhost', '.herokuapp.com', '.pythonanywhere.com']
+    for h in allowed_hosts_env.split(','):
+        h = h.strip().replace('https://', '').replace('http://', '').split('/')[0].split(' ')[0]
+        if h:
+            parsed_hosts.append(h)
+
+# Acepta comodines y dominios de despliegue para evitar Bad Request (400)
+ALLOWED_HOSTS = list(set(parsed_hosts + [
+    '*',
+    '.herokuapp.com',
+    '.pythonanywhere.com',
+    'localhost',
+    '127.0.0.1',
+]))
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.herokuapp.com',
+    'https://*.pythonanywhere.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 
 # Application definition
