@@ -10,7 +10,31 @@ from reclutamiento.models import (
 class Command(BaseCommand):
     help = 'Genera datos de prueba realistas para revisar el ciclo completo de vacantes y la suite de reportería.'
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset',
+            action='store_true',
+            default=True,
+            help='Borra y regenera limpiamente todos los datos demo (por defecto True).'
+        )
+        parser.add_argument(
+            '--no-reset',
+            dest='reset',
+            action='store_false',
+            help='No borra los registros previos antes de sembrar.'
+        )
+
+    def handle(self, *args, **options):
+        reset = options.get('reset', True)
+        if reset:
+            self.stdout.write("Limpiando registros demo anteriores...")
+            RegistroActividad.objects.all().delete()
+            Proceso.objects.all().delete()
+            Candidato.objects.all().delete()
+            PerfilDePuesto.objects.all().delete()
+            Puesto.objects.all().delete()
+            Aviso.objects.all().delete()
+
         self.stdout.write("Creando roles, usuarios y datos demo...")
 
         # 1. GRUPOS Y ROLES
@@ -47,7 +71,7 @@ class Command(BaseCommand):
                 user.perfilusuario.marcas.set(marcas_list)
             return user
 
-        # Actualizar jorge.guzman si existe
+        # Actualizar o crear jorge.guzman
         jg = User.objects.filter(username='jorge.guzman').first()
         if jg:
             jg.set_password('password123')
@@ -56,6 +80,8 @@ class Command(BaseCommand):
             jg.first_name = 'Jorge'
             jg.last_name = 'Guzmán'
             jg.save()
+        else:
+            jg = crear_usuario('jorge.guzman', 'jorge@gmail.com', 'Jorge', 'Guzmán', is_staff=True, is_super=True)
 
         u_go = crear_usuario('gerente.operativo', 'operativo@premier.com', 'Roberto', 'Mendoza', 'Gerentes Operativos')
         u_gm = crear_usuario('gerente.marca', 'gm.toyota@premier.com', 'Carlos', 'Villanueva', 'Gerente General de Marca', marcas_list=[marcas['Toyota Premier'], marcas['Honda Premier']])
@@ -309,6 +335,21 @@ class Command(BaseCommand):
             candidato=c_entrevista, puesto=p7, asesora_asignada=u_as1,
             estatus_proceso=Proceso.Estatus.ENTREVISTA_JEFE,
             retroalimentacion='Superó psicometría (percentil 92) e integridad aprobada. Listo para entrevista técnica con Roberto Mendoza.'
+        )
+        RegistroActividad.objects.create(
+            usuario=u_as1, accion="Postulación Registrada",
+            tipo_objeto="Proceso", id_objeto=proc_entrevista.id,
+            detalles="Candidato recibido e integrado al proceso de selección de Toyota Aeropuerto."
+        )
+        RegistroActividad.objects.create(
+            usuario=u_as1, accion="Psicometría e Integridad Aprobada",
+            tipo_objeto="Proceso", id_objeto=proc_entrevista.id,
+            detalles="Pruebas psicométricas con percentil 92. Apto para perfil comercial."
+        )
+        RegistroActividad.objects.create(
+            usuario=u_as1, accion="Envío a Entrevista con Jefe Inmediato",
+            tipo_objeto="Proceso", id_objeto=proc_entrevista.id,
+            detalles="Cita programada con Roberto Mendoza (Gerente de Ventas)."
         )
 
         # VACANTE 8: 7. En Trámites de Ingreso
