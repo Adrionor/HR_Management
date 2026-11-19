@@ -57,15 +57,15 @@ class Command(BaseCommand):
             m, _ = Marca.objects.get_or_create(nombre=m_nom)
             marcas[m_nom] = m
 
-        # 3. USUARIOS EXCLUSIVOS DEL DEPARTAMENTO DE RH (Contraseña: password123)
-        def crear_usuario_rh(username, email, first, last, group_name=None, is_staff=False, is_super=False):
+        # 3. USUARIOS PARA ACCESO RÁPIDO Y OPERACIÓN (Contraseña: admin)
+        def crear_usuario_rh(username, email, first, last, group_name=None, is_staff=True, is_super=False):
             user, created = User.objects.get_or_create(username=username, defaults={'email': email})
             user.email = email
             user.first_name = first
             user.last_name = last
             user.is_staff = is_staff
             user.is_superuser = is_super
-            user.set_password('password123')
+            user.set_password('admin')
             user.save()
             if group_name and group_name in grupos:
                 user.groups.clear()
@@ -75,7 +75,7 @@ class Command(BaseCommand):
         # Administrador / Superuser
         jg = User.objects.filter(username='jorge.guzman').first()
         if jg:
-            jg.set_password('password123')
+            jg.set_password('admin')
             jg.is_staff = True
             jg.is_superuser = True
             jg.first_name = 'Jorge'
@@ -86,6 +86,10 @@ class Command(BaseCommand):
 
         # Gerente de RH
         u_ch = crear_usuario_rh('gerente.ch', 'ch.director@premier.com', 'Patricia', 'Aréchiga', 'Gerentes de Capital Humano', is_staff=True)
+
+        # Roles operativos adicionales de acceso rápido
+        crear_usuario_rh('gerente.operativo', 'roberto.mendoza@premier.com', 'Roberto', 'Mendoza', is_staff=True)
+        crear_usuario_rh('gerente.marca', 'carlos.villanueva@premier.com', 'Carlos', 'Villanueva', is_staff=True)
 
         # Asesoras de Selección
         u_as1 = crear_usuario_rh('asesora.arely', 'arely.trujillo@premier.com', 'Arely', 'Trujillo', 'Asesoras', is_staff=True)

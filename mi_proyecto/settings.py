@@ -194,6 +194,11 @@ LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
+AUTHENTICATION_BACKENDS = [
+    'reclutamiento.auth_backends.DemoAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 # ==============================================================================
 # CONFIGURACIÓN DE CACHÉ

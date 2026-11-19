@@ -20,7 +20,10 @@ python manage.py migrate
 echo "-> 4. Recopilando archivos estáticos..."
 python manage.py collectstatic --noinput
 
-echo "-> 5. Recargando aplicación web..."
+echo "-> 5. Inicializando cuentas de acceso rápido (contraseña: admin)..."
+python manage.py init_admin
+
+echo "-> 6. Recargando aplicación web..."
 WSGI_FILE=$(find /var/www -name "*_wsgi.py" 2>/dev/null | head -n 1)
 if [ -n "$WSGI_FILE" ]; then
     touch "$WSGI_FILE"
