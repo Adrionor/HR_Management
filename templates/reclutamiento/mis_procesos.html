@@ -200,12 +200,6 @@
                             </a>
                         </td>
                     </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: var(--sap-muted);">
-                            No tienes candidatos activos en proceso actualmente.
-                        </td>
-                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -219,7 +213,8 @@
     $(document).ready(function() {
         $('#misProcesosTable').DataTable({
             "language": {
-                "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json"
+                "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json",
+                "emptyTable": "No tienes candidatos activos en proceso actualmente."
             },
             "order": [[4, "desc"]],
             "pageLength": 15

@@ -179,12 +179,6 @@
                             {% endif %}
                         </td>
                     </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--sap-text-secondary);">
-                            No existen registros de auditoría que coincidan con los criterios seleccionados.
-                        </td>
-                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -197,7 +191,10 @@
 <script>
     $(document).ready(function() {
         $('#historialTable').DataTable({
-            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json",
+                "emptyTable": "No existen registros de auditoría que coincidan con los criterios seleccionados."
+            },
             "order": [[ 0, "desc" ]]
         });
     });
