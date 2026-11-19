@@ -1,54 +1,5 @@
 [
 {
-  "model": "reclutamiento.marca",
-  "pk": 1,
-  "fields": {
-    "nombre": "asdfdg"
-  }
-},
-{
-  "model": "reclutamiento.marca",
-  "pk": 2,
-  "fields": {
-    "nombre": "dasfag"
-  }
-},
-{
-  "model": "reclutamiento.marca",
-  "pk": 3,
-  "fields": {
-    "nombre": "Toyota Premier"
-  }
-},
-{
-  "model": "reclutamiento.marca",
-  "pk": 4,
-  "fields": {
-    "nombre": "Honda Premier"
-  }
-},
-{
-  "model": "reclutamiento.marca",
-  "pk": 5,
-  "fields": {
-    "nombre": "Hyundai Premier"
-  }
-},
-{
-  "model": "reclutamiento.marca",
-  "pk": 6,
-  "fields": {
-    "nombre": "Kia Premier"
-  }
-},
-{
-  "model": "reclutamiento.marca",
-  "pk": 7,
-  "fields": {
-    "nombre": "Chevrolet Premier"
-  }
-},
-{
   "model": "reclutamiento.catalogopuesto",
   "pk": 1,
   "fields": {
@@ -1097,6 +1048,405 @@
   }
 },
 {
+  "model": "reclutamiento.marca",
+  "pk": 1,
+  "fields": {
+    "nombre": "asdfdg"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 2,
+  "fields": {
+    "nombre": "dasfag"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 3,
+  "fields": {
+    "nombre": "Toyota Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 4,
+  "fields": {
+    "nombre": "Honda Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 5,
+  "fields": {
+    "nombre": "Hyundai Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 6,
+  "fields": {
+    "nombre": "Kia Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 7,
+  "fields": {
+    "nombre": "Chevrolet Premier"
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 47,
+  "fields": {
+    "marca": 3,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 9,
+    "agencia": "Toyota Culiacán Aeropuerto",
+    "area": "VTAS",
+    "ciudad": "CUL",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": 2,
+    "carrera_sugerida": "Mercadotecnia, Administración o afín",
+    "reemplaza_a": "Edgar Beltrán",
+    "jefe_inmediato_nombre": "Roberto Mendoza",
+    "jefe_inmediato_puesto": "Gerente de Ventas Nuevos",
+    "nombre_jefe_inmediato": "Roberto Mendoza",
+    "puesto_jefe_inmediato": "Gerente de Ventas Nuevos",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "Lograr metas mensuales de venta y atención a clientes de piso y leads digitales.",
+    "funciones_puesto": "1. Prospección de clientes\n2. Realización de pruebas de manejo\n3. Elaboración de cotizaciones",
+    "indicador_puesto": "Venta mínima de 8 unidades mensuales",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "Lunes a Viernes 8:30 - 18:30, Sábados 9:00 - 14:00",
+    "sueldo_base": "10000.00",
+    "esquema_comisiones": "Comisiones por unidad facturada y bonos por financiamiento F&I.",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-13T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Vacante asignada para reclutamiento activo. Buenas referencias del perfil solicitado."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 48,
+  "fields": {
+    "marca": 4,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 29,
+    "agencia": "Honda Mazatlán Marina",
+    "area": "SERV",
+    "ciudad": "MZT",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Marcos Quintero",
+    "jefe_inmediato_puesto": "Gerente de Servicio",
+    "nombre_jefe_inmediato": "Marcos Quintero",
+    "puesto_jefe_inmediato": "Gerente de Servicio",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "Recepción de unidades, asesoría técnica de mantenimiento y entrega a clientes.",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "12000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-09T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.sofia"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Meta de bono alcanzada: 3 candidatos aptos enviados a entrevista con jefe dentro del plazo."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 49,
+  "fields": {
+    "marca": 5,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 37,
+    "agencia": "Hyundai Los Mochis Centro",
+    "area": "SERV",
+    "ciudad": "LMM",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Ignacio Valenzuela",
+    "jefe_inmediato_puesto": "Jefe de Taller",
+    "nombre_jefe_inmediato": "Ignacio Valenzuela",
+    "puesto_jefe_inmediato": "Jefe de Taller",
+    "motivo_requisicion": "INC",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "16000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-10-22T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": "2026-11-15T21:24:04.571Z",
+    "numero_reinicios": 1,
+    "comentarios": "Reinicio de SLA #1 autorizado por Dirección CH: Reajuste salarial en tabulador para atraer técnicos con certificación máster."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 50,
+  "fields": {
+    "marca": 6,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 80,
+    "agencia": "Kia Tijuana Río",
+    "area": "ADM",
+    "ciudad": "TIJ",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Claudia Lizárraga",
+    "jefe_inmediato_puesto": "Contadora General",
+    "nombre_jefe_inmediato": "Claudia Lizárraga",
+    "puesto_jefe_inmediato": "Contadora General",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "13500.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-10-14T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.sofia"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Alerta operativa: proceso detenido a la espera de confirmación de documentos."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 51,
+  "fields": {
+    "marca": 3,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 64,
+    "agencia": "Toyota Culiacán Tres Ríos",
+    "area": "REF",
+    "ciudad": "CUL",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Jaime Gastélum",
+    "jefe_inmediato_puesto": "Gerente de Refacciones",
+    "nombre_jefe_inmediato": "Jaime Gastélum",
+    "puesto_jefe_inmediato": "Gerente de Refacciones",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "11000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-11T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 12,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Candidato aprobado por jefe de refacciones. En trámite de alta e ingreso."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 52,
+  "fields": {
+    "marca": 3,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 131,
+    "agencia": "Toyota Culiacán Aeropuerto",
+    "area": "REF",
+    "ciudad": "CUL",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Jaime Gastélum",
+    "jefe_inmediato_puesto": "Gerente de Refacciones",
+    "nombre_jefe_inmediato": "Jaime Gastélum",
+    "puesto_jefe_inmediato": "Gerente de Refacciones",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "9500.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": false,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-04T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 12,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Vacante cerrada con éxito en 10 días hábiles. Cumplió meta de bono."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 53,
+  "fields": {
+    "marca": 7,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 42,
+    "agencia": "Chevrolet Hermosillo Kino",
+    "area": "SERV",
+    "ciudad": "HMO",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Ernesto Barajas",
+    "jefe_inmediato_puesto": "Jefe de Taller HyP",
+    "nombre_jefe_inmediato": "Ernesto Barajas",
+    "puesto_jefe_inmediato": "Jefe de Taller HyP",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "14000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-10T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.sofia"
+    ],
+    "dias_meta": 12,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": ""
+  }
+},
+{
   "model": "reclutamiento.candidato",
   "pk": 41,
   "fields": {
@@ -1556,147 +1906,6 @@
   }
 },
 {
-  "model": "auth.group",
-  "fields": {
-    "name": "Gerentes de Capital Humano",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "fields": {
-    "name": "Asesoras",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$cqJ8jGOsnizKSCbVcivhOv$xDxQ5IL4W+SDsG5X/60JRlqYD8JT06C+8CQryVYvOEM=",
-    "last_login": "2026-11-19T19:10:07.534Z",
-    "is_superuser": true,
-    "username": "jorge.guzman",
-    "first_name": "Jorge",
-    "last_name": "Guzmán",
-    "email": "jorge@gmail.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2025-07-06T20:22:04.656Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$PcKVYO7UP5pFo9AaG2J14h$Qx/UkpBai9Fg1m88k/kr3l/jkb7k1jM4ApJhNGLln4I=",
-    "last_login": "2026-11-19T17:42:05.615Z",
-    "is_superuser": false,
-    "username": "gerente.ch",
-    "first_name": "Patricia",
-    "last_name": "Aréchiga",
-    "email": "ch.director@premier.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-09-23T18:45:57.855Z",
-    "groups": [
-      [
-        "Gerentes de Capital Humano"
-      ]
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$lGELth9wY24VFQ3XrjSu5Y$pqMoKl2NYS7wsdC8TOH1zh4pgruaiks06bdnvf1Cm8I=",
-    "last_login": "2026-11-19T17:28:36.361Z",
-    "is_superuser": false,
-    "username": "asesora.arely",
-    "first_name": "Arely",
-    "last_name": "Trujillo",
-    "email": "arely.trujillo@premier.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-09-23T18:45:59.552Z",
-    "groups": [
-      [
-        "Asesoras"
-      ]
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$VSwYVGfIl18mBs2qgdwr76$rGHuark19S6mjHGqHu0bQTNDn6p/6gjRRtReSu/zIS8=",
-    "last_login": "2026-11-19T17:42:05.362Z",
-    "is_superuser": false,
-    "username": "asesora.sofia",
-    "first_name": "Sofía",
-    "last_name": "Navarro",
-    "email": "sofia.navarro@premier.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-09-23T18:46:01.179Z",
-    "groups": [
-      [
-        "Asesoras"
-      ]
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$xHDK9XYdY9E70WYmyytUss$7LOqQml05tTxViYNBPVzqYEpD6k40G228NEtioeGkek=",
-    "last_login": null,
-    "is_superuser": false,
-    "username": "gerente.operativo",
-    "first_name": "Roberto",
-    "last_name": "Mendoza",
-    "email": "roberto.mendoza@premier.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-11-19T23:41:08.330Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "fields": {
-    "password": "pbkdf2_sha256$1000000$j5ptecRz0HI7cXs8Ues851$81a5zf+CLkWlViLIY2jGuZnD0LBLybC9diU5xD6us9Q=",
-    "last_login": null,
-    "is_superuser": false,
-    "username": "gerente.marca",
-    "first_name": "Carlos",
-    "last_name": "Villanueva",
-    "email": "carlos.villanueva@premier.com",
-    "is_staff": true,
-    "is_active": true,
-    "date_joined": "2026-11-19T23:41:25.965Z",
-    "groups": [],
-    "user_permissions": []
-  }
-},
-{
-  "model": "reclutamiento.aviso",
-  "pk": 7,
-  "fields": {
-    "titulo": "Nuevo Modelo Operativo de Capital Humano",
-    "contenido": "El sistema ahora opera exclusivamente para el equipo de Capital Humano. Las vacantes nacen autorizadas y activas directamente sin requerir aprobaciones externas. Monitorea tus SLAs y metas de bono directamente desde el panel.",
-    "fecha_creacion": "2026-11-19T21:24:04.815Z",
-    "creado_por": [
-      "gerente.ch"
-    ],
-    "esta_activo": true
-  }
-},
-{
   "model": "reclutamiento.proceso",
   "pk": 24,
   "fields": {
@@ -1884,413 +2093,16 @@
   }
 },
 {
-  "model": "reclutamiento.puesto",
-  "pk": 47,
-  "fields": {
-    "marca": 3,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 9,
-    "agencia": "Toyota Culiacán Aeropuerto",
-    "area": "VTAS",
-    "ciudad": "CUL",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": 2,
-    "carrera_sugerida": "Mercadotecnia, Administración o afín",
-    "reemplaza_a": "Edgar Beltrán",
-    "jefe_inmediato_nombre": "Roberto Mendoza",
-    "jefe_inmediato_puesto": "Gerente de Ventas Nuevos",
-    "nombre_jefe_inmediato": "Roberto Mendoza",
-    "puesto_jefe_inmediato": "Gerente de Ventas Nuevos",
-    "motivo_requisicion": "ROT",
-    "objetivo_puesto": "Lograr metas mensuales de venta y atención a clientes de piso y leads digitales.",
-    "funciones_puesto": "1. Prospección de clientes\n2. Realización de pruebas de manejo\n3. Elaboración de cotizaciones",
-    "indicador_puesto": "Venta mínima de 8 unidades mensuales",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "Lunes a Viernes 8:30 - 18:30, Sábados 9:00 - 14:00",
-    "sueldo_base": "10000.00",
-    "esquema_comisiones": "Comisiones por unidad facturada y bonos por financiamiento F&I.",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": true,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-11-13T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.arely"
-    ],
-    "dias_meta": 20,
-    "fecha_inicio_sla_custom": null,
-    "numero_reinicios": 0,
-    "comentarios": "Vacante asignada para reclutamiento activo. Buenas referencias del perfil solicitado."
-  }
-},
-{
-  "model": "reclutamiento.puesto",
-  "pk": 48,
-  "fields": {
-    "marca": 4,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 29,
-    "agencia": "Honda Mazatlán Marina",
-    "area": "SERV",
-    "ciudad": "MZT",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": null,
-    "carrera_sugerida": "",
-    "reemplaza_a": "",
-    "jefe_inmediato_nombre": "Marcos Quintero",
-    "jefe_inmediato_puesto": "Gerente de Servicio",
-    "nombre_jefe_inmediato": "Marcos Quintero",
-    "puesto_jefe_inmediato": "Gerente de Servicio",
-    "motivo_requisicion": "ROT",
-    "objetivo_puesto": "Recepción de unidades, asesoría técnica de mantenimiento y entrega a clientes.",
-    "funciones_puesto": "",
-    "indicador_puesto": "",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "",
-    "sueldo_base": "12000.00",
-    "esquema_comisiones": "",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": true,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-11-09T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.sofia"
-    ],
-    "dias_meta": 20,
-    "fecha_inicio_sla_custom": null,
-    "numero_reinicios": 0,
-    "comentarios": "Meta de bono alcanzada: 3 candidatos aptos enviados a entrevista con jefe dentro del plazo."
-  }
-},
-{
-  "model": "reclutamiento.puesto",
-  "pk": 49,
-  "fields": {
-    "marca": 5,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 37,
-    "agencia": "Hyundai Los Mochis Centro",
-    "area": "SERV",
-    "ciudad": "LMM",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": null,
-    "carrera_sugerida": "",
-    "reemplaza_a": "",
-    "jefe_inmediato_nombre": "Ignacio Valenzuela",
-    "jefe_inmediato_puesto": "Jefe de Taller",
-    "nombre_jefe_inmediato": "Ignacio Valenzuela",
-    "puesto_jefe_inmediato": "Jefe de Taller",
-    "motivo_requisicion": "INC",
-    "objetivo_puesto": "",
-    "funciones_puesto": "",
-    "indicador_puesto": "",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "",
-    "sueldo_base": "16000.00",
-    "esquema_comisiones": "",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": true,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-10-22T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.arely"
-    ],
-    "dias_meta": 20,
-    "fecha_inicio_sla_custom": "2026-11-15T21:24:04.571Z",
-    "numero_reinicios": 1,
-    "comentarios": "Reinicio de SLA #1 autorizado por Dirección CH: Reajuste salarial en tabulador para atraer técnicos con certificación máster."
-  }
-},
-{
-  "model": "reclutamiento.puesto",
-  "pk": 50,
-  "fields": {
-    "marca": 6,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 80,
-    "agencia": "Kia Tijuana Río",
-    "area": "ADM",
-    "ciudad": "TIJ",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": null,
-    "carrera_sugerida": "",
-    "reemplaza_a": "",
-    "jefe_inmediato_nombre": "Claudia Lizárraga",
-    "jefe_inmediato_puesto": "Contadora General",
-    "nombre_jefe_inmediato": "Claudia Lizárraga",
-    "puesto_jefe_inmediato": "Contadora General",
-    "motivo_requisicion": "ROT",
-    "objetivo_puesto": "",
-    "funciones_puesto": "",
-    "indicador_puesto": "",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "",
-    "sueldo_base": "13500.00",
-    "esquema_comisiones": "",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": true,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-10-14T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.sofia"
-    ],
-    "dias_meta": 20,
-    "fecha_inicio_sla_custom": null,
-    "numero_reinicios": 0,
-    "comentarios": "Alerta operativa: proceso detenido a la espera de confirmación de documentos."
-  }
-},
-{
-  "model": "reclutamiento.puesto",
-  "pk": 51,
-  "fields": {
-    "marca": 3,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 64,
-    "agencia": "Toyota Culiacán Tres Ríos",
-    "area": "REF",
-    "ciudad": "CUL",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": null,
-    "carrera_sugerida": "",
-    "reemplaza_a": "",
-    "jefe_inmediato_nombre": "Jaime Gastélum",
-    "jefe_inmediato_puesto": "Gerente de Refacciones",
-    "nombre_jefe_inmediato": "Jaime Gastélum",
-    "puesto_jefe_inmediato": "Gerente de Refacciones",
-    "motivo_requisicion": "ROT",
-    "objetivo_puesto": "",
-    "funciones_puesto": "",
-    "indicador_puesto": "",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "",
-    "sueldo_base": "11000.00",
-    "esquema_comisiones": "",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": true,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-11-11T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.arely"
-    ],
-    "dias_meta": 12,
-    "fecha_inicio_sla_custom": null,
-    "numero_reinicios": 0,
-    "comentarios": "Candidato aprobado por jefe de refacciones. En trámite de alta e ingreso."
-  }
-},
-{
-  "model": "reclutamiento.puesto",
-  "pk": 52,
-  "fields": {
-    "marca": 3,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 131,
-    "agencia": "Toyota Culiacán Aeropuerto",
-    "area": "REF",
-    "ciudad": "CUL",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": null,
-    "carrera_sugerida": "",
-    "reemplaza_a": "",
-    "jefe_inmediato_nombre": "Jaime Gastélum",
-    "jefe_inmediato_puesto": "Gerente de Refacciones",
-    "nombre_jefe_inmediato": "Jaime Gastélum",
-    "puesto_jefe_inmediato": "Gerente de Refacciones",
-    "motivo_requisicion": "ROT",
-    "objetivo_puesto": "",
-    "funciones_puesto": "",
-    "indicador_puesto": "",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "",
-    "sueldo_base": "9500.00",
-    "esquema_comisiones": "",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": false,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-11-04T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.arely"
-    ],
-    "dias_meta": 12,
-    "fecha_inicio_sla_custom": null,
-    "numero_reinicios": 0,
-    "comentarios": "Vacante cerrada con éxito en 10 días hábiles. Cumplió meta de bono."
-  }
-},
-{
-  "model": "reclutamiento.puesto",
-  "pk": 53,
-  "fields": {
-    "marca": 7,
-    "aprobado_por_gerente_marca": null,
-    "fecha_aprobacion_gerente_marca": null,
-    "aprobado_por_director": null,
-    "fecha_aprobacion_director": null,
-    "titulo": 42,
-    "agencia": "Chevrolet Hermosillo Kino",
-    "area": "SERV",
-    "ciudad": "HMO",
-    "cantidad_vacantes": 1,
-    "experiencia_minima": null,
-    "carrera_sugerida": "",
-    "reemplaza_a": "",
-    "jefe_inmediato_nombre": "Ernesto Barajas",
-    "jefe_inmediato_puesto": "Jefe de Taller HyP",
-    "nombre_jefe_inmediato": "Ernesto Barajas",
-    "puesto_jefe_inmediato": "Jefe de Taller HyP",
-    "motivo_requisicion": "ROT",
-    "objetivo_puesto": "",
-    "funciones_puesto": "",
-    "indicador_puesto": "",
-    "herramientas_puesto": "",
-    "conocimientos_tecnicos": "",
-    "horario": "",
-    "sueldo_base": "14000.00",
-    "esquema_comisiones": "",
-    "archivo_justificacion": "",
-    "es_confidencial": false,
-    "motivo_rechazo": null,
-    "estatus_autorizacion": "AUTORIZADO",
-    "esta_abierto": true,
-    "solicitado_por": null,
-    "fecha_solicitud": "2026-11-10T21:24:04.571Z",
-    "autorizado_por": null,
-    "fecha_autorizacion": null,
-    "segundo_autorizado_por": null,
-    "fecha_segunda_autorizacion": null,
-    "asesora_encargada": [
-      "asesora.sofia"
-    ],
-    "dias_meta": 12,
-    "fecha_inicio_sla_custom": null,
-    "numero_reinicios": 0,
-    "comentarios": ""
-  }
-},
-{
-  "model": "reclutamiento.perfilusuario",
-  "pk": 1,
-  "fields": {
-    "usuario": [
-      "jorge.guzman"
-    ],
-    "marcas": []
-  }
-},
-{
-  "model": "reclutamiento.perfilusuario",
-  "pk": 4,
-  "fields": {
-    "usuario": [
-      "gerente.ch"
-    ],
-    "marcas": []
-  }
-},
-{
-  "model": "reclutamiento.perfilusuario",
-  "pk": 5,
-  "fields": {
-    "usuario": [
-      "asesora.arely"
-    ],
-    "marcas": []
-  }
-},
-{
-  "model": "reclutamiento.perfilusuario",
-  "pk": 6,
-  "fields": {
-    "usuario": [
-      "asesora.sofia"
-    ],
-    "marcas": []
-  }
-},
-{
-  "model": "reclutamiento.perfilusuario",
+  "model": "reclutamiento.aviso",
   "pk": 7,
   "fields": {
-    "usuario": [
-      "gerente.operativo"
+    "titulo": "Nuevo Modelo Operativo de Capital Humano",
+    "contenido": "El sistema ahora opera exclusivamente para el equipo de Capital Humano. Las vacantes nacen autorizadas y activas directamente sin requerir aprobaciones externas. Monitorea tus SLAs y metas de bono directamente desde el panel.",
+    "fecha_creacion": "2026-11-19T21:24:04.815Z",
+    "creado_por": [
+      "gerente.ch"
     ],
-    "marcas": []
-  }
-},
-{
-  "model": "reclutamiento.perfilusuario",
-  "pk": 9,
-  "fields": {
-    "usuario": [
-      "gerente.marca"
-    ],
-    "marcas": []
+    "esta_activo": true
   }
 }
 ]

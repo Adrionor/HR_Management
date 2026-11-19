@@ -43,6 +43,8 @@ def ensure_user_profile(sender, instance, **kwargs):
     """
     Asegura que cada User tenga un PerfilUsuario asociado sin duplicación ni doble save().
     """
+    if kwargs.get('raw', False):
+        return
     PerfilUsuario.objects.get_or_create(usuario=instance)
 
 
