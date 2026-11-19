@@ -39,6 +39,19 @@
         text-decoration: underline;
         color: var(--sap-primary-hover);
     }
+    .sap-filter-bar {
+        background: #f8fafc;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1rem;
+        margin-bottom: 1.25rem;
+    }
+    .sap-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.85rem;
+        align-items: end;
+    }
 </style>
 {% endblock %}
 
@@ -53,28 +66,80 @@
             </svg>
             Bolsa de Trabajo General
         </h1>
-        <p class="sap-page-subtitle">Repositorio de candidatos registrados y disponibles para vincular a vacantes.</p>
+        <p class="sap-page-subtitle">Exploración y búsqueda de candidatos disponibles para vacantes en cualquier agencia y ciudad.</p>
     </div>
 </div>
 
+<!-- Barra de Filtros Operativa de RH -->
+<div class="sap-filter-bar">
+    <form method="get" action="{% url 'bolsa_trabajo_consulta' %}">
+        <div class="sap-filter-grid">
+            <div class="sap-form-group" style="margin-bottom: 0;">
+                <label class="sap-label" for="q_puesto" style="font-size: 0.75rem;">Puesto de Interés:</label>
+                <input type="text" name="q_puesto" id="q_puesto" class="sap-input" style="font-size: 0.8125rem;" placeholder="Ej. Asesor de Ventas, Mecánico..." value="{{ filtros.q_puesto }}">
+            </div>
+
+            <div class="sap-form-group" style="margin-bottom: 0;">
+                <label class="sap-label" for="q_ciudad" style="font-size: 0.75rem;">Ciudad:</label>
+                <select name="q_ciudad" id="q_ciudad" class="sap-select" style="font-size: 0.8125rem;">
+                    <option value="">-- Todas las ciudades --</option>
+                    {% for cod, nombre in ciudades_choices %}
+                    <option value="{{ cod }}" {% if filtros.q_ciudad == cod %}selected{% endif %}>{{ nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="sap-form-group" style="margin-bottom: 0;">
+                <label class="sap-label" for="q_busqueda" style="font-size: 0.75rem;">Búsqueda General:</label>
+                <input type="text" name="q_busqueda" id="q_busqueda" class="sap-input" style="font-size: 0.8125rem;" placeholder="Nombre, email, RFC, habilidades..." value="{{ filtros.q_busqueda }}">
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="flex: 1;">
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <span>Filtrar</span>
+                </button>
+                <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                    Limpiar
+                </a>
+            </div>
+        </div>
+
+        <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--sap-text); cursor: pointer;">
+                <input type="checkbox" name="mostrar_expirados" value="1" {% if filtros.mostrar_expirados %}checked{% endif %} onchange="this.form.submit();">
+                <span>Mostrar candidatos inactivos o con evaluaciones expiradas (> 365 días)</span>
+            </label>
+
+            {% if filtros.total_ocultos > 0 and not filtros.mostrar_expirados %}
+            <span style="font-size: 0.75rem; color: var(--sap-muted);">
+                ({{ filtros.total_ocultos }} candidatos ocultos por inactividad > 365 días)
+            </span>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
 <div class="sap-card">
+    <div class="sap-card-header">
+        <h2 class="sap-card-title">Candidatos Disponibles</h2>
+        <span class="sap-badge sap-badge-neutral tabular-nums">{{ candidatos|length }} registros</span>
+    </div>
     <div class="sap-card-body" style="padding: 1rem;">
         <div class="table-responsive">
             <table id="candidatosTable" class="display sap-table" style="width:100%">
                 <thead>
                     <tr>
                         <th>Candidato</th>
+                        <th>Ciudad</th>
+                        <th>Puesto Interés</th>
                         <th>Tipo</th>
                         <th>Teléfono</th>
                         <th>Nivel Educativo</th>
                         <th>Experiencia</th>
                         <th>Último Puesto</th>
-                        <th>Puesto Interés</th>
                         <th>CV</th>
                         <th style="text-align: right;">Historial</th>
-                    </tr>
-                    <tr class="filters">
-                        <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,10 +149,35 @@
                             <a href="{% url 'candidato_detalle' candidato.id %}" target="_blank" class="link-candidato">
                                 {{ candidato.nombre_completo }}
                             </a>
-                            {% if candidato.alerta == 'NO_APROBADO' %}
-                                <span class="sap-badge sap-badge-error" style="margin-left: 4px;"><span class="sap-badge-dot"></span>No Aprobado</span>
+                            {% if candidato.es_no_contratable %}
+                                <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; font-weight: 700; margin-left: 4px;">
+                                    <span class="sap-badge-dot"></span>NO CONTRATABLE
+                                </span>
+                                {% if candidato.motivo_no_contratable %}
+                                    <div style="font-size: 0.72rem; color: #991b1b; font-weight: 500; margin-top: 2px;">
+                                        {{ candidato.motivo_no_contratable }}
+                                    </div>
+                                {% endif %}
+                            {% elif candidato.alerta == 'NO_APROBADO' %}
+                                <span class="sap-badge sap-badge-error" style="margin-left: 4px;"><span class="sap-badge-dot"></span>No Aprobó</span>
+                            {% elif candidato.alerta == 'EXPIRADO_REINICIABLE' %}
+                                <span class="sap-badge sap-badge-info" style="margin-left: 4px;" title="Reprobó hace más de 1 año: elegible para reiniciar evaluaciones">
+                                    <span class="sap-badge-dot"></span>Examen Vencido (Reiniciable)
+                                </span>
+                            {% elif candidato.alerta == 'INACTIVO' %}
+                                <span class="sap-badge sap-badge-warning" style="margin-left: 4px;" title="Sin actividad en el sistema en más de 365 días">
+                                    <span class="sap-badge-dot"></span>Inactivo (> 1 año)
+                                </span>
                             {% elif candidato.alerta == 'EN_BOLSA' %}
                                 <span class="sap-badge sap-badge-neutral" style="margin-left: 4px;"><span class="sap-badge-dot"></span>En Bolsa</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ candidato.get_ciudad_residencia_display|default:candidato.ciudad_residencia }}</td>
+                        <td>
+                            {% if candidato.puesto_de_interes %}
+                                {{ candidato.puesto_de_interes.titulo.nombre }}
+                            {% else %}
+                                <span style="color: var(--sap-muted); font-style: italic;">{{ candidato.interes_custom|default:"General" }}</span>
                             {% endif %}
                         </td>
                         <td>
@@ -102,13 +192,6 @@
                         <td class="tabular-nums" style="text-align: center;">{{ candidato.años_de_experiencia|default_if_none:"0" }} años</td>
                         <td>{{ candidato.ultimo_puesto|default_if_none:"N/A" }}</td>
                         <td>
-                            {% if candidato.puesto_de_interes %}
-                                {{ candidato.puesto_de_interes.titulo.nombre }}
-                            {% else %}
-                                <span style="color: var(--sap-muted); font-style: italic;">{{ candidato.interes_custom|default:"General" }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
                             {% if candidato.cv %}
                                 <a href="{{ candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
                                     Ver CV
@@ -118,7 +201,7 @@
                             {% endif %}
                         </td>
                         <td style="text-align: right;">
-                            {% if candidato.alerta %}
+                            {% if candidato.alerta or candidato.es_no_contratable %}
                                 <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
                                     Consultar
                                 </a>
@@ -129,8 +212,8 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--sap-muted);">
-                            No hay candidatos disponibles en el repositorio.
+                        <td colspan="10" style="text-align: center; padding: 2.5rem 1rem; color: var(--sap-muted);">
+                            No se encontraron candidatos disponibles con los criterios seleccionados.
                         </td>
                     </tr>
                     {% endfor %}
@@ -144,26 +227,10 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    $('#candidatosTable thead tr:eq(0) th').each(function(i) {
-        var title = $(this).text().trim();
-        if (title && title !== 'CV' && title !== 'Historial' && title !== 'Tipo') {
-            $(this).closest('table').find('thead tr.filters th').eq(i).html('<input type="text" class="filter-input" placeholder="Buscar ' + title + '" />');
-        }
-    });
-
-    var table = $('#candidatosTable').DataTable({
+    $('#candidatosTable').DataTable({
         "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
-        orderCellsTop: true,
-        fixedHeader: true,
-    });
-
-    table.columns().every(function () {
-        var that = this;
-        $('input', this.header()).on('keyup change clear', function () {
-            if (that.search() !== this.value) {
-                that.search(this.value).draw();
-            }
-        });
+        "pageLength": 25,
+        "order": []
     });
 });
 </script>

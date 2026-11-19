@@ -137,39 +137,102 @@
                 <polyline points="17 11 19 13 23 9"></polyline>
             </svg>
             {{ proceso.candidato.nombre_completo }}
+            {% if proceso.candidato.es_no_contratable %}
+                <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; font-weight: 700; margin-left: 8px;">
+                    <span class="sap-badge-dot"></span>NO CONTRATABLE
+                </span>
+            {% endif %}
         </h1>
         <p class="sap-page-subtitle">
             Vacante: <strong>{{ proceso.puesto.titulo.nombre }}</strong> &bull; 
             Etapa actual: <span class="sap-badge sap-badge-info">{{ proceso.get_estatus_proceso_display }}</span>
+            {% if proceso.esta_estancado %}
+                <span class="sap-badge sap-badge-warning" style="margin-left: 4px;">
+                    <span class="sap-badge-dot"></span>Estancado ({{ proceso.dias_en_etapa_actual }} días)
+                </span>
+            {% endif %}
         </p>
     </div>
 </div>
 
-<!-- Barra de Progreso Horizontal (Flujo Guiado) o Banner de Estado Terminal -->
-{% if proceso.estatus_proceso == 'NO_PSICO' %}
-<div class="sap-card" style="border-left: 4px solid #bb0000; background: #fff5f5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
-    <div style="display: flex; align-items: center; gap: 0.85rem;">
-        <svg class="sap-icon" style="color: #bb0000; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+<!-- Banner de Alerta Crítica si el candidato es No Contratable -->
+{% if proceso.candidato.es_no_contratable %}
+<div class="sap-card" style="border-left: 4px solid #b91c1c; background: #fef2f2; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+        <svg class="sap-icon" style="color: #b91c1c; width: 28px; height: 28px; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
         <div>
-            <div style="font-weight: 600; color: #bb0000; font-size: 0.95rem;">Proceso Concluido &bull; No Aprobó Evaluaciones</div>
-            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
-                El candidato no cubrió las evaluaciones requeridas (Psicometría o Integridad). El proceso operativo se encuentra cerrado.
+            <div style="font-weight: 700; color: #b91c1c; font-size: 1rem;">CANDIDATO BOLETINADO &bull; NO CONTRATABLE</div>
+            <div style="font-size: 0.85rem; color: #991b1b; margin-top: 4px;">
+                <strong>Motivo de Boletinación:</strong> {{ proceso.candidato.motivo_no_contratable|default:"Sin motivo registrado" }}
             </div>
         </div>
     </div>
 </div>
-{% elif proceso.estatus_proceso == 'EN_BOLSA' %}
+{% endif %}
+
+<!-- Barra de Progreso Horizontal (Flujo Guiado) o Banner de Estado Terminal -->
+{% if proceso.estatus_proceso == 'DESCARTADO_CH' or proceso.estatus_proceso == 'EN_BOLSA' %}
 <div class="sap-card" style="border-left: 4px solid #b25900; background: #fffbf0; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
-    <div style="display: flex; align-items: center; gap: 0.85rem;">
+    <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
         <svg class="sap-icon" style="color: #b25900; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
-            <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
         <div>
-            <div style="font-weight: 600; color: #b25900; font-size: 0.95rem;">Proceso Concluido &bull; Enviado a Bolsa de Trabajo</div>
+            <div style="font-weight: 600; color: #b25900; font-size: 0.95rem;">Proceso Concluido &bull; Descartado por Perfil / Enviado a Bolsa</div>
             <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
-                El candidato no continuó en este proceso y se encuentra disponible en la Bolsa de Trabajo para otras vacantes de la empresa.
+                {% if proceso.motivo_descarte %}
+                    <strong>Motivo de descarte:</strong> {{ proceso.motivo_descarte }}
+                {% else %}
+                    El candidato no continuó en este puesto y queda en el repositorio de talento para futuras búsquedas.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% elif proceso.estatus_proceso == 'NO_PRUEBAS' or proceso.estatus_proceso == 'NO_PSICO' %}
+<div class="sap-card" style="border-left: 4px solid #bb0000; background: #fff5f5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+        <svg class="sap-icon" style="color: #bb0000; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div>
+            <div style="font-weight: 600; color: #bb0000; font-size: 0.95rem;">Proceso Concluido &bull; No Aprobó Pruebas (Integridad / Pyxoom)</div>
+            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+                {% if proceso.motivo_descarte %}
+                    <strong>Motivo de descarte:</strong> {{ proceso.motivo_descarte }}
+                {% else %}
+                    El candidato no cubrió los estándares de las evaluaciones psicométricas o de integridad.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% elif proceso.estatus_proceso == 'ABANDONO' %}
+<div class="sap-card" style="border-left: 4px solid #64748b; background: #f8fafc; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+        <svg class="sap-icon" style="color: #64748b; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div>
+            <div style="font-weight: 600; color: #334155; font-size: 0.95rem;">Proceso Concluido &bull; Abandonó el Proceso</div>
+            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+                <strong>Motivo de abandono:</strong> {{ proceso.motivo_descarte|default:"Candidato no continuó en el proceso." }}
+            </div>
+        </div>
+    </div>
+</div>
+{% elif proceso.estatus_proceso == 'CONTRATADO' %}
+<div class="sap-card" style="border-left: 4px solid #16a34a; background: #f0fdf4; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+        <svg class="sap-icon" style="color: #16a34a; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+        </svg>
+        <div>
+            <div style="font-weight: 600; color: #15803d; font-size: 0.95rem;">¡Candidato Contratado! &bull; Plaza Cubierta</div>
+            <div style="font-size: 0.8125rem; color: #166534; margin-top: 2px;">
+                El candidato ha ingresado a la empresa cerrando exitosamente la plaza requerida.
             </div>
         </div>
     </div>
@@ -177,42 +240,42 @@
 {% else %}
 <div class="sap-stepper-container">
     <div class="sap-stepper-header">
-        <span class="sap-stepper-header-title">Progreso del Proceso de Selección</span>
+        <span class="sap-stepper-header-title">Progreso del Proceso de Selección (Gestión Directa RH)</span>
         <span class="sap-stepper-header-status">
-            Etapa actual: {{ proceso.get_estatus_proceso_display }}
+            Etapa actual: <strong>{{ proceso.get_estatus_proceso_display }}</strong>
         </span>
     </div>
 
     {% with s=proceso.estatus_proceso %}
     <ol class="sap-stepper">
-        <!-- Paso 1: Evaluaciones Iniciales -->
-        <li class="sap-step {% if s == 'NUEVO' or s == 'INTEG' or s == 'PSICO' %}active{% elif s == 'ENT_AS' or s == 'REF' or s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+        <!-- Paso 1: Filtros Iniciales y Pruebas -->
+        <li class="sap-step {% if s == 'NUEVO' or s == 'CONTACTO' or s == 'PRUEBAS' %}active{% elif s == 'ENT_CH' or s == 'REF' or s == 'ENT_JF' or s == 'CONF_JF' or s == 'MEDICO' or s == 'DOCS' or s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}completed{% endif %}">
             <div class="sap-step-indicator">
-                {% if s == 'ENT_AS' or s == 'REF' or s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                {% if s == 'ENT_CH' or s == 'REF' or s == 'ENT_JF' or s == 'CONF_JF' or s == 'MEDICO' or s == 'DOCS' or s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}
                     <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                 {% else %}
                     1
                 {% endif %}
             </div>
-            <div class="sap-step-title">1. Evaluaciones</div>
+            <div class="sap-step-title">1. Pruebas / Filtro</div>
         </li>
 
-        <!-- Paso 2: Entrevista Asesora y Referencias -->
-        <li class="sap-step {% if s == 'ENT_AS' or s == 'REF' %}active{% elif s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+        <!-- Paso 2: Entrevista CH y Referencias -->
+        <li class="sap-step {% if s == 'ENT_CH' or s == 'REF' %}active{% elif s == 'ENT_JF' or s == 'CONF_JF' or s == 'MEDICO' or s == 'DOCS' or s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}completed{% endif %}">
             <div class="sap-step-indicator">
-                {% if s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                {% if s == 'ENT_JF' or s == 'CONF_JF' or s == 'MEDICO' or s == 'DOCS' or s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}
                     <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                 {% else %}
                     2
                 {% endif %}
             </div>
-            <div class="sap-step-title">2. Entrevista Asesora</div>
+            <div class="sap-step-title">2. Entrevista CH</div>
         </li>
 
-        <!-- Paso 3: Entrevista con Jefe Inmediato -->
-        <li class="sap-step {% if s == 'ENT_JF' %}active{% elif s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+        <!-- Paso 3: Entrevista y Confirmación con Jefe Inmediato -->
+        <li class="sap-step {% if s == 'ENT_JF' or s == 'CONF_JF' %}active{% elif s == 'MEDICO' or s == 'DOCS' or s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}completed{% endif %}">
             <div class="sap-step-indicator">
-                {% if s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                {% if s == 'MEDICO' or s == 'DOCS' or s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}
                     <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                 {% else %}
                     3
@@ -221,20 +284,20 @@
             <div class="sap-step-title">3. Entrevista Jefe</div>
         </li>
 
-        <!-- Paso 4: Exámenes y Documentación -->
-        <li class="sap-step {% if s == 'MEDIC' or s == 'DOCS' %}active{% elif s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+        <!-- Paso 4: Examen Médico y Revisión Documental -->
+        <li class="sap-step {% if s == 'MEDICO' or s == 'DOCS' %}active{% elif s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}completed{% endif %}">
             <div class="sap-step-indicator">
-                {% if s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                {% if s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' or s == 'CONTRATADO' %}
                     <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                 {% else %}
                     4
                 {% endif %}
             </div>
-            <div class="sap-step-title">4. Documentación</div>
+            <div class="sap-step-title">4. Médico & Docs</div>
         </li>
 
-        <!-- Paso 5: Contratación e Ingreso -->
-        <li class="sap-step {% if s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' %}active{% elif s == 'CONTRATADO' %}completed{% endif %}">
+        <!-- Paso 5: Programación de Ingreso y Contratación -->
+        <li class="sap-step {% if s == 'INGRESO_PROG' or s == 'ALTA_ADMIN' %}active{% elif s == 'CONTRATADO' %}completed{% endif %}">
             <div class="sap-step-indicator">
                 {% if s == 'CONTRATADO' %}
                     <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
@@ -253,25 +316,25 @@
 <div class="sap-action-callout">
     <div class="sap-action-callout-content">
         <div class="sap-action-callout-title">
-            ¿Qué hacer hoy con este candidato?
+            Control Operativo de RH &bull; Siguiente Acción
         </div>
         <div class="sap-action-callout-desc">
             {% if proceso.estatus_proceso == 'ENT_JF' %}
-                El candidato está en entrevista con su jefe inmediato. Cuando recibas su retroalimentación, selecciona la siguiente etapa y guarda las observaciones en el panel derecho.
-            {% elif proceso.estatus_proceso == 'ENT_AS' %}
-                Realiza la entrevista inicial con el candidato. Si califica para la vacante, selecciona la siguiente etapa y pulsa "Guardar y avanzar etapa".
+                Candidato enviado a entrevista con el Jefe Inmediato (<strong>{{ proceso.puesto.nombre_jefe_inmediato }}</strong>). Al recibir confirmación por correo, selecciona la etapa <strong>Confirmado por Jefe (CONF_JF)</strong> o la etapa correspondiente.
+            {% elif proceso.estatus_proceso == 'CONF_JF' %}
+                El jefe inmediato ha confirmado al candidato. Procede a coordinar el <strong>Examen Médico</strong> y la <strong>Revisión de Documentos</strong>.
+            {% elif proceso.estatus_proceso == 'PRUEBAS' %}
+                Captura los resultados de Integridad y Pyxoom en el panel derecho antes de continuar a la entrevista.
             {% elif proceso.estatus_proceso == 'CONTRATADO' %}
-                ¡Candidato contratado! La vacante ha sido completada y cerrada exitosamente.
-            {% elif proceso.estatus_proceso == 'EN_BOLSA' %}
-                El candidato no continuó en este proceso y se encuentra disponible en la bolsa de trabajo para otras oportunidades.
-            {% elif proceso.estatus_proceso == 'NO_PSICO' %}
-                El candidato no aprobó las evaluaciones requeridas. El proceso se encuentra cerrado.
+                ¡Candidato contratado! La plaza ha sido cubierta exitosamente.
+            {% elif proceso.estatus_proceso == 'DESCARTADO_CH' or proceso.estatus_proceso == 'NO_PRUEBAS' or proceso.estatus_proceso == 'ABANDONO' %}
+                Proceso concluido en estatus terminal. El candidato no se encuentra activo en esta vacante.
             {% else %}
-                Revisa el avance del candidato. Para continuar el proceso, utiliza el formulario "Avanzar Etapa" ubicado en el panel derecho.
+                Avanza de etapa cuando concluyas la actividad actual utilizando el formulario de gestión a la derecha.
             {% endif %}
         </div>
     </div>
-    {% if proceso.estatus_proceso != 'CONTRATADO' and proceso.estatus_proceso != 'EN_BOLSA' and proceso.estatus_proceso != 'NO_PSICO' %}
+    {% if proceso.estatus_proceso != 'CONTRATADO' and proceso.estatus_proceso != 'DESCARTADO_CH' and proceso.estatus_proceso != 'NO_PRUEBAS' and proceso.estatus_proceso != 'ABANDONO' %}
     <div>
         <a href="#panelAvanzar" class="sap-btn sap-btn-primary sap-btn-sm">
             <span>Avanzar etapa &darr;</span>
@@ -407,19 +470,19 @@
                 <div>
                     <h2 class="sap-card-title">Avanzar Etapa de Selección</h2>
                     <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
-                        Selecciona la nueva etapa y registra las notas del candidato
+                        Control operativo exclusivo de RH &bull; Actualiza la etapa y los resultados del candidato
                     </div>
                 </div>
             </div>
             <div class="sap-card-body">
-                <form method="post">
+                <form method="post" id="formAvanzarEtapa">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="actualizar_estatus">
                     
                     <div class="sap-form-group">
                         <label class="sap-label" for="estatus_proceso">Nueva Etapa del Proceso:</label>
                         <select name="estatus_proceso" id="estatus_proceso" class="sap-select">
-                            {% for value, text in proceso.Estatus.choices %}
+                            {% for value, text in estatus_choices %}
                             <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>
                                 {{ text }}
                             </option>
@@ -427,9 +490,49 @@
                         </select>
                     </div>
 
+                    <!-- Panel de Resultados de Evaluaciones (Integridad y Pyxoom) -->
+                    <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); padding: 0.85rem; margin-bottom: 1rem;">
+                        <div class="sap-section-label" style="margin-bottom: 0.5rem; font-weight: 600; color: var(--sap-text);">
+                            Resultados de Evaluaciones
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div class="sap-form-group" style="margin-bottom: 0;">
+                                <label class="sap-label" for="resultado_integridad" style="font-size: 0.75rem;">Examen de Integridad:</label>
+                                <select name="resultado_integridad" id="resultado_integridad" class="sap-select" style="font-size: 0.8125rem;">
+                                    <option value="">-- Sin evaluar / Pendiente --</option>
+                                    {% for val, label in integridad_choices %}
+                                    <option value="{{ val }}" {% if proceso.resultado_integridad == val %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="sap-form-group" style="margin-bottom: 0;">
+                                <label class="sap-label" for="resultado_pyxoom" style="font-size: 0.75rem;">Psicometría Pyxoom:</label>
+                                <select name="resultado_pyxoom" id="resultado_pyxoom" class="sap-select" style="font-size: 0.8125rem;">
+                                    <option value="">-- Sin evaluar / Pendiente --</option>
+                                    {% for val, label in pyxoom_choices %}
+                                    <option value="{{ val }}" {% if proceso.resultado_pyxoom == val %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Motivo de Descarte o Abandono (Obligatorio en etapas terminales) -->
+                    <div class="sap-form-group" id="grupo_motivo_descarte">
+                        <label class="sap-label" for="motivo_descarte">
+                            Motivo de Descarte / Abandono <span id="label_descarte_obligatorio" style="color: #b91c1c; font-weight: 700; display: none;">(Obligatorio)</span>:
+                        </label>
+                        <textarea name="motivo_descarte" id="motivo_descarte" class="sap-textarea" rows="2" placeholder="Obligatorio al descartar o marcar abandono...">{{ proceso.motivo_descarte }}</textarea>
+                    </div>
+
                     <div class="sap-form-group">
                         <label class="sap-label" for="retroalimentacion">Observaciones / Notas de Seguimiento:</label>
-                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-textarea" rows="4" placeholder="Escribe el resultado de la entrevista, evaluación o notas para la siguiente etapa...">{{ proceso.retroalimentacion }}</textarea>
+                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-textarea" rows="3" placeholder="Escribe el resultado de la entrevista, confirmación de jefe o notas para la siguiente etapa...">{{ proceso.retroalimentacion }}</textarea>
                     </div>
 
                     <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%; padding: 8px 12px; font-size: 0.875rem;">
@@ -440,9 +543,44 @@
             </div>
         </div>
 
+        <!-- Tarjeta de Acción Rápida: Boletinar como No Contratable -->
+        {% if not proceso.candidato.es_no_contratable %}
+        <div class="sap-card" style="border-top: 3px solid #b91c1c; margin-top: 1.25rem;">
+            <div class="sap-card-header">
+                <div>
+                    <h2 class="sap-card-title" style="color: #b91c1c;">
+                        <svg class="sap-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #b91c1c; vertical-align: middle;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        Boletinar Candidato (No Contratable)
+                    </h2>
+                    <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
+                        Marca al candidato como no contratable de forma permanente en todo el grupo
+                    </div>
+                </div>
+            </div>
+            <div class="sap-card-body">
+                <form method="post" onsubmit="return confirm('¿Está absolutamente seguro de registrar permanentemente a este candidato como NO CONTRATABLE? Se cerrará este proceso y no podrá postularse a ninguna vacante.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="marcar_no_contratable">
+                    
+                    <div class="sap-form-group">
+                        <label class="sap-label" for="motivo_no_contratable">Motivo de Boletinación <span style="color: #b91c1c; font-weight: 700;">(Obligatorio)</span>:</label>
+                        <textarea name="motivo_no_contratable" id="motivo_no_contratable" class="sap-textarea" rows="2" placeholder="Especifica con detalle la causa de boletinación (ej. falta de honradez, documentación apócrifa, etc.)..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="sap-btn sap-btn-sm" style="background: #b91c1c; color: #ffffff; width: 100%; border: none;">
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <span>Marcar Permanentemente como No Contratable</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Formulario Condicional: Transferir a Otra Asesora -->
         {% if proceso.asesora_asignada == user and proceso.estatus_proceso == 'REF' %}
-        <div class="sap-card" style="border-left: 3px solid var(--sap-warning-text);">
+        <div class="sap-card" style="border-left: 3px solid var(--sap-warning-text); margin-top: 1.25rem;">
             <div class="sap-card-header">
                 <h2 class="sap-card-title" style="color: var(--sap-warning-text);">Transferir a Asesora de Agencia</h2>
             </div>
@@ -473,13 +611,13 @@
         {% endif %}
 
         <!-- Bitácora de Movimientos (Historial de Auditoría) -->
-        <div class="sap-card">
+        <div class="sap-card" style="margin-top: 1.25rem;">
             <div class="sap-card-header">
                 <h2 class="sap-card-title">Bitácora de Movimientos</h2>
             </div>
             <div class="sap-card-body">
                 <ul class="sap-feed-list">
-                    {% for registro in proceso.registros_de_actividad %}
+                    {% for registro in historial %}
                     <li class="sap-feed-item">
                         <span class="sap-feed-marker"></span>
                         <div class="sap-feed-time tabular-nums">
@@ -500,4 +638,30 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var selectEstatus = document.getElementById('estatus_proceso');
+    var labelDescarte = document.getElementById('label_descarte_obligatorio');
+    var inputDescarte = document.getElementById('motivo_descarte');
+
+    function actualizarRequerido() {
+        if (!selectEstatus) return;
+        var val = selectEstatus.value;
+        var esTerminalDescarte = (val === 'DESCARTADO_CH' || val === 'NO_PRUEBAS' || val === 'ABANDONO');
+        if (esTerminalDescarte) {
+            if (labelDescarte) labelDescarte.style.display = 'inline';
+            if (inputDescarte) inputDescarte.setAttribute('required', 'required');
+        } else {
+            if (labelDescarte) labelDescarte.style.display = 'none';
+            if (inputDescarte) inputDescarte.removeAttribute('required');
+        }
+    }
+
+    if (selectEstatus) {
+        selectEstatus.addEventListener('change', actualizarRequerido);
+        actualizarRequerido();
+    }
+});
+</script>
 {% endblock %}

@@ -14,7 +14,7 @@ import csv
 import json
 
 from .forms import SolicitudPuestoForm, RegistroCandidatoForm, PublicacionForm, PerfilDePuestoForm
-from .models import Candidato, Puesto, Proceso, RegistroActividad, Publicacion, PerfilDePuesto, Aviso, Marca
+from .models import Candidato, Puesto, Proceso, RegistroActividad, Publicacion, PerfilDePuesto, Aviso, Marca, CatalogoPuesto
 from .permissions import (
     es_gerente_ch, es_asesora, es_personal_rh,
     puede_ver_operaciones, es_management, puede_ver_confidenciales, puede_ver_reportes,
@@ -468,60 +468,157 @@ def portal_gerente_view(request):
     return redirect('crear_vacante')
 
 
-@login_required
-@user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
-def bolsa_trabajo_readonly_view(request):
-    # Estatus activos que impiden temporalmente que un candidato sea postulado
-    # (Los procesos cerrados como CONTRATADO_CERRADO, EN_BOLSA o NO_PSICO no bloquean la bolsa)
+def obtener_candidatos_bolsa(request):
+    """
+    Retorna la lista de candidatos disponibles para la bolsa de trabajo y asignación.
+    - Excluye candidatos con un proceso activo (no terminal).
+    - Permite filtrar libremente por puesto de interés (q_puesto) y ciudad (q_ciudad).
+    - Oculta por defecto candidatos sin actividad en > 365 días o que reprobaron exámenes
+      hace más de 365 días (se incluyen como expirados/reiniciables si mostrar_expirados == '1').
+    - Identifica permanentemente a los candidatos con es_no_contratable == True.
+    """
     estatus_activos = [
         Proceso.Estatus.NUEVO,
-        Proceso.Estatus.INTEGRIDAD,
-        Proceso.Estatus.PSICOMETRICOS,
-        Proceso.Estatus.REFERENCIAS,
-        Proceso.Estatus.ENTREVISTA_ASESORA,
-        Proceso.Estatus.ENTREVISTA_JEFE,
-        Proceso.Estatus.EXAMENES_MEDICOS,
-        Proceso.Estatus.SOLICITUD_DOCS,
-        Proceso.Estatus.FIRMA_CONTRATO,
-        Proceso.Estatus.ALTA_SISTEMAS,
-        Proceso.Estatus.FECHA_INGRESO,
+        Proceso.Estatus.CONTACTO,
+        Proceso.Estatus.PRUEBAS,
+        Proceso.Estatus.ENT_CH,
+        Proceso.Estatus.REF,
+        Proceso.Estatus.ENT_JF,
+        Proceso.Estatus.CONF_JF,
+        Proceso.Estatus.MEDICO,
+        Proceso.Estatus.DOCS,
+        Proceso.Estatus.INGRESO_PROG,
+        Proceso.Estatus.ALTA_ADMIN,
     ]
 
-    # Obtenemos los IDs de candidatos que están en un proceso activo actualmente
+    q_puesto = request.GET.get('q_puesto', '').strip()
+    q_ciudad = request.GET.get('q_ciudad', '').strip()
+    q_busqueda = request.GET.get('q_busqueda', '').strip()
+    mostrar_expirados = request.GET.get('mostrar_expirados', '0') in ['1', 'true', 'True']
+
+    # IDs de candidatos con proceso activo
     ids_candidatos_no_disponibles = Proceso.objects.filter(
         estatus_proceso__in=estatus_activos
     ).values_list('candidato_id', flat=True)
 
-    # Obtenemos los candidatos que NO están en esa lista (limitado a los 500 más recientes para rendimiento)
-    candidatos_disponibles = list(
-        Candidato.objects.exclude(id__in=ids_candidatos_no_disponibles).order_by('-fecha_registro')[:500])
+    queryset = Candidato.objects.exclude(id__in=ids_candidatos_no_disponibles)\
+        .select_related('puesto_de_interes', 'puesto_de_interes__titulo')\
+        .prefetch_related('procesos')
 
-    # Optimización de N+1 queries: precargar los últimos procesos reciclables en un solo query
-    un_ano_atras = timezone.now() - timezone.timedelta(days=365)
-    estatus_finalizados_reciclables = [Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
+    # Filtro por Puesto de Interés (título de puesto o interés personalizado)
+    if q_puesto:
+        if q_puesto.isdigit():
+            queryset = queryset.filter(
+                Q(puesto_de_interes__titulo_id=int(q_puesto)) |
+                Q(puesto_de_interes_id=int(q_puesto))
+            )
+        else:
+            queryset = queryset.filter(
+                Q(puesto_de_interes__titulo__nombre__icontains=q_puesto) |
+                Q(interes_custom__icontains=q_puesto)
+            )
 
-    candidatos_ids = [c.id for c in candidatos_disponibles]
-    procesos_reciclables = Proceso.objects.filter(
-        candidato_id__in=candidatos_ids,
-        estatus_proceso__in=estatus_finalizados_reciclables
-    ).order_by('-fecha_inicio_etapa')
+    # Filtro por Ciudad (residencia del candidato o ciudad del puesto de interés)
+    if q_ciudad:
+        queryset = queryset.filter(
+            Q(ciudad_residencia__iexact=q_ciudad) |
+            Q(puesto_de_interes__ciudad__iexact=q_ciudad)
+        )
 
-    ultimo_proceso_map = {}
-    for proc in procesos_reciclables:
-        if proc.candidato_id not in ultimo_proceso_map:
-            ultimo_proceso_map[proc.candidato_id] = proc
+    # Búsqueda general por texto (nombre, correo, rfc o habilidades)
+    if q_busqueda:
+        queryset = queryset.filter(
+            Q(nombres__icontains=q_busqueda) |
+            Q(apellidos__icontains=q_busqueda) |
+            Q(email__icontains=q_busqueda) |
+            Q(rfc__icontains=q_busqueda) |
+            Q(habilidades__icontains=q_busqueda)
+        )
 
-    for candidato in candidatos_disponibles:
-        ultimo_proceso_finalizado = ultimo_proceso_map.get(candidato.id)
-        candidato.alerta = None
+    candidatos_raw = list(queryset.order_by('-fecha_registro')[:500])
 
-        if ultimo_proceso_finalizado:
-            if ultimo_proceso_finalizado.estatus_proceso == Proceso.Estatus.NO_APROBADO_PSICO and ultimo_proceso_finalizado.fecha_inicio_etapa > un_ano_atras:
-                candidato.alerta = 'NO_APROBADO'
-            elif ultimo_proceso_finalizado.estatus_proceso == Proceso.Estatus.EN_BOLSA:
-                candidato.alerta = 'EN_BOLSA'
+    candidatos_procesados = []
+    total_ocultos_expirados = 0
 
-    contexto = {'candidatos': candidatos_disponibles}
+    for c in candidatos_raw:
+        fechas_actividad = [c.fecha_registro] if c.fecha_registro else []
+        ultimo_proc_reprobado = None
+        ultimo_proc_general = None
+
+        for proc in c.procesos.all():
+            if proc.fecha_inicio_etapa:
+                fechas_actividad.append(proc.fecha_inicio_etapa)
+            if proc.estatus_proceso in [Proceso.Estatus.NO_PRUEBAS, Proceso.Estatus.NO_APROBADO_PSICO] or \
+               proc.resultado_integridad == Proceso.ResultadoIntegridad.NO_APROBADO or \
+               proc.resultado_pyxoom == Proceso.ResultadoPyxoom.REPROBADO:
+                if not ultimo_proc_reprobado or (proc.fecha_inicio_etapa and ultimo_proc_reprobado.fecha_inicio_etapa and proc.fecha_inicio_etapa > ultimo_proc_reprobado.fecha_inicio_etapa):
+                    ultimo_proc_reprobado = proc
+            if not ultimo_proc_general or (proc.fecha_inicio_etapa and ultimo_proc_general.fecha_inicio_etapa and proc.fecha_inicio_etapa > ultimo_proc_general.fecha_inicio_etapa):
+                ultimo_proc_general = proc
+
+        ultima_fecha = max(fechas_actividad) if fechas_actividad else timezone.now()
+        dias_inactivo = (timezone.now() - ultima_fecha).days if ultima_fecha else 0
+        es_inactivo_365 = dias_inactivo > 365
+
+        es_reprobado_365 = False
+        reprobado_reciente = False
+        if ultimo_proc_reprobado and ultimo_proc_reprobado.fecha_inicio_etapa:
+            dias_reprobado = (timezone.now() - ultimo_proc_reprobado.fecha_inicio_etapa).days
+            if dias_reprobado > 365:
+                es_reprobado_365 = True
+            else:
+                reprobado_reciente = True
+
+        es_expirado = es_inactivo_365 or es_reprobado_365
+
+        # Ocultar por defecto si no se solicitó mostrar expirados/inactivos
+        if not mostrar_expirados and es_expirado:
+            total_ocultos_expirados += 1
+            continue
+
+        c.dias_inactivo = dias_inactivo
+        c.es_expirado_365 = es_expirado
+
+        # Configurar etiqueta visual de estado
+        if c.es_no_contratable:
+            c.alerta = 'NO_CONTRATABLE'
+        elif reprobado_reciente:
+            c.alerta = 'NO_APROBADO'
+        elif es_reprobado_365:
+            c.alerta = 'EXPIRADO_REINICIABLE'
+        elif es_inactivo_365:
+            c.alerta = 'INACTIVO'
+        elif ultimo_proc_general and ultimo_proc_general.estatus_proceso in [Proceso.Estatus.DESCARTADO_CH, Proceso.Estatus.EN_BOLSA]:
+            c.alerta = 'EN_BOLSA'
+        else:
+            c.alerta = None
+
+        candidatos_procesados.append(c)
+
+    filtros = {
+        'q_puesto': q_puesto,
+        'q_ciudad': q_ciudad,
+        'q_busqueda': q_busqueda,
+        'mostrar_expirados': mostrar_expirados,
+        'total_ocultos': total_ocultos_expirados,
+    }
+    return candidatos_procesados, filtros
+
+
+@login_required
+@user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
+def bolsa_trabajo_readonly_view(request):
+    """Bolsa de trabajo general de RH con filtros por puesto y ciudad."""
+    candidatos_disponibles, filtros = obtener_candidatos_bolsa(request)
+    puestos_catalogo = CatalogoPuesto.objects.all().order_by('nombre')
+    ciudades_choices = Candidato.CIUDADES_RESIDENCIA_CHOICES
+
+    contexto = {
+        'candidatos': candidatos_disponibles,
+        'filtros': filtros,
+        'puestos_catalogo': puestos_catalogo,
+        'ciudades_choices': ciudades_choices,
+    }
     return render(request, 'reclutamiento/bolsa_trabajo_readonly.html', contexto)
 
 
@@ -533,17 +630,25 @@ def asignar_candidato_view(request, puesto_id):
 
     # Estatus de procesos activos (no finalizados)
     estatus_activos = [
-        Proceso.Estatus.NUEVO, Proceso.Estatus.INTEGRIDAD, Proceso.Estatus.PSICOMETRICOS,
-        Proceso.Estatus.REFERENCIAS, Proceso.Estatus.ENTREVISTA_ASESORA, Proceso.Estatus.ENTREVISTA_JEFE,
-        Proceso.Estatus.EXAMENES_MEDICOS, Proceso.Estatus.SOLICITUD_DOCS, Proceso.Estatus.FIRMA_CONTRATO,
-        Proceso.Estatus.ALTA_SISTEMAS, Proceso.Estatus.FECHA_INGRESO
+        Proceso.Estatus.NUEVO, Proceso.Estatus.CONTACTO, Proceso.Estatus.PRUEBAS,
+        Proceso.Estatus.ENT_CH, Proceso.Estatus.REF, Proceso.Estatus.ENT_JF,
+        Proceso.Estatus.CONF_JF, Proceso.Estatus.MEDICO, Proceso.Estatus.DOCS,
+        Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN
     ]
 
     if request.method == 'POST':
         candidato_id = request.POST.get('candidato_id')
         candidato = get_object_or_404(Candidato, id=candidato_id)
 
-        # Validar si el candidato ya tiene algún proceso activo actualmente
+        # 1. Bloqueo estricto si el candidato está marcado como NO CONTRATABLE
+        if candidato.es_no_contratable:
+            messages.error(
+                request,
+                f"Operación Bloqueada: El candidato '{candidato.nombre_completo}' está registrado como NO CONTRATABLE y no puede ser asignado a ninguna vacante. Motivo: {candidato.motivo_no_contratable or 'Boletinado por RH'}."
+            )
+            return redirect('asignar_candidato', puesto_id=puesto.id)
+
+        # 2. Validar si el candidato ya tiene algún proceso activo actualmente
         proceso_activo_existente = Proceso.objects.filter(
             candidato=candidato,
             estatus_proceso__in=estatus_activos
@@ -561,7 +666,7 @@ def asignar_candidato_view(request, puesto_id):
             )
             return redirect('asignar_candidato', puesto_id=puesto.id)
 
-        # LN-04: Iniciar en NUEVO
+        # 3. Iniciar en etapa inicial NUEVO
         nuevo_proceso = Proceso.objects.create(
             candidato=candidato,
             puesto=puesto,
@@ -570,47 +675,24 @@ def asignar_candidato_view(request, puesto_id):
         )
         RegistroActividad.objects.create(
             usuario=request.user,
-            accion=f"Tomó al candidato '{candidato.nombre_completo}' para el puesto '{puesto.titulo.nombre}'",
+            accion=f"Tomó al candidato '{candidato.nombre_completo}' para el puesto '{puesto.titulo.nombre if puesto.titulo else puesto.id}'",
             tipo_objeto="Proceso",
             id_objeto=nuevo_proceso.id
         )
         messages.success(request, f"Candidato '{candidato.nombre_completo}' asignado al proceso para la vacante.")
         return redirect('asignar_candidato', puesto_id=puesto.id)
 
-    # Lógica GET para mostrar la lista de candidatos disponibles (sin proceso activo actualmente)
-    ids_candidatos_no_disponibles = Proceso.objects.filter(
-        estatus_proceso__in=estatus_activos
-    ).values_list('candidato_id', flat=True)
-    candidatos_disponibles = list(
-        Candidato.objects.exclude(id__in=ids_candidatos_no_disponibles).order_by('-fecha_registro')[:500])
-
-    # Optimización de N+1 queries para asignar_candidato_view
-    un_ano_atras = timezone.now() - timezone.timedelta(days=365)
-    estatus_finalizados_reciclables = [Proceso.Estatus.NO_APROBADO_PSICO, Proceso.Estatus.EN_BOLSA]
-
-    candidatos_ids = [c.id for c in candidatos_disponibles]
-    procesos_reciclables = Proceso.objects.filter(
-        candidato_id__in=candidatos_ids,
-        estatus_proceso__in=estatus_finalizados_reciclables
-    ).order_by('-fecha_inicio_etapa')
-
-    ultimo_proceso_map = {}
-    for proc in procesos_reciclables:
-        if proc.candidato_id not in ultimo_proceso_map:
-            ultimo_proceso_map[proc.candidato_id] = proc
-
-    for candidato in candidatos_disponibles:
-        ultimo_proceso_finalizado = ultimo_proceso_map.get(candidato.id)
-        candidato.alerta = None
-        if ultimo_proceso_finalizado:
-            if ultimo_proceso_finalizado.estatus_proceso == Proceso.Estatus.NO_APROBADO_PSICO and ultimo_proceso_finalizado.fecha_inicio_etapa > un_ano_atras:
-                candidato.alerta = 'NO_APROBADO'
-            elif ultimo_proceso_finalizado.estatus_proceso == Proceso.Estatus.EN_BOLSA:
-                candidato.alerta = 'EN_BOLSA'
+    # Lógica GET para mostrar la lista de candidatos disponibles
+    candidatos_disponibles, filtros = obtener_candidatos_bolsa(request)
+    puestos_catalogo = CatalogoPuesto.objects.all().order_by('nombre')
+    ciudades_choices = Candidato.CIUDADES_RESIDENCIA_CHOICES
 
     contexto = {
         'candidatos': candidatos_disponibles,
-        'puesto_seleccionado': puesto
+        'puesto_seleccionado': puesto,
+        'filtros': filtros,
+        'puestos_catalogo': puestos_catalogo,
+        'ciudades_choices': ciudades_choices,
     }
     return render(request, 'reclutamiento/asignar_candidato.html', contexto)
 
@@ -715,39 +797,97 @@ def mis_vacantes_view(request):
 
 
 @login_required
+@require_POST
+@user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
+def reiniciar_vacante_view(request, puesto_id):
+    """
+    Reinicia el reloj de SLA de una vacante vencida para un nuevo ciclo de días meta.
+    Incrementa numero_reinicios y actualiza fecha_inicio_sla_custom, registrando la auditoría
+    en RegistroActividad para el cálculo de bono.
+    """
+    puesto = get_object_or_404(Puesto, id=puesto_id)
+    comentario = request.POST.get('comentario', '').strip()
+
+    puesto.reiniciar_sla(nueva_fecha=timezone.now(), comentario=comentario)
+
+    RegistroActividad.objects.create(
+        usuario=request.user,
+        accion=f"Reinició el conteo de SLA para la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' (Ciclo #{puesto.numero_reinicios})",
+        tipo_objeto="Puesto",
+        id_objeto=puesto.id,
+        detalles=comentario or f"Reinicio operativo de ciclo SLA por vencimiento de vacante (Ciclo #{puesto.numero_reinicios})"
+    )
+
+    messages.success(
+        request,
+        f"¡Conteo de SLA reiniciado exitosamente para la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}'! Se inició el ciclo #{puesto.numero_reinicios}."
+    )
+    return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+
+
+@login_required
 @user_passes_test(puede_acceder_proceso, login_url=reverse_lazy('acceso_denegado'))
 def detalle_proceso_view(request, proceso_id):
-    proceso = get_object_or_404(Proceso.objects.select_related('candidato', 'puesto__titulo', 'puesto__solicitado_por', 'asesora_asignada'), id=proceso_id)
+    proceso = get_object_or_404(
+        Proceso.objects.select_related('candidato', 'puesto__titulo', 'puesto__solicitado_por', 'asesora_asignada'),
+        id=proceso_id
+    )
 
-    # En el modelo exclusivo de RH, todo el personal autorizado puede gestionar procesos
+    # En el modelo exclusivo de RH, todo el personal autorizado de RH gestiona el proceso
     puede_gestionar = puede_ver_operaciones(request.user)
 
     if not puede_gestionar:
         raise PermissionDenied
 
-    # Manejo de los diferentes formularios de la página (solo quien puede gestionar puede modificar)
     if request.method == 'POST':
-        if not puede_gestionar:
-            raise PermissionDenied
         action = request.POST.get('action')
 
         if action == 'actualizar_estatus':
             estatus_anterior = proceso.get_estatus_proceso_display()
             nuevo_estatus = request.POST.get('estatus_proceso')
-            nuevas_notas = request.POST.get('retroalimentacion')
+            nuevas_notas = request.POST.get('retroalimentacion', '').strip()
+            resultado_integridad = request.POST.get('resultado_integridad', '').strip()
+            resultado_pyxoom = request.POST.get('resultado_pyxoom', '').strip()
+            motivo_descarte = request.POST.get('motivo_descarte', '').strip()
 
-            # Hallazgo #3: Validación estricta del nuevo estatus
+            # 1. Validación de estatus permitido
             if nuevo_estatus not in Proceso.Estatus.values:
                 messages.error(request, 'El estatus seleccionado no es válido.')
                 return redirect('detalle_proceso', proceso_id=proceso.id)
+
+            # 2. Motivo obligatorio al descartar o abandono
+            estatus_terminales_descarte = [
+                Proceso.Estatus.DESCARTADO_CH,
+                Proceso.Estatus.NO_PRUEBAS,
+                Proceso.Estatus.ABANDONO,
+            ]
+            if nuevo_estatus in estatus_terminales_descarte:
+                if not motivo_descarte:
+                    messages.error(
+                        request,
+                        'Es obligatorio especificar el motivo de descarte o abandono para finalizar el proceso.'
+                    )
+                    return redirect('detalle_proceso', proceso_id=proceso.id)
+                proceso.motivo_descarte = motivo_descarte
+
+            # 3. Captura opcional / actualización de resultados de pruebas
+            if resultado_integridad in Proceso.ResultadoIntegridad.values:
+                proceso.resultado_integridad = resultado_integridad
+            elif resultado_integridad == 'CLEAR':
+                proceso.resultado_integridad = None
+
+            if resultado_pyxoom in Proceso.ResultadoPyxoom.values:
+                proceso.resultado_pyxoom = resultado_pyxoom
+            elif resultado_pyxoom == 'CLEAR':
+                proceso.resultado_pyxoom = None
 
             proceso.estatus_proceso = nuevo_estatus
             proceso.retroalimentacion = nuevas_notas
             proceso.fecha_inicio_etapa = timezone.now()
             proceso.save()
 
-            # Hallazgo #4: Mensaje consolidado único según la acción
-            if nuevo_estatus == Proceso.Estatus.CONTRATADO_CERRADO:
+            # 4. Verificación de vacante si fue contratado
+            if nuevo_estatus == Proceso.Estatus.CONTRATADO:
                 puesto = proceso.puesto
                 if puesto:
                     cubiertas = puesto.plazas_cubiertas
@@ -755,20 +895,83 @@ def detalle_proceso_view(request, proceso_id):
                     if cubiertas >= total:
                         puesto.esta_abierto = False
                         puesto.save()
-                        messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado y vacante cerrada al 100%! ({cubiertas} de {total} plazas).")
+                        messages.success(
+                            request,
+                            f"¡Candidato '{proceso.candidato.nombre_completo}' contratado y vacante completada al 100%! ({cubiertas} de {total} plazas)."
+                        )
                     else:
-                        messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado! Plaza cubierta ({cubiertas} de {total} plazas). La vacante continúa abierta.")
+                        messages.success(
+                            request,
+                            f"¡Candidato '{proceso.candidato.nombre_completo}' contratado! Plaza cubierta ({cubiertas} de {total}). La vacante continúa abierta."
+                        )
                 else:
                     messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado exitosamente!")
             else:
-                messages.success(request, '¡El proceso ha sido actualizado exitosamente!')
+                messages.success(request, f"Etapa actualizada a '{proceso.get_estatus_proceso_display()}' exitosamente.")
+
+            # 5. Registro detallado en auditoría
+            detalles_log = []
+            if nuevas_notas:
+                detalles_log.append(f"Notas: {nuevas_notas}")
+            if motivo_descarte and nuevo_estatus in estatus_terminales_descarte:
+                detalles_log.append(f"Motivo descarte/abandono: {motivo_descarte}")
+            if proceso.resultado_integridad:
+                detalles_log.append(f"Integridad: {proceso.get_resultado_integridad_display()}")
+            if proceso.resultado_pyxoom:
+                detalles_log.append(f"Pyxoom: {proceso.get_resultado_pyxoom_display()}")
 
             RegistroActividad.objects.create(
                 usuario=request.user,
-                accion=f"Cambió el estatus de '{estatus_anterior}' a '{proceso.get_estatus_proceso_display()}' para '{proceso.candidato.nombre_completo}'",
+                accion=f"Cambió etapa de '{estatus_anterior}' a '{proceso.get_estatus_proceso_display()}' para '{proceso.candidato.nombre_completo}'",
                 tipo_objeto="Proceso",
                 id_objeto=proceso.id,
-                detalles=nuevas_notas
+                detalles=" | ".join(detalles_log) if detalles_log else None
+            )
+
+        elif action == 'marcar_no_contratable':
+            motivo = request.POST.get('motivo_no_contratable', '').strip()
+            if not motivo:
+                messages.error(request, 'Es obligatorio indicar el motivo por el cual el candidato es NO CONTRATABLE.')
+                return redirect('detalle_proceso', proceso_id=proceso.id)
+
+            candidato = proceso.candidato
+            candidato.es_no_contratable = True
+            candidato.motivo_no_contratable = motivo
+            candidato.save()
+
+            # Descartar proceso activo si no ha concluido
+            estatus_terminales = [
+                Proceso.Estatus.CONTRATADO,
+                Proceso.Estatus.DESCARTADO_CH,
+                Proceso.Estatus.NO_PRUEBAS,
+                Proceso.Estatus.ABANDONO,
+            ]
+            if proceso.estatus_proceso not in estatus_terminales:
+                estatus_anterior = proceso.get_estatus_proceso_display()
+                proceso.estatus_proceso = Proceso.Estatus.DESCARTADO_CH
+                proceso.motivo_descarte = f"Boletinado como No Contratable: {motivo}"
+                proceso.fecha_inicio_etapa = timezone.now()
+                proceso.save()
+
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion=f"Canceló proceso de '{estatus_anterior}' a Descartado tras marcar al candidato como NO CONTRATABLE",
+                    tipo_objeto="Proceso",
+                    id_objeto=proceso.id,
+                    detalles=motivo
+                )
+
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion=f"Marcó permanentemente al candidato '{candidato.nombre_completo}' como NO CONTRATABLE",
+                tipo_objeto="Candidato",
+                id_objeto=candidato.id,
+                detalles=motivo
+            )
+
+            messages.warning(
+                request,
+                f"¡El candidato '{candidato.nombre_completo}' ha sido marcado permanentemente como NO CONTRATABLE!"
             )
 
         elif action == 'transferir_proceso':
@@ -778,7 +981,7 @@ def detalle_proceso_view(request, proceso_id):
                 asesora_anterior = proceso.asesora_asignada
                 nombre_anterior = asesora_anterior.username if asesora_anterior else 'Sin asesora previa'
                 proceso.asesora_asignada = nueva_asesora
-                proceso.estatus_proceso = Proceso.Estatus.ENTREVISTA_ASESORA
+                proceso.estatus_proceso = Proceso.Estatus.ENT_CH
                 proceso.fecha_inicio_etapa = timezone.now()
                 proceso.save()
                 RegistroActividad.objects.create(
@@ -810,10 +1013,14 @@ def detalle_proceso_view(request, proceso_id):
 
     contexto = {
         'proceso': proceso,
+        'candidato': proceso.candidato,
         'historial': historial_proceso,
         'asesoras_disponibles': asesoras_disponibles,
         'publicaciones': publicaciones_del_puesto,
         'form_publicacion': form_publicacion,
+        'estatus_choices': Proceso.Estatus.choices,
+        'integridad_choices': Proceso.ResultadoIntegridad.choices,
+        'pyxoom_choices': Proceso.ResultadoPyxoom.choices,
     }
     return render(request, 'reclutamiento/detalle_proceso.html', contexto)
 

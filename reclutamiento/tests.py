@@ -532,6 +532,288 @@ class HRManagementTests(TestCase):
         v2 = ReportesService.get_cache_version()
         self.assertGreater(v2, v1)
 
+    def test_detalle_proceso_avance_directo_y_evaluaciones(self):
+        """Verifica que la asesora gestione directamente ENT_JF, CONF_JF y capture resultados de pruebas."""
+        from django.contrib.auth.models import Group
+        from reclutamiento.models import RegistroActividad
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            sueldo_base=12000
+        )
+        cand = Candidato.objects.create(nombres='Pedro', apellidos='Infante', email='pedro@example.com')
+        proc = Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.PRUEBAS
+        )
+
+        self.client.login(username='testuser', password='password123')
+
+        # 1. Capturar resultados de pruebas y avanzar a ENT_JF
+        resp = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.ENT_JF,
+            'resultado_integridad': 'APROBADO',
+            'resultado_pyxoom': 'OPTIMO',
+            'retroalimentacion': 'Candidato enviado con jefe de ventas.'
+        })
+        self.assertEqual(resp.status_code, 302)
+        proc.refresh_from_db()
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.ENT_JF)
+        self.assertEqual(proc.resultado_integridad, 'APROBADO')
+        self.assertEqual(proc.resultado_pyxoom, 'OPTIMO')
+
+        # Verificar rastro en RegistroActividad
+        reg = RegistroActividad.objects.filter(tipo_objeto='Proceso', id_objeto=proc.id).first()
+        self.assertIsNotNone(reg)
+        self.assertEqual(reg.usuario, self.user)
+        self.assertIn('Enviado a Entrevista con Jefe', reg.accion)
+
+        # 2. Confirmación directa por la asesora sin esperar intervención externa (CONF_JF)
+        resp2 = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.CONF_JF,
+            'retroalimentacion': 'Jefe confirmó visto bueno por correo.'
+        })
+        self.assertEqual(resp2.status_code, 302)
+        proc.refresh_from_db()
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.CONF_JF)
+
+    def test_detalle_proceso_motivo_descarte_obligatorio(self):
+        """Verifica que al descartar o marcar abandono sea obligatorio ingresar motivo_descarte."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand = Candidato.objects.create(nombres='Luis', apellidos='Aguilar', email='luis@example.com')
+        proc = Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.ENT_CH
+        )
+
+        self.client.login(username='testuser', password='password123')
+
+        # Intento de descarte sin motivo
+        resp_fallo = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.DESCARTADO_CH,
+            'motivo_descarte': '   '
+        })
+        self.assertEqual(resp_fallo.status_code, 302)
+        proc.refresh_from_db()
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.ENT_CH)  # No debe cambiar
+
+        # Descarte con motivo válido
+        resp_exito = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.DESCARTADO_CH,
+            'motivo_descarte': 'Expectativa salarial fuera del tabulador corporativo'
+        })
+        self.assertEqual(resp_exito.status_code, 302)
+        proc.refresh_from_db()
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.DESCARTADO_CH)
+        self.assertEqual(proc.motivo_descarte, 'Expectativa salarial fuera del tabulador corporativo')
+
+    def test_detalle_proceso_marcar_no_contratable(self):
+        """Verifica que la asesora pueda boletinar permanentemente a un candidato con motivo obligatorio."""
+        from django.contrib.auth.models import Group
+        from reclutamiento.models import RegistroActividad
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand = Candidato.objects.create(nombres='Víctor', apellidos='Manuel', email='victor@example.com')
+        proc = Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.CONTACTO
+        )
+
+        self.client.login(username='testuser', password='password123')
+
+        # Intento sin motivo
+        resp_sin_motivo = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'marcar_no_contratable',
+            'motivo_no_contratable': ''
+        })
+        self.assertEqual(resp_sin_motivo.status_code, 302)
+        cand.refresh_from_db()
+        self.assertFalse(cand.es_no_contratable)
+
+        # Con motivo válido
+        resp_con_motivo = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'marcar_no_contratable',
+            'motivo_no_contratable': 'Presentó documentos falsificados en entrevista.'
+        })
+        self.assertEqual(resp_con_motivo.status_code, 302)
+        cand.refresh_from_db()
+        self.assertTrue(cand.es_no_contratable)
+        self.assertEqual(cand.motivo_no_contratable, 'Presentó documentos falsificados en entrevista.')
+
+        # El proceso activo debe haberse cancelado/descartado
+        proc.refresh_from_db()
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.DESCARTADO_CH)
+
+        # Debe existir registro de actividad para el candidato
+        reg_cand = RegistroActividad.objects.filter(tipo_objeto='Candidato', id_objeto=cand.id).first()
+        self.assertIsNotNone(reg_cand)
+        self.assertIn('NO CONTRATABLE', reg_cand.accion)
+
+    def test_reiniciar_vacante_view(self):
+        """Verifica que reiniciar_vacante_view incremente numero_reinicios y actualice fecha_inicio_sla_custom."""
+        from django.contrib.auth.models import Group
+        from reclutamiento.models import RegistroActividad
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        fecha_antigua = timezone.now() - timezone.timedelta(days=25)
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            fecha_solicitud=fecha_antigua,
+            dias_meta=20,
+            esta_abierto=True,
+            sueldo_base=15000
+        )
+        self.assertEqual(puesto.numero_reinicios, 0)
+        self.assertGreater(puesto.dias_transcurridos, 20)
+
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {
+            'comentario': 'Se extiende búsqueda por falta de candidatos en la plaza.'
+        })
+        self.assertEqual(resp.status_code, 302)
+        puesto.refresh_from_db()
+
+        self.assertEqual(puesto.numero_reinicios, 1)
+        self.assertIsNotNone(puesto.fecha_inicio_sla_custom)
+        self.assertEqual(puesto.dias_transcurridos, 0)
+        self.assertIn('Reinicio SLA #1', puesto.comentarios)
+
+        # Registro en auditoría
+        reg = RegistroActividad.objects.filter(tipo_objeto='Puesto', id_objeto=puesto.id).first()
+        self.assertIsNotNone(reg)
+        self.assertIn('Reinició el conteo de SLA', reg.accion)
+
+    def test_bolsa_trabajo_filtros_y_expirados(self):
+        """Verifica filtros por puesto y ciudad, y exclusión por defecto de candidatos inactivos >365 días."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        # Candidato reciente en Mazatlán
+        c_mzt = Candidato.objects.create(
+            nombres='Ana', apellidos='Soto', email='ana@example.com',
+            ciudad_residencia='MZT', interes_custom='Asesor de Ventas'
+        )
+        # Candidato reciente en Culiacán
+        c_cul = Candidato.objects.create(
+            nombres='Carlos', apellidos='Ríos', email='carlos@example.com',
+            ciudad_residencia='CUL', interes_custom='Técnico Mecánico'
+        )
+        # Candidato inactivo hace más de 400 días
+        c_viejo = Candidato.objects.create(
+            nombres='Viejo', apellidos='Inactivo', email='viejo@example.com',
+            ciudad_residencia='CUL', interes_custom='Asesor de Ventas'
+        )
+        # Forzar fecha_registro antigua
+        fecha_antigua = timezone.now() - timezone.timedelta(days=400)
+        Candidato.objects.filter(id=c_viejo.id).update(fecha_registro=fecha_antigua)
+
+        self.client.login(username='testuser', password='password123')
+
+        # 1. Sin filtros: c_viejo NO debe aparecer por defecto
+        resp = self.client.get(reverse('bolsa_trabajo_consulta'))
+        ids = [c.id for c in resp.context['candidatos']]
+        self.assertIn(c_mzt.id, ids)
+        self.assertIn(c_cul.id, ids)
+        self.assertNotIn(c_viejo.id, ids)
+
+        # 2. Con mostrar_expirados=1: c_viejo DEBE aparecer con alerta INACTIVO
+        resp_exp = self.client.get(reverse('bolsa_trabajo_consulta') + '?mostrar_expirados=1')
+        ids_exp = [c.id for c in resp_exp.context['candidatos']]
+        self.assertIn(c_viejo.id, ids_exp)
+
+        # 3. Filtrar por ciudad MZT
+        resp_ciudad = self.client.get(reverse('bolsa_trabajo_consulta') + '?q_ciudad=MZT')
+        ids_ciudad = [c.id for c in resp_ciudad.context['candidatos']]
+        self.assertIn(c_mzt.id, ids_ciudad)
+        self.assertNotIn(c_cul.id, ids_ciudad)
+
+        # 4. Filtrar por puesto 'Mecánico'
+        resp_puesto = self.client.get(reverse('bolsa_trabajo_consulta') + '?q_puesto=Mecánico')
+        ids_puesto = [c.id for c in resp_puesto.context['candidatos']]
+        self.assertIn(c_cul.id, ids_puesto)
+        self.assertNotIn(c_mzt.id, ids_puesto)
+
+    def test_asignar_candidato_bloquea_no_contratable(self):
+        """Verifica que asignar_candidato_view bloquee rotundamente la postulación de candidatos no contratables."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand_vetado = Candidato.objects.create(
+            nombres='Beto',
+            apellidos='Vetado',
+            email='beto@example.com',
+            es_no_contratable=True,
+            motivo_no_contratable='Falta grave en empresa anterior'
+        )
+
+        self.client.login(username='testuser', password='password123')
+
+        # Intentar asignarlo vía POST
+        resp = self.client.post(reverse('asignar_candidato', args=[puesto.id]), {
+            'candidato_id': cand_vetado.id
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        # No debe haberse creado ningún proceso
+        self.assertFalse(Proceso.objects.filter(candidato=cand_vetado, puesto=puesto).exists())
+
+
 
 
 
