@@ -9,32 +9,47 @@ except ImportError:
     filetype = None
 
 
+from django.utils import timezone
+
+
 class SolicitudPuestoForm(forms.ModelForm):
+    fecha_solicitud = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d'],
+        label="Fecha de Solicitud (Requisición Física)"
+    )
+
     class Meta:
         model = Puesto
-        # --- LISTA COMPLETA Y FINAL DE CAMPOS PARA LA REQUISICIÓN ---
+        # --- CAMPOS EXCLUSIVOS DE CAPTURA DIRECTA PARA RH ---
         fields = [
-            'marca', 'agencia', 'titulo', 'ciudad', 'area', 'cantidad_vacantes',
-            'nombre_jefe_inmediato', 'puesto_jefe_inmediato',
+            'fecha_solicitud',
+            'agencia',
+            'ciudad',
+            'titulo',
+            'cantidad_vacantes',
+            'jefe_inmediato_nombre',
+            'jefe_inmediato_puesto',
             'motivo_requisicion',
-            'reemplaza_a',  # <-- AÑADIDO AQUÍ, ESTE ERA EL CAMPO FALTANTE
-            'objetivo_puesto', 'funciones_puesto',
-            'indicador_puesto',
-            'experiencia_minima',
-            'carrera_sugerida',
-            'herramientas_puesto', 'conocimientos_tecnicos',
-            'horario', 'sueldo_base', 'esquema_comisiones',
+            'sueldo_base',
+            'esquema_comisiones',
+            'dias_meta',
+            'comentarios',
             'archivo_justificacion',
-            'es_confidencial'
         ]
-        # Los widgets no necesitan cambios
         widgets = {
-            'funciones_puesto': forms.Textarea(attrs={'rows': 5}),
+            'jefe_inmediato_nombre': forms.TextInput(attrs={'placeholder': 'Nombre completo según requisición física'}),
+            'jefe_inmediato_puesto': forms.TextInput(attrs={'placeholder': 'Puesto del jefe inmediato'}),
+            'sueldo_base': forms.NumberInput(attrs={'step': '0.01'}),
+            'dias_meta': forms.NumberInput(attrs={'min': '1'}),
             'esquema_comisiones': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe los bonos, comisiones, etc. Si no aplica, déjalo en blanco.'}),
-            'objetivo_puesto': forms.Textarea(attrs={'rows': 3}),
-            'indicador_puesto': forms.Textarea(attrs={'rows': 3}),
-            'reemplaza_a': forms.TextInput(attrs={'placeholder': 'Nombre del colaborador anterior'}),
+            'comentarios': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Comentarios u observaciones adicionales sobre la requisición'}),
         }
+
+    def clean_fecha_solicitud(self):
+        fecha = self.cleaned_data.get("fecha_solicitud")
+        return fecha or timezone.now()
 
     def clean_archivo_justificacion(self):
         archivo = self.cleaned_data.get("archivo_justificacion", False)
@@ -45,10 +60,10 @@ class SolicitudPuestoForm(forms.ModelForm):
         if archivo.size > 5 * 1024 * 1024:
             raise ValidationError("El archivo es demasiado grande. El máximo permitido es 5 MB.")
 
-        allowed_extensions = [".pdf", ".docx", ".doc", ".jpg", ".jpeg", ".png"]
+        allowed_extensions = [".pdf", ".jpg", ".jpeg", ".png"]
         file_extension = os.path.splitext(archivo.name)[1].lower()
         if file_extension not in allowed_extensions:
-            raise ValidationError(f"Tipo de archivo no válido ({file_extension}). Se permiten PDF, DOCX o imágenes.")
+            raise ValidationError(f"Tipo de archivo no válido ({file_extension}). Se permiten únicamente PDF, JPG o PNG.")
 
         return archivo
 

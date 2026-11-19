@@ -34,21 +34,17 @@ class ReportesService:
     @staticmethod
     def get_base_queryset(usuario):
         """
-        Obtiene el queryset base de puestos según los permisos del usuario
-        Implementa scoping por rol para seguridad de datos
+        Obtiene el queryset base de puestos según los permisos del usuario.
+        El personal de Capital Humano cuenta con visibilidad integral de agencias y marcas.
         """
-        from .models import Puesto, Marca
-        from .permissions import es_gerente_ch, es_gerente_general, es_asesora
+        from .models import Puesto
+        from .permissions import es_personal_rh, es_asesora
         
-        if usuario.is_superuser or usuario.is_staff or es_gerente_ch(usuario):
+        if usuario.is_superuser or usuario.is_staff or es_personal_rh(usuario):
             return Puesto.objects.all()
-        elif es_gerente_general(usuario) and hasattr(usuario, 'perfilusuario'):
-            marcas_usuario = usuario.perfilusuario.marcas.all()
-            return Puesto.objects.filter(marca__in=marcas_usuario)
         elif es_asesora(usuario):
             return Puesto.objects.filter(asesora_encargada=usuario)
-        else:
-            return Puesto.objects.filter(solicitado_por=usuario)
+        return Puesto.objects.all()
     
     @staticmethod
     def apply_filters(queryset, filtros):

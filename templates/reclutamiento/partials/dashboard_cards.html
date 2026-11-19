@@ -62,97 +62,45 @@
 </div>
 {% endif %}
 
-<!-- SECCIÓN 2: GESTIÓN OPERATIVA Y APROBACIONES -->
+<!-- SECCIÓN 2: GESTIÓN DE VACANTES DE RH -->
 <div class="sap-tile-group">
-    <div class="sap-tile-group-title">Operaciones y Aprobaciones</div>
+    <div class="sap-tile-group-title">Operaciones de Capital Humano</div>
     <div class="sap-tiles-grid">
-        <!-- Portal del Gerente Operativo -->
-        {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
-        <a href="{% url 'portal_gerente' %}" class="sap-tile sap-tile-direct">
+        <!-- Captura Directa de Requisición -->
+        <a href="{% url 'crear_vacante' %}" class="sap-tile sap-tile-direct">
             <div class="sap-tile-top">
                 <div class="sap-tile-icon-box">
-                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                 </div>
-                {% if candidatos_entrevista_count > 0 %}
-                    <span class="sap-badge sap-badge-warning">Por entrevistar</span>
-                {% else %}
-                    <span class="sap-badge sap-badge-success">Al día</span>
-                {% endif %}
+                <span class="sap-badge sap-badge-primary">Nueva</span>
             </div>
             <div class="sap-tile-body">
-                <h3 class="sap-tile-title">Solicitar Puesto</h3>
-                <div class="sap-tile-stat tabular-nums">{{ candidatos_entrevista_count|default:"0" }}</div>
-                <div class="sap-tile-stat-label">candidatos por entrevistar</div>
+                <h3 class="sap-tile-title">Capturar Requisición</h3>
+                <div class="sap-tile-stat tabular-nums">+</div>
+                <div class="sap-tile-stat-label">registro directo de vacante</div>
             </div>
             <div class="sap-tile-footer">
-                <span class="sap-tile-action-btn">Entrevistar / Solicitar &rarr;</span>
-            </div>
-        </a>
-        {% endif %}
-
-        <!-- Aprobaciones Pendientes -->
-        {% if user.is_staff or 'Gerente General de Marca' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-        <a href="{% url 'lista_solicitudes' %}" class="sap-tile sap-tile-direct">
-            <div class="sap-tile-top">
-                <div class="sap-tile-icon-box">
-                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                </div>
-                {% if pendientes_aprobacion > 0 %}
-                    <span class="sap-badge sap-badge-warning">Pendiente</span>
-                {% else %}
-                    <span class="sap-badge sap-badge-success">Al día</span>
-                {% endif %}
-            </div>
-            <div class="sap-tile-body">
-                <h3 class="sap-tile-title">Aprobar Vacantes</h3>
-                <div class="sap-tile-stat tabular-nums">{{ pendientes_aprobacion|default:"0" }}</div>
-                <div class="sap-tile-stat-label">solicitudes pendientes</div>
-            </div>
-            <div class="sap-tile-footer">
-                <span class="sap-tile-action-btn">Revisar solicitudes &rarr;</span>
-            </div>
-        </a>
-        {% endif %}
-
-        <!-- Asignación de Vacantes (Capital Humano) -->
-        {% if 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-        <a href="{% url 'vista_asignar_puestos' %}" class="sap-tile sap-tile-direct">
-            <div class="sap-tile-top">
-                <div class="sap-tile-icon-box">
-                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M18 17H6v-2h12v2zm0-4H6v-2h12v2zm0-4H6V7h12v2zM3 22l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20z"/></svg>
-                </div>
-                {% if puestos_por_asignar > 0 %}
-                    <span class="sap-badge sap-badge-warning">Por repartir</span>
-                {% else %}
-                    <span class="sap-badge sap-badge-success">Al día</span>
-                {% endif %}
-            </div>
-            <div class="sap-tile-body">
-                <h3 class="sap-tile-title">Asignar a Asesoras</h3>
-                <div class="sap-tile-stat tabular-nums">{{ puestos_por_asignar|default:"0" }}</div>
-                <div class="sap-tile-stat-label">vacantes por asignar</div>
-            </div>
-            <div class="sap-tile-footer">
-                <span class="sap-tile-action-btn">Asignar vacantes &rarr;</span>
+                <span class="sap-tile-action-btn">Crear requisición &rarr;</span>
             </div>
         </a>
 
-        <!-- Supervisión de Procesos -->
-        <a href="{% url 'vista_supervisar_procesos' %}" class="sap-tile sap-tile-direct">
+        <!-- Mis Vacantes Activas -->
+        <a href="{% url 'mis_vacantes' %}" class="sap-tile sap-tile-direct">
             <div class="sap-tile-top">
                 <div class="sap-tile-icon-box">
-                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
                 </div>
-                <span class="sap-badge sap-badge-neutral">Equipo</span>
+                <span class="sap-badge sap-badge-neutral">{{ mis_vacantes_count }} activas</span>
             </div>
             <div class="sap-tile-body">
-                <h3 class="sap-tile-title">Supervisar Equipo</h3>
-                <div class="sap-tile-stat tabular-nums">&bull;&bull;&bull;</div>
-                <div class="sap-tile-stat-label">balance de carga</div>
+                <h3 class="sap-tile-title">Mis Vacantes</h3>
+                <div class="sap-tile-stat tabular-nums">{{ mis_vacantes_count }}</div>
+                <div class="sap-tile-stat-label">en seguimiento activo</div>
             </div>
             <div class="sap-tile-footer">
-                <span class="sap-tile-action-btn">Supervisar procesos &rarr;</span>
+                <span class="sap-tile-action-btn">Ver mis vacantes &rarr;</span>
             </div>
+        </a>
         </a>
         {% endif %}
     </div>
@@ -196,24 +144,6 @@
             </div>
             <div class="sap-tile-footer">
                 <span class="sap-tile-action-btn">Ver bitácora &rarr;</span>
-            </div>
-        </a>
-
-        <!-- Biblioteca de Perfiles -->
-        <a href="{% url 'biblioteca_perfiles' %}" class="sap-tile sap-tile-direct">
-            <div class="sap-tile-top">
-                <div class="sap-tile-icon-box">
-                    <svg class="sap-tile-svg" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
-                </div>
-                <span class="sap-badge sap-badge-neutral">Catálogo</span>
-            </div>
-            <div class="sap-tile-body">
-                <h3 class="sap-tile-title">Perfiles de Puesto</h3>
-                <div class="sap-tile-stat tabular-nums">RH</div>
-                <div class="sap-tile-stat-label">descripciones de perfil</div>
-            </div>
-            <div class="sap-tile-footer">
-                <span class="sap-tile-action-btn">Consultar perfiles &rarr;</span>
             </div>
         </a>
 

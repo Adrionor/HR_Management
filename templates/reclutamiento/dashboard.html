@@ -478,45 +478,6 @@
         </a>
         {% endif %}
 
-        <!-- Candidatos por Entrevistar (Gerente Operativo) -->
-        {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
-        <a href="{% url 'portal_gerente' %}" class="wb-metric-item" title="Candidatos en etapa de entrevista con jefe">
-            <span class="wb-metric-label">
-                Por Entrevistar
-                <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </span>
-            <span class="wb-metric-value {% if candidatos_entrevista_count > 0 %}has-alert{% else %}is-zero{% endif %}">
-                {{ candidatos_entrevista_count|default:"0" }}
-            </span>
-        </a>
-        {% endif %}
-
-        <!-- Aprobaciones Pendientes (Gerente de Marca / Director / Staff) -->
-        {% if user.is_staff or 'Gerente General de Marca' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-        <a href="{% url 'lista_solicitudes' %}" class="wb-metric-item" title="Requisiciones pendientes de tu firma">
-            <span class="wb-metric-label">
-                Por Aprobar
-                <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </span>
-            <span class="wb-metric-value {% if pendientes_aprobacion > 0 %}has-alert{% else %}is-zero{% endif %}">
-                {{ pendientes_aprobacion|default:"0" }}
-            </span>
-        </a>
-        {% endif %}
-
-        <!-- Vacantes por Asignar a Asesoras (Gerentes de CH) -->
-        {% if 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-        <a href="{% url 'vista_asignar_puestos' %}" class="wb-metric-item" title="Vacantes autorizadas pendientes de repartir">
-            <span class="wb-metric-label">
-                Por Asignar
-                <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </span>
-            <span class="wb-metric-value {% if puestos_por_asignar > 0 %}has-alert{% else %}is-zero{% endif %}">
-                {{ puestos_por_asignar|default:"0" }}
-            </span>
-        </a>
-        {% endif %}
-
         <!-- Bolsa de Trabajo General -->
         <a href="{% url 'bolsa_trabajo_consulta' %}" class="wb-metric-item" title="Talento registrado en la bolsa">
             <span class="wb-metric-label">
@@ -548,11 +509,6 @@
             </a>
             {% endif %}
 
-            <a href="{% url 'biblioteca_perfiles' %}" class="wb-tool-btn" title="Descripciones de perfil autorizadas">
-                <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
-                <span>Perfiles de Puesto</span>
-            </a>
-
             {% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
             <a href="{% url 'vista_historial_general' %}" class="wb-tool-btn" title="Auditoría de movimientos">
                 <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -562,12 +518,10 @@
         </div>
 
         <div class="wb-toolbar-group">
-            {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
-            <a href="{% url 'portal_gerente' %}" class="wb-tool-btn primary" title="Crear una nueva requisición de personal">
+            <a href="{% url 'crear_vacante' %}" class="wb-tool-btn primary" title="Capturar una nueva requisición de personal">
                 <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                <span>Nueva Solicitud de Vacante</span>
+                <span>Nueva Requisición</span>
             </a>
-            {% endif %}
 
             {% if user.is_superuser %}
             <a href="{% url 'admin:index' %}" class="wb-tool-btn" style="color: #64748b;" title="Panel Django Admin">

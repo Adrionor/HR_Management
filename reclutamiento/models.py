@@ -60,7 +60,7 @@ class Puesto(models.Model):
         PENDIENTE_DIR = 'PENDIENTE_DIR', 'Pendiente de Dirección'
         RECHAZADO = 'RECHAZADO', 'Rechazado'
 
-    marca = models.ForeignKey(Marca, on_delete=models.PROTECT, verbose_name="Marca", null=True)
+    marca = models.ForeignKey(Marca, on_delete=models.PROTECT, verbose_name="Marca", null=True, blank=True)
 
     class Area(models.TextChoices):
         VENTAS = 'VTAS', 'Ventas'
@@ -97,7 +97,7 @@ class Puesto(models.Model):
     # --- Campos del Puesto ---
     titulo = models.ForeignKey(CatalogoPuesto, on_delete=models.PROTECT, verbose_name="Nombre del Puesto Vacante", null=True)
     agencia = models.CharField(max_length=100, verbose_name="Agencia", db_index=True)
-    area = models.CharField(max_length=4, choices=Area.choices, verbose_name="Área")
+    area = models.CharField(max_length=4, choices=Area.choices, verbose_name="Área", default=Area.OTRA, blank=True)
     ciudad = models.CharField(max_length=100, verbose_name="Ciudad de la Vacante", choices=CIUDADES_CHOICES)
     cantidad_vacantes = models.PositiveIntegerField(default=1, verbose_name="Cantidad de Vacantes Solicitadas")
     experiencia_minima = models.PositiveIntegerField(null=True, blank=True, verbose_name="Experiencia Mínima (años)",
@@ -199,6 +199,10 @@ class Puesto(models.Model):
             self.jefe_inmediato_puesto = self.puesto_jefe_inmediato
         elif not self.puesto_jefe_inmediato and self.jefe_inmediato_puesto:
             self.puesto_jefe_inmediato = self.jefe_inmediato_puesto
+
+        # Asignación automática a quien captura si no se ha asignado asesora
+        if not self.asesora_encargada and self.solicitado_por:
+            self.asesora_encargada = self.solicitado_por
 
         super().save(*args, **kwargs)
 
@@ -347,9 +351,22 @@ class Puesto(models.Model):
             Proceso.Estatus.ALTA_ADMIN,
         ]
         if any(e in estatus_set for e in tramites):
-            return '6. En Trámites de Contratación'
+            return '5. En Trámites de Ingreso'
 
-        return '5. Entrevistas / Evaluación'
+        if Proceso.Estatus.ENT_JF in estatus_set or Proceso.Estatus.CONF_JF in estatus_set:
+            return '4. En Entrevista / Decisión con Jefe'
+
+        filtros = [
+            Proceso.Estatus.NUEVO,
+            Proceso.Estatus.CONTACTO,
+            Proceso.Estatus.PRUEBAS,
+            Proceso.Estatus.ENT_CH,
+            Proceso.Estatus.REF,
+        ]
+        if any(e in estatus_set for e in filtros):
+            return '3. En Filtros y Evaluaciones RH'
+
+        return '2. En Búsqueda'
 
     @property
     def candidato_mas_avanzado(self):

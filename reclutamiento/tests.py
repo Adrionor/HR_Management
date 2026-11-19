@@ -64,13 +64,21 @@ class HRManagementTests(TestCase):
         self.assertEqual(perfil_admin.search_fields, ('puesto__titulo__nombre', 'comentarios_adicionales'))
 
     def test_solicitud_puesto_form_integrity(self):
-        """Verifica que SolicitudPuestoForm mantenga todos los campos requeridos y widgets personalizados."""
+        """Verifica que SolicitudPuestoForm contenga únicamente los campos definidos para la captura directa de RH."""
         form = SolicitudPuestoForm()
-        self.assertIn('reemplaza_a', form.fields)
-        self.assertIn('funciones_puesto', form.fields)
-        self.assertIn('sueldo_base', form.fields)
-        # Verificar que el widget de funciones_puesto tenga los rows definidos
-        self.assertEqual(form.fields['funciones_puesto'].widget.attrs.get('rows'), 5)
+        campos_esperados = [
+            'fecha_solicitud', 'agencia', 'ciudad', 'titulo', 'cantidad_vacantes',
+            'jefe_inmediato_nombre', 'jefe_inmediato_puesto', 'motivo_requisicion',
+            'sueldo_base', 'esquema_comisiones', 'dias_meta', 'comentarios',
+            'archivo_justificacion'
+        ]
+        for campo in campos_esperados:
+            self.assertIn(campo, form.fields)
+
+        # Campos eliminados no deben existir en el formulario
+        self.assertNotIn('reemplaza_a', form.fields)
+        self.assertNotIn('funciones_puesto', form.fields)
+        self.assertNotIn('objetivo_puesto', form.fields)
 
     def test_puesto_sla_y_etapas_operativas(self):
         """Verifica el cálculo de días meta, estatus de SLA y etapa operativa en Puesto."""
@@ -170,49 +178,38 @@ class HRManagementTests(TestCase):
         self.assertEqual(response_solicitantes.status_code, 200)
         self.assertIn('Jefe Solicitante', response_solicitantes.content.decode('utf-8-sig'))
 
-    def test_evaluacion_entrevista_jefe_operativo(self):
-        """Verifica que el gerente operativo pueda evaluar a un candidato en ENT_JF desde su portal."""
+    def test_captura_directa_vacante_por_asesora(self):
+        """Verifica que la captura directa por una asesora guarde la vacante activa y autoasignada."""
         from django.contrib.auth.models import Group
-        grupo_go, _ = Group.objects.get_or_create(name='Gerentes Operativos')
-        self.user.groups.add(grupo_go)
-
-        puesto = Puesto.objects.create(
-            titulo=self.cat_puesto,
-            marca=self.marca,
-            agencia='Toyota Premier',
-            ciudad='CUL',
-            area='VTAS',
-            solicitado_por=self.user,
-            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
-            esta_abierto=True,
-            nombre_jefe_inmediato='Juan Pérez',
-            puesto_jefe_inmediato='Gerente',
-            motivo_requisicion='ROT',
-            sueldo_base=12000.00
-        )
-        cand = Candidato.objects.create(nombres='Laura', apellidos='Sánchez', email='laura@example.com')
-        proc = Proceso.objects.create(
-            candidato=cand,
-            puesto=puesto,
-            estatus_proceso=Proceso.Estatus.ENTREVISTA_JEFE
-        )
-
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
         self.client.login(username='testuser', password='password123')
 
-        # Evaluar candidato aprobándolo
-        response = self.client.post(reverse('portal_gerente'), {
-            'action': 'evaluar_candidato',
-            'proceso_id': proc.id,
-            'decision': 'APROBAR',
-            'retroalimentacion_jefe': 'Excelente actitud y experiencia en prospección.'
+        response = self.client.post(reverse('crear_vacante'), {
+            'titulo': self.cat_puesto.id,
+            'agencia': 'Toyota Premier Culiacán',
+            'ciudad': 'CUL',
+            'cantidad_vacantes': 2,
+            'jefe_inmediato_nombre': 'Ing. Roberto Gómez',
+            'jefe_inmediato_puesto': 'Gerente de Ventas',
+            'motivo_requisicion': 'ROT',
+            'sueldo_base': 18000.00,
+            'esquema_comisiones': 'Comisiones por vehículo vendido',
+            'dias_meta': 25,
+            'comentarios': 'Requisición física entregada con firma de autorización.'
         })
         self.assertEqual(response.status_code, 302)
-        proc.refresh_from_db()
-        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.EXAMENES_MEDICOS)
-        self.assertIn('Excelente actitud', proc.retroalimentacion)
+        puesto = Puesto.objects.filter(agencia='Toyota Premier Culiacán').first()
+        self.assertIsNotNone(puesto)
+        self.assertEqual(puesto.estatus_autorizacion, Puesto.EstatusAutorizacion.AUTORIZADO)
+        self.assertTrue(puesto.esta_abierto)
+        self.assertEqual(puesto.asesora_encargada, self.user)
+        self.assertEqual(puesto.solicitado_por, self.user)
+        self.assertEqual(puesto.dias_meta, 25)
+        self.assertEqual(puesto.jefe_inmediato_nombre, 'Ing. Roberto Gómez')
 
-    def test_rechazo_solicitud_con_motivo(self):
-        """Verifica que el rechazo de una requisición guarde el motivo_rechazo."""
+    def test_modulos_externos_desactivados(self):
+        """Verifica que los módulos y rutas ajenos a RH estén desactivados y redirijan al dashboard o mis vacantes."""
         self.user.is_staff = True
         self.user.save()
         self.client.login(username='testuser', password='password123')
@@ -224,20 +221,27 @@ class HRManagementTests(TestCase):
             ciudad='CUL',
             area='VTAS',
             solicitado_por=self.user,
-            estatus_autorizacion=Puesto.EstatusAutorizacion.PENDIENTE_DIR,
-            nombre_jefe_inmediato='Juan Pérez',
-            puesto_jefe_inmediato='Gerente',
-            motivo_requisicion='INC',
             sueldo_base=15000.00
         )
-        response = self.client.post(reverse('rechazar_solicitud', args=[puesto.id]), {
-            'motivo_rechazo': 'Plantilla congelada por Dirección General.'
-        })
-        self.assertEqual(response.status_code, 302)
-        puesto.refresh_from_db()
-        self.assertEqual(puesto.estatus_autorizacion, Puesto.EstatusAutorizacion.RECHAZADO)
-        self.assertFalse(puesto.esta_abierto)
-        self.assertEqual(puesto.motivo_rechazo, 'Plantilla congelada por Dirección General.')
+        resp_rechazar = self.client.post(reverse('rechazar_solicitud', args=[puesto.id]), {'motivo_rechazo': 'test'})
+        self.assertEqual(resp_rechazar.status_code, 302)
+        self.assertIn('/dashboard/', resp_rechazar.url)
+
+        resp_aprobar = self.client.post(reverse('aprobar_solicitud', args=[puesto.id]))
+        self.assertEqual(resp_aprobar.status_code, 302)
+        self.assertIn('/dashboard/', resp_aprobar.url)
+
+        resp_pendientes = self.client.get(reverse('lista_solicitudes'))
+        self.assertEqual(resp_pendientes.status_code, 302)
+        self.assertIn('/dashboard/', resp_pendientes.url)
+
+        resp_perfil = self.client.get(reverse('gestion_perfil_puesto', args=[puesto.id]))
+        self.assertEqual(resp_perfil.status_code, 302)
+        self.assertIn('/mis-vacantes/', resp_perfil.url)
+
+        resp_portal = self.client.get(reverse('portal_gerente'))
+        self.assertEqual(resp_portal.status_code, 302)
+        self.assertIn('/vacantes/crear/', resp_portal.url)
 
     def test_require_post_en_aprobacion_y_rechazo(self):
         """BUG-02 y BUG-03: Verifica que GET a aprobar o rechazar devuelva 405 Method Not Allowed."""
@@ -511,38 +515,14 @@ class HRManagementTests(TestCase):
         self.assertEqual(proc.estatus_proceso, Proceso.Estatus.NUEVO)
 
     def test_audit_supervisar_procesos_sin_asesora_no_truena(self):
-        """Hallazgo #5: Reasignar un proceso con asesora_asignada=None no genera AttributeError."""
-        from django.contrib.auth.models import Group
-        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
-        self.user.groups.add(grupo_ch)
-
-        asesora_nueva = User.objects.create_user(username='asesora_nueva', password='password123')
-        puesto = Puesto.objects.create(
-            titulo=self.cat_puesto,
-            marca=self.marca,
-            agencia='Toyota Premier',
-            ciudad='CUL',
-            area='VTAS',
-            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
-            esta_abierto=True,
-            sueldo_base=10000
-        )
-        cand = Candidato.objects.create(nombres='Silvia', apellidos='Pinal', email='silvia@example.com')
-        proc = Proceso.objects.create(
-            candidato=cand,
-            puesto=puesto,
-            asesora_asignada=None,  # Sin asesora previa
-            estatus_proceso=Proceso.Estatus.NUEVO
-        )
-
+        """Verifica que el módulo de supervisión y reasignación externa esté desactivado y redirija al dashboard."""
         self.client.login(username='testuser', password='password123')
         resp = self.client.post(reverse('vista_supervisar_procesos'), {
-            'proceso_id': proc.id,
-            'nueva_asesora_id': asesora_nueva.id
+            'proceso_id': 1,
+            'nueva_asesora_id': 2
         })
         self.assertEqual(resp.status_code, 302)
-        proc.refresh_from_db()
-        self.assertEqual(proc.asesora_asignada, asesora_nueva)
+        self.assertIn('/dashboard/', resp.url)
 
     def test_audit_reportes_versioned_cache_invalidation(self):
         """Hallazgo #8: La invalidación por versión funciona sin cache.clear()."""

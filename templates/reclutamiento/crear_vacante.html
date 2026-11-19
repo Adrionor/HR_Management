@@ -1,0 +1,232 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Captura de Requisición de Personal | RH{% endblock %}
+
+{% block breadcrumb %}
+    <span class="sap-breadcrumb-sep">/</span>
+    <a href="{% url 'mis_vacantes' %}" class="sap-breadcrumb-item">Vacantes</a>
+    <span class="sap-breadcrumb-sep">/</span>
+    <span class="sap-breadcrumb-current">Nueva Requisición</span>
+{% endblock %}
+
+{% block style %}
+<style>
+    .sap-page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-bottom: 3rem;
+    }
+    
+    .sap-form-header {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--sap-shadow-card);
+    }
+    .sap-form-header h1 {
+        margin: 0 0 0.35rem 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--sap-text);
+    }
+    .sap-form-header p {
+        margin: 0;
+        color: var(--sap-muted);
+        font-size: 0.875rem;
+    }
+
+    .sap-fieldset {
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background-color: #ffffff;
+        box-shadow: var(--sap-shadow-card);
+    }
+    .sap-fieldset legend {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--sap-primary);
+        padding: 0 0.6rem;
+    }
+    
+    .sap-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.25rem;
+    }
+    
+    .sap-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+    .sap-form-group label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--sap-text);
+    }
+    .sap-form-group input, 
+    .sap-form-group select, 
+    .sap-form-group textarea {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-sm);
+        font-family: inherit;
+        font-size: 0.875rem;
+        background-color: #ffffff;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .sap-form-group input:focus, 
+    .sap-form-group select:focus, 
+    .sap-form-group textarea:focus {
+        border-color: var(--sap-primary);
+        box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
+        outline: none;
+    }
+
+    .sap-file-hint {
+        font-size: 0.775rem;
+        color: var(--sap-muted);
+        margin-top: 4px;
+    }
+    
+    .sap-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    .sap-error-banner {
+        background-color: var(--sap-error-bg);
+        border: 1px solid var(--sap-error-border);
+        color: var(--sap-error-text);
+        padding: 1rem 1.25rem;
+        border-radius: var(--sap-radius-sm);
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sap-page-container">
+    <div class="sap-form-header">
+        <h1>Captura de Requisición de Personal</h1>
+        <p>Captura directa para el departamento de Capital Humano. Al guardarse, la vacante se activa automáticamente y queda asignada a tu usuario.</p>
+    </div>
+
+    {% if form.errors %}
+        <div class="sap-error-banner">
+            <strong>Por favor revisa y corrige los siguientes campos:</strong>
+            <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- 1. Datos Generales de la Vacante -->
+        <fieldset class="sap-fieldset">
+            <legend>Datos de la Posición y Ubicación</legend>
+            <div class="sap-form-grid">
+                <div class="sap-form-group">
+                    <label for="{{ form.titulo.id_for_label }}">Puesto Vacante (Catálogo) *</label>
+                    {{ form.titulo }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.agencia.id_for_label }}">Agencia o Sucursal *</label>
+                    {{ form.agencia }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.ciudad.id_for_label }}">Ciudad *</label>
+                    {{ form.ciudad }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.cantidad_vacantes.id_for_label }}">Plazas a Cubrir *</label>
+                    {{ form.cantidad_vacantes }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.fecha_solicitud.id_for_label }}">Fecha de Solicitud (Requisición Física)</label>
+                    {{ form.fecha_solicitud }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.dias_meta.id_for_label }}">Días Meta SLA (Editable) *</label>
+                    {{ form.dias_meta }}
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- 2. Información del Jefe Inmediato y Requisición -->
+        <fieldset class="sap-fieldset">
+            <legend>Datos del Solicitante / Jefe Inmediato</legend>
+            <div class="sap-form-grid">
+                <div class="sap-form-group">
+                    <label for="{{ form.jefe_inmediato_nombre.id_for_label }}">Nombre del Jefe Inmediato</label>
+                    {{ form.jefe_inmediato_nombre }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.jefe_inmediato_puesto.id_for_label }}">Puesto del Jefe Inmediato</label>
+                    {{ form.jefe_inmediato_puesto }}
+                </div>
+                <div class="sap-form-group">
+                    <label for="{{ form.motivo_requisicion.id_for_label }}">Motivo de la Requisición *</label>
+                    {{ form.motivo_requisicion }}
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- 3. Compensación y Condiciones -->
+        <fieldset class="sap-fieldset">
+            <legend>Compensación y Condiciones</legend>
+            <div class="sap-form-grid">
+                <div class="sap-form-group">
+                    <label for="{{ form.sueldo_base.id_for_label }}">Sueldo Base Mensual (Bruto) *</label>
+                    {{ form.sueldo_base }}
+                </div>
+                <div class="sap-form-group" style="grid-column: 1 / -1;">
+                    <label for="{{ form.esquema_comisiones.id_for_label }}">Esquema de Comisiones y/o Bonos</label>
+                    {{ form.esquema_comisiones }}
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- 4. Respaldo Físico y Observaciones -->
+        <fieldset class="sap-fieldset">
+            <legend>Soporte Documental y Observaciones</legend>
+            <div class="sap-form-group" style="margin-bottom: 1.25rem;">
+                <label for="{{ form.archivo_justificacion.id_for_label }}">Requisición Firmada (PDF, JPG, PNG)</label>
+                {{ form.archivo_justificacion }}
+                <div class="sap-file-hint">Adjunta escaneo o fotografía de la requisición física firmada (máximo 5 MB).</div>
+            </div>
+            <div class="sap-form-group">
+                <label for="{{ form.comentarios.id_for_label }}">Comentarios u Observaciones de RH</label>
+                {{ form.comentarios }}
+            </div>
+        </fieldset>
+
+        <div class="sap-form-actions">
+            <a href="{% url 'mis_vacantes' %}" class="sap-btn sap-btn-secondary">Cancelar</a>
+            <button type="submit" class="sap-btn sap-btn-primary">
+                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                <span>Guardar y Activar Vacante</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
