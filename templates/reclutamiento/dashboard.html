@@ -1,25 +1,20 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Bandeja de Trabajo - Gestión de Talento{% endblock %}
+{% block title %}Panel Principal de Capital Humano{% endblock %}
 
 {% block breadcrumb %}
     <span class="sap-breadcrumb-separator">/</span>
-    <span class="sap-breadcrumb-current">Bandeja de Trabajo</span>
+    <span class="sap-breadcrumb-current">Dashboard de RH</span>
 {% endblock %}
 
 {% block back_button %}
-    <!-- Vista raíz: No requiere botón regresar -->
+    <!-- Vista principal: No requiere botón regresar -->
 {% endblock %}
 
 {% block style %}
 <style>
-    /* ==========================================================================
-       WORKBENCH / COCKPIT OPERATIVO (ESTILO ASHBY / LINEAR)
-       Diseño denso, funcional y sin cuadrícula de tarjetas genéricas.
-       ========================================================================== */
-
-    .wb-container {
+    .rh-dashboard-container {
         max-width: 1440px;
         margin: 0 auto;
         display: flex;
@@ -27,8 +22,8 @@
         gap: 1.25rem;
     }
 
-    /* 1. Header de Cabecera y Perfil */
-    .wb-header {
+    /* Encabezado */
+    .rh-dashboard-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -37,829 +32,518 @@
         padding-bottom: 0.25rem;
     }
 
-    .wb-header-title {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .wb-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--sap-text);
-        letter-spacing: -0.01em;
+    .rh-dashboard-title {
         margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .wb-subtitle {
-        font-size: 0.8125rem;
-        color: var(--sap-muted);
-        margin: 0;
-    }
-
-    .wb-role-badge {
-        font-size: 0.725rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 3px 8px;
-        border-radius: var(--sap-radius-sm);
-        background: #eef2f7;
-        color: #334155;
-        border: 1px solid #cbd5e1;
-    }
-
-    /* 2. Barra de Métricas Inline (Status Ribbon / Metric Strip) */
-    .wb-status-ribbon {
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius-md);
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        box-shadow: var(--sap-shadow-card);
-    }
-
-    .wb-metric-item {
-        flex: 1 1 160px;
-        padding: 0.85rem 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        border-right: 1px solid var(--sap-border-subtle);
-        text-decoration: none;
-        color: inherit;
-        transition: background-color 0.12s ease;
-    }
-
-    .wb-metric-item:last-child {
-        border-right: none;
-    }
-
-    .wb-metric-item:hover {
-        background-color: #f8fafc;
-    }
-
-    .wb-metric-label {
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--sap-muted);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .wb-metric-value {
         font-size: 1.35rem;
         font-weight: 700;
         color: var(--sap-text);
-        font-variant-numeric: tabular-nums;
-        line-height: 1.2;
+        letter-spacing: -0.01em;
     }
 
-    .wb-metric-value.has-alert {
-        color: var(--sap-warning-text);
+    .rh-dashboard-subtitle {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.825rem;
+        color: var(--sap-muted);
     }
 
-    .wb-metric-value.is-zero {
-        color: #94a3b8;
+    /* Grid de Tarjetas Operativas de RH */
+    .rh-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 1rem;
     }
 
-    /* 3. Barra de Herramientas y Acciones Rápidas (Toolbar) */
-    .wb-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.75rem;
+    .rh-op-card {
         background: #ffffff;
         border: 1px solid var(--sap-border);
         border-radius: var(--sap-radius-md);
-        padding: 0.6rem 1rem;
+        padding: 1.15rem 1.25rem;
         box-shadow: var(--sap-shadow-card);
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 125px;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
     }
 
-    .wb-toolbar-group {
+    .rh-op-card:hover {
+        border-color: var(--sap-primary);
+        box-shadow: 0 4px 12px rgba(0, 112, 242, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .rh-op-card-top {
         display: flex;
-        align-items: center;
-        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
         gap: 0.5rem;
     }
 
-    .wb-tool-btn {
+    .rh-op-card-title {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sap-muted);
+        margin: 0;
+    }
+
+    .rh-op-card-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--sap-radius-sm);
+        background: #f0f7ff;
+        color: var(--sap-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .rh-op-card-counter {
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+        margin: 0.35rem 0;
+    }
+
+    .rh-op-card-action {
+        font-size: 0.785rem;
+        font-weight: 600;
+        color: var(--sap-primary);
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 5px 11px;
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: var(--sap-text);
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius-sm);
-        text-decoration: none;
-        transition: all 0.12s ease;
+        gap: 4px;
+        margin-top: auto;
     }
 
-    .wb-tool-btn:hover {
-        border-color: var(--sap-primary);
-        color: var(--sap-primary);
-        background: #fbfcfd;
-    }
-
-    .wb-tool-btn.primary {
-        background: var(--sap-primary);
-        border-color: var(--sap-primary);
-        color: #ffffff;
-        font-weight: 600;
-    }
-
-    .wb-tool-btn.primary:hover {
-        background: var(--sap-primary-hover);
-        border-color: var(--sap-primary-hover);
-        color: #ffffff;
-    }
-
-    .wb-tool-icon {
-        width: 15px;
-        height: 15px;
-        fill: currentColor;
-    }
-
-    /* 4. Layout Principal Dividido: Worklist (72%) + Feed Lateral (28%) */
-    .wb-main-layout {
+    /* Layout Principal (2 Columnas) */
+    .rh-main-layout {
         display: grid;
-        grid-template-columns: 2.5fr 1fr;
+        grid-template-columns: 1fr 340px;
         gap: 1.25rem;
         align-items: start;
     }
 
-    @media (max-width: 1024px) {
-        .wb-main-layout {
+    @media (max-width: 1080px) {
+        .rh-main-layout {
             grid-template-columns: 1fr;
         }
     }
 
-    /* 5. Paneles de la Worklist */
-    .wb-worklist-column {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-    }
-
-    .wb-panel {
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius-md);
-        box-shadow: var(--sap-shadow-card);
-        overflow: hidden;
-    }
-
-    .wb-panel-header {
-        padding: 0.85rem 1.25rem;
-        background: #fbfcfd;
-        border-bottom: 1px solid var(--sap-border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
-    .wb-panel-title-box {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-    }
-
-    .wb-panel-title {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--sap-text);
-        margin: 0;
-        letter-spacing: -0.01em;
-    }
-
-    .wb-panel-count {
-        font-size: 0.725rem;
-        font-weight: 600;
-        background: #e2e8f0;
-        color: #334155;
-        padding: 2px 7px;
-        border-radius: 10px;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .wb-panel-link {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--sap-primary);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-    }
-
-    .wb-panel-link:hover {
-        text-decoration: underline;
-    }
-
-    /* 6. Tabla Densa / Worklist de Alta Legibilidad */
-    .wb-table {
+    .rh-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.825rem;
     }
 
-    .wb-table th {
+    .rh-table th {
         background: #f8fafc;
         color: var(--sap-muted);
         font-weight: 600;
-        font-size: 0.7rem;
+        font-size: 0.725rem;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 0.65rem 1.15rem;
+        letter-spacing: 0.04em;
+        padding: 0.65rem 1rem;
         border-bottom: 1px solid var(--sap-border);
         text-align: left;
-        white-space: nowrap;
     }
 
-    .wb-table td {
-        padding: 0.75rem 1.15rem;
+    .rh-table td {
+        padding: 0.75rem 1rem;
         border-bottom: 1px solid var(--sap-border-subtle);
-        color: var(--sap-text);
         vertical-align: middle;
+        color: var(--sap-text);
     }
 
-    .wb-table tr:last-child td {
+    .rh-table tr:last-child td {
         border-bottom: none;
     }
 
-    .wb-table tbody tr {
-        transition: background-color 0.1s ease;
-    }
-
-    .wb-table tbody tr:hover {
-        background-color: #f8fafc;
-    }
-
-    .wb-person-name {
-        font-weight: 600;
-        color: var(--sap-text);
-        text-decoration: none;
-        display: block;
-        line-height: 1.25;
-    }
-
-    .wb-person-name:hover {
-        color: var(--sap-primary);
-    }
-
-    .wb-person-sub {
-        font-size: 0.75rem;
-        color: var(--sap-muted);
-        margin-top: 2px;
-        display: block;
-    }
-
-    .wb-action-link {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--sap-primary);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        white-space: nowrap;
-    }
-
-    .wb-action-link:hover {
-        text-decoration: underline;
-        color: var(--sap-primary-hover);
-    }
-
-    .wb-empty-state {
-        padding: 2.25rem 1rem;
-        text-align: center;
-        color: var(--sap-muted);
-        font-size: 0.825rem;
-    }
-
-    /* Barra de progreso de cobertura (mini 4px) */
-    .wb-progress-bar {
-        width: 90px;
-        height: 5px;
-        background: #e2e8f0;
-        border-radius: 3px;
-        overflow: hidden;
-        margin-top: 4px;
-    }
-
-    .wb-progress-fill {
-        height: 100%;
-        background: var(--sap-primary);
-        border-radius: 3px;
-    }
-
-    .wb-progress-fill.complete {
-        background: var(--sap-success);
-    }
-
-    /* 7. Sidebar de Comunicaciones */
-    .wb-sidebar {
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius-md);
-        box-shadow: var(--sap-shadow-card);
-        overflow: hidden;
-    }
-
-    .wb-sidebar-header {
-        padding: 0.85rem 1.15rem;
-        background: #fbfcfd;
-        border-bottom: 1px solid var(--sap-border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .wb-notice-item {
-        padding: 0.9rem 1.15rem;
-        border-bottom: 1px solid var(--sap-border-subtle);
-    }
-
-    .wb-notice-item:last-child {
-        border-bottom: none;
-    }
-
-    .wb-notice-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--sap-text);
-        margin: 0 0 0.25rem 0;
-    }
-
-    .wb-notice-body {
-        font-size: 0.8rem;
-        color: var(--sap-muted);
-        line-height: 1.45;
-        margin: 0 0 0.4rem 0;
-    }
-
-    .wb-notice-meta {
-        font-size: 0.725rem;
-        color: #94a3b8;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+    .rh-table tbody tr:hover {
+        background: #f8fafc;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="wb-container">
+<div class="rh-dashboard-container">
 
-    <!-- 1. Cabecera de Identificación -->
-    <header class="wb-header">
-        <div class="wb-header-title">
-            <h1 class="wb-title">
-                Bandeja de Trabajo &bull; {{ user.get_full_name|default:user.username }}
+    <!-- Encabezado de la Asesora / Directora -->
+    <header class="rh-dashboard-header">
+        <div>
+            <h1 class="rh-dashboard-title">
+                Bandeja de Operaciones &bull; {{ user.get_full_name|default:user.username }}
             </h1>
-            <p class="wb-subtitle">
-                Sistema Corporativo de Reclutamiento y Selección &bull; Premier Automotriz
+            <p class="rh-dashboard-subtitle">
+                Sistema Exclusivo de Capital Humano &bull; Premier Automotriz
             </p>
         </div>
         <div>
-            <span class="wb-role-badge">
+            <span class="sap-badge sap-badge-info" style="font-size: 0.8rem; padding: 4px 10px;">
                 {% if user.is_superuser %}
-                    Superusuario Corporativo
-                {% elif 'Gerentes de Capital Humano' in user_groups %}
-                    Gerente de Capital Humano
-                {% elif 'Gerente General de Marca' in user_groups %}
-                    Gerente General de Marca
-                {% elif 'Gerentes Operativos' in user_groups %}
-                    Gerente Operativo
-                {% elif 'Asesoras' in user_groups %}
-                    Asesora de Reclutamiento
+                    Superusuario RH
+                {% elif es_directora_ch %}
+                    Directora / Gerencia CH
                 {% else %}
-                    Usuario del Sistema
+                    Asesora de Reclutamiento
                 {% endif %}
             </span>
         </div>
     </header>
 
-    <!-- 2. Barra de Métricas y Estado en Vivo (Metric Strip) -->
-    <section class="wb-status-ribbon">
-        <!-- Procesos Activos (Asesoras / CH) -->
-        {% if 'Asesoras' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-        <a href="{% url 'mis_procesos' %}" class="wb-metric-item" title="Ver candidatos en seguimiento activo">
-            <span class="wb-metric-label">
-                Mis Candidatos
-                <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </span>
-            <span class="wb-metric-value {% if mis_procesos_count > 0 %}has-alert{% else %}is-zero{% endif %}">
-                {{ mis_procesos_count|default:"0" }}
+    <!-- Tarjetas Operativas de RH (Sin Ruido, Contadores Grandes y Enlaces Directos) -->
+    <section class="rh-cards-grid">
+        <!-- 1. Registrar Vacante -->
+        <a href="{% url 'crear_vacante' %}" class="rh-op-card" title="Registrar una nueva vacante directamente">
+            <div class="rh-op-card-top">
+                <span class="rh-op-card-title">Registrar Vacante</span>
+                <div class="rh-op-card-icon" style="background: #e7f6ec; color: #107e3e;">
+                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </div>
+            </div>
+            <div class="rh-op-card-counter" style="color: #107e3e; font-size: 1.6rem; margin: 0.6rem 0;">
+                + Nueva
+            </div>
+            <span class="rh-op-card-action" style="color: #107e3e;">
+                Capturar requisición &rarr;
             </span>
         </a>
 
-        <!-- Vacantes Abiertas (Asesoras / CH) -->
-        <a href="{% url 'mis_vacantes' %}" class="wb-metric-item" title="Ver vacantes asignadas abiertas">
-            <span class="wb-metric-label">
-                Mis Vacantes
-                <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </span>
-            <span class="wb-metric-value {% if mis_vacantes_count == 0 %}is-zero{% endif %}">
+        <!-- 2. Mis Vacantes -->
+        <a href="{% url 'mis_vacantes' %}" class="rh-op-card" title="Ver vacantes asignadas activas">
+            <div class="rh-op-card-top">
+                <span class="rh-op-card-title">Mis Vacantes</span>
+                <div class="rh-op-card-icon">
+                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                </div>
+            </div>
+            <div class="rh-op-card-counter">
                 {{ mis_vacantes_count|default:"0" }}
+            </div>
+            <span class="rh-op-card-action">
+                Ver vacantes abiertas &rarr;
+            </span>
+        </a>
+
+        <!-- 3. Mis Candidatos en Proceso -->
+        <a href="{% url 'mis_procesos' %}" class="rh-op-card" title="Candidatos en seguimiento activo">
+            <div class="rh-op-card-top">
+                <span class="rh-op-card-title">Mis Candidatos</span>
+                <div class="rh-op-card-icon" style="background: #e8f3ff; color: #0070f2;">
+                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                </div>
+            </div>
+            <div class="rh-op-card-counter">
+                {{ mis_procesos_count|default:"0" }}
+            </div>
+            <span class="rh-op-card-action">
+                Candidatos en proceso &rarr;
+            </span>
+        </a>
+
+        <!-- 4. Bolsa de Trabajo -->
+        <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-op-card" title="Repositorio general de talento disponible">
+            <div class="rh-op-card-top">
+                <span class="rh-op-card-title">Bolsa de Trabajo</span>
+                <div class="rh-op-card-icon" style="background: #f1f3f5; color: #495057;">
+                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </div>
+            </div>
+            <div class="rh-op-card-counter">
+                {{ candidatos_bolsa_count|default:"0" }}
+            </div>
+            <span class="rh-op-card-action">
+                Explorar candidatos &rarr;
+            </span>
+        </a>
+
+        <!-- 5. Reportes Excel -->
+        <a href="{% url 'vista_reportes' %}" class="rh-op-card" title="Generación y exportación de reportes analíticos">
+            <div class="rh-op-card-top">
+                <span class="rh-op-card-title">Reportes Excel</span>
+                <div class="rh-op-card-icon" style="background: #e7f6ec; color: #107e3e;">
+                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                </div>
+            </div>
+            <div class="rh-op-card-counter" style="font-size: 1.6rem; margin: 0.6rem 0;">
+                BI / Excel
+            </div>
+            <span class="rh-op-card-action">
+                Descargar reportes &rarr;
+            </span>
+        </a>
+
+        <!-- 6. Bitácora de Auditoría (Para Directora/Gerencia CH o Superuser) -->
+        {% if es_directora_ch %}
+        <a href="{% url 'vista_historial_general' %}" class="rh-op-card" title="Registro detallado de movimientos de personal y procesos">
+            <div class="rh-op-card-top">
+                <span class="rh-op-card-title">Auditoría RH</span>
+                <div class="rh-op-card-icon" style="background: #fff4e5; color: #b25900;">
+                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                </div>
+            </div>
+            <div class="rh-op-card-counter" style="font-size: 1.6rem; margin: 0.6rem 0; color: #b25900;">
+                Auditoría
+            </div>
+            <span class="rh-op-card-action" style="color: #b25900;">
+                Consultar bitácora &rarr;
             </span>
         </a>
         {% endif %}
-
-        <!-- Bolsa de Trabajo General -->
-        <a href="{% url 'bolsa_trabajo_consulta' %}" class="wb-metric-item" title="Talento registrado en la bolsa">
-            <span class="wb-metric-label">
-                Bolsa de Trabajo
-                <svg style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </span>
-            <span class="wb-metric-value">
-                {{ candidatos_bolsa_count|default:"0" }}
-            </span>
-        </a>
     </section>
 
-    <!-- 3. Barra de Herramientas y Acciones Rápidas (Toolbar Funcional) -->
-    <nav class="wb-toolbar" aria-label="Herramientas del sistema">
-        <div class="wb-toolbar-group">
-            <span style="font-size: 0.725rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sap-muted); margin-right: 4px;">
-                Módulos:
-            </span>
+    <!-- Layout Principal: Tablas de Trabajo Operativo (Izq) y Panel de Soporte/Avisos (Der) -->
+    <main class="rh-main-layout">
 
-            <a href="{% url 'bolsa_trabajo_consulta' %}" class="wb-tool-btn" title="Consultar base de candidatos">
-                <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 3s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                <span>Bolsa de Trabajo</span>
-            </a>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
 
-            {% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or 'Gerente General de Marca' in user_groups or 'Asesoras' in user_groups or user.is_superuser %}
-            <a href="{% url 'vista_reportes' %}" class="wb-tool-btn" title="Abrir tablero de métricas y cumplimiento de SLA">
-                <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                <span>Reportes BI</span>
-            </a>
-            {% endif %}
-
-            {% if user.is_staff or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-            <a href="{% url 'vista_historial_general' %}" class="wb-tool-btn" title="Auditoría de movimientos">
-                <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-                <span>Bitácora de Auditoría</span>
-            </a>
-            {% endif %}
-        </div>
-
-        <div class="wb-toolbar-group">
-            <a href="{% url 'crear_vacante' %}" class="wb-tool-btn primary" title="Capturar una nueva requisición de personal">
-                <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                <span>Nueva Requisición</span>
-            </a>
-
-            {% if user.is_superuser %}
-            <a href="{% url 'admin:index' %}" class="wb-tool-btn" style="color: #64748b;" title="Panel Django Admin">
-                <svg class="wb-tool-icon" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                <span>Admin</span>
-            </a>
-            {% endif %}
-        </div>
-    </nav>
-
-    <!-- 4. Layout Principal: Bandeja Operativa Viva (Izq) y Avisos (Der) -->
-    <main class="wb-main-layout">
-
-        <!-- Columna de Tareas Operativas -->
-        <div class="wb-worklist-column">
-
-            <!-- BLOQUE A: CANDIDATOS EN ENTREVISTA CON JEFE (Gerente Operativo) -->
-            {% if 'Gerentes Operativos' in user_groups or user.is_superuser %}
-            {% if candidatos_entrevista_list %}
-            <section class="wb-panel" style="border-top: 3px solid var(--sap-warning-text);">
-                <div class="wb-panel-header">
-                    <div class="wb-panel-title-box">
-                        <h2 class="wb-panel-title">Candidatos por Evaluar (Entrevista con Jefe)</h2>
-                        <span class="wb-panel-count" style="background: #fef3c7; color: #92400e;">
-                            {{ candidatos_entrevista_count }}
-                        </span>
-                    </div>
-                    <a href="{% url 'portal_gerente' %}" class="wb-panel-link">Ir al Portal &rarr;</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="wb-table">
-                        <thead>
-                            <tr>
-                                <th>Candidato</th>
-                                <th>Puesto Vacante</th>
-                                <th>Asesora Asignada</th>
-                                <th>Esperando desde</th>
-                                <th style="text-align: right;">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for proc in candidatos_entrevista_list %}
-                            <tr>
-                                <td>
-                                    <span class="wb-person-name">{{ proc.candidato.nombre_completo }}</span>
-                                    <span class="wb-person-sub">{{ proc.candidato.email }}</span>
-                                </td>
-                                <td>
-                                    <strong>{{ proc.puesto.titulo.nombre }}</strong>
-                                    <span class="wb-person-sub">{{ proc.puesto.marca.nombre }} &bull; {{ proc.puesto.agencia }}</span>
-                                </td>
-                                <td>{% if proc.asesora_asignada %}{{ proc.asesora_asignada.get_full_name|default:proc.asesora_asignada.username }}{% else %}Sin asesora{% endif %}</td>
-                                <td class="tabular-nums">{{ proc.fecha_inicio_etapa|date:"d/m/Y" }}</td>
-                                <td style="text-align: right;">
-                                    <a href="{% url 'portal_gerente' %}#evaluar-{{ proc.id }}" class="wb-action-link" style="color: var(--sap-warning-text);">
-                                        Evaluar candidato &rarr;
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-            {% endif %}
-            {% endif %}
-
-            <!-- BLOQUE B: SOLICITUDES PENDIENTES DE APROBACIÓN (Gerente Marca / Director) -->
-            {% if user.is_staff or 'Gerente General de Marca' in user_groups or user.is_superuser %}
-            {% if solicitudes_pendientes_list %}
-            <section class="wb-panel" style="border-top: 3px solid #0057b8;">
-                <div class="wb-panel-header">
-                    <div class="wb-panel-title-box">
-                        <h2 class="wb-panel-title">Vacantes Pendientes de tu Aprobación</h2>
-                        <span class="wb-panel-count" style="background: #e0f2fe; color: #0369a1;">
-                            {{ pendientes_aprobacion }}
-                        </span>
-                    </div>
-                    <a href="{% url 'lista_solicitudes' %}" class="wb-panel-link">Ver todas &rarr;</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="wb-table">
-                        <thead>
-                            <tr>
-                                <th>Puesto Solicitado</th>
-                                <th>Marca / Agencia</th>
-                                <th>Solicitante</th>
-                                <th>Fecha Solicitud</th>
-                                <th style="text-align: right;">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sol in solicitudes_pendientes_list %}
-                            <tr>
-                                <td>
-                                    <span class="wb-person-name">{{ sol.titulo.nombre }}</span>
-                                    <span class="wb-person-sub">{{ sol.cantidad_vacantes }} plaza(s) &bull; {{ sol.get_motivo_requisicion_display }}</span>
-                                </td>
-                                <td>{{ sol.marca.nombre }} &bull; {{ sol.agencia }}</td>
-                                <td>{% if sol.solicitado_por %}{{ sol.solicitado_por.get_full_name|default:sol.solicitado_por.username }}{% else %}N/A{% endif %}</td>
-                                <td class="tabular-nums">{{ sol.fecha_solicitud|date:"d/m/Y" }}</td>
-                                <td style="text-align: right;">
-                                    <a href="{% url 'lista_solicitudes' %}" class="wb-action-link">
-                                        Revisar y firmar &rarr;
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-            {% endif %}
-            {% endif %}
-
-            <!-- BLOQUE C: TRABAJO DE ASESORAS — CANDIDATOS EN PROCESO ACTIVO -->
-            {% if 'Asesoras' in user_groups or 'Gerentes de Capital Humano' in user_groups or user.is_superuser %}
-            <section class="wb-panel">
-                <div class="wb-panel-header">
-                    <div class="wb-panel-title-box">
-                        <h2 class="wb-panel-title">Candidatos en Seguimiento Activo</h2>
-                        <span class="wb-panel-count">{{ mis_procesos_count }}</span>
+            <!-- TABLA 1: CANDIDATOS EN SEGUIMIENTO ACTIVO -->
+            <div class="sap-card">
+                <div class="sap-card-header">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h2 class="sap-card-title">Candidatos en Seguimiento Activo</h2>
+                        <span class="sap-badge sap-badge-neutral tabular-nums">{{ mis_procesos_count }}</span>
                     </div>
                     {% if mis_procesos_count > 0 %}
-                    <a href="{% url 'mis_procesos' %}" class="wb-panel-link">
+                    <a href="{% url 'mis_procesos' %}" style="font-size: 0.8rem; font-weight: 600; color: var(--sap-primary); text-decoration: none;">
                         Ver todos ({{ mis_procesos_count }}) &rarr;
                     </a>
                     {% endif %}
                 </div>
-                <div class="table-responsive">
-                    <table class="wb-table">
-                        <thead>
-                            <tr>
-                                <th>Candidato</th>
-                                <th>Vacante Asignada</th>
-                                <th>Etapa Actual</th>
-                                <th>En etapa desde</th>
-                                <th style="text-align: right;">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for proc in mis_procesos_activos %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'detalle_proceso' proc.id %}" class="wb-person-name">
-                                        {{ proc.candidato.nombre_completo }}
-                                    </a>
-                                    <span class="wb-person-sub">{{ proc.candidato.email }}</span>
-                                </td>
-                                <td>
-                                    <strong>{{ proc.puesto.titulo.nombre }}</strong>
-                                    <span class="wb-person-sub">{{ proc.puesto.marca.nombre }} &bull; {{ proc.puesto.agencia }}</span>
-                                </td>
-                                <td>
-                                    <span class="sap-badge sap-badge-info">{{ proc.get_estatus_proceso_display }}</span>
-                                </td>
-                                <td class="tabular-nums">{{ proc.fecha_inicio_etapa|date:"d/m/Y" }}</td>
-                                <td style="text-align: right;">
-                                    <a href="{% url 'detalle_proceso' proc.id %}" class="wb-action-link">
-                                        Avanzar etapa &rarr;
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="wb-empty-state">
-                                    No tienes candidatos en seguimiento activo actualmente.
-                                    <br>
-                                    <a href="{% url 'bolsa_trabajo_consulta' %}" style="color: var(--sap-primary); font-weight: 500; text-decoration: none; margin-top: 4px; display: inline-block;">
-                                        Buscar candidatos en la Bolsa de Trabajo &rarr;
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="sap-card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="rh-table">
+                            <thead>
+                                <tr>
+                                    <th>Candidato</th>
+                                    <th>Vacante</th>
+                                    <th>Etapa Actual</th>
+                                    <th>Alerta de Tiempo</th>
+                                    <th style="text-align: right;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for proc in mis_procesos_activos %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'detalle_proceso' proc.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
+                                            {{ proc.candidato.nombre_completo }}
+                                        </a>
+                                        <div style="font-size: 0.75rem; color: var(--sap-muted);">{{ proc.candidato.email }}</div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 500;">{{ proc.puesto.titulo.nombre }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--sap-muted);">{{ proc.puesto.agencia }} ({{ proc.puesto.get_ciudad_display }})</div>
+                                    </td>
+                                    <td>
+                                        <span class="sap-badge sap-badge-info">{{ proc.get_estatus_proceso_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if proc.esta_estancado or proc.dias_en_etapa_actual >= 30 %}
+                                            <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; border-color: #fca5a5;">
+                                                <span class="sap-badge-dot"></span>Detenido +30 días ({{ proc.dias_en_etapa_actual }}d)
+                                            </span>
+                                        {% else %}
+                                            <span class="tabular-nums" style="font-size: 0.8125rem; color: var(--sap-muted);">
+                                                {{ proc.dias_en_etapa_actual }} día(s) en etapa
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <a href="{% url 'detalle_proceso' proc.id %}" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 8px;">
+                                            Avanzar etapa &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem 1rem; color: var(--sap-muted);">
+                                        No hay candidatos en proceso activo en este momento.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- BLOQUE D: VACANTES ASIGNADAS ABIERTAS (Asesoras) -->
-            <section class="wb-panel">
-                <div class="wb-panel-header">
-                    <div class="wb-panel-title-box">
-                        <h2 class="wb-panel-title">Mis Vacantes Abiertas para Búsqueda</h2>
-                        <span class="wb-panel-count">{{ mis_vacantes_count }}</span>
+            <!-- TABLA 2: VACANTES ABIERTAS ASIGNADAS -->
+            <div class="sap-card">
+                <div class="sap-card-header">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h2 class="sap-card-title">Mis Vacantes Abiertas</h2>
+                        <span class="sap-badge sap-badge-neutral tabular-nums">{{ mis_vacantes_count }}</span>
                     </div>
                     {% if mis_vacantes_count > 0 %}
-                    <a href="{% url 'mis_vacantes' %}" class="wb-panel-link">
+                    <a href="{% url 'mis_vacantes' %}" style="font-size: 0.8rem; font-weight: 600; color: var(--sap-primary); text-decoration: none;">
                         Ver todas ({{ mis_vacantes_count }}) &rarr;
                     </a>
                     {% endif %}
                 </div>
-                <div class="table-responsive">
-                    <table class="wb-table">
-                        <thead>
-                            <tr>
-                                <th>Puesto / Ubicación</th>
-                                <th>Cobertura de Plazas</th>
-                                <th>Días / Meta SLA</th>
-                                <th>Estatus SLA</th>
-                                <th style="text-align: right;">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for vac in mis_vacantes_activas %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'puesto_detalle' vac.id %}" class="wb-person-name">
-                                        {{ vac.titulo.nombre }}
-                                    </a>
-                                    <span class="wb-person-sub">{{ vac.marca.nombre }} &bull; {{ vac.agencia }} ({{ vac.get_ciudad_display }})</span>
-                                </td>
-                                <td>
-                                    <div class="tabular-nums" style="font-weight: 600;">
-                                        {{ vac.plazas_cubiertas }} de {{ vac.cantidad_vacantes }} contratada(s)
-                                    </div>
-                                    <div class="wb-progress-bar">
-                                        <div class="wb-progress-fill {% if vac.esta_completamente_cubierta %}complete{% endif %}"
-                                             style="width: {% widthratio vac.plazas_cubiertas vac.cantidad_vacantes 100 %}%;"></div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="tabular-nums" style="font-weight: 600;">{{ vac.dias_transcurridos }}</span>
-                                    <span style="color: var(--sap-muted); font-size: 0.75rem;">/ {{ vac.dias_meta }} días</span>
-                                </td>
-                                <td>
-                                    {% if vac.estatus_sla == 'EN_TIEMPO' %}
-                                        <span class="sap-badge sap-badge-success">En tiempo</span>
-                                    {% elif vac.estatus_sla == 'POR_VENCER' %}
-                                        <span class="sap-badge sap-badge-warning">Por vencer</span>
-                                    {% else %}
-                                        <span class="sap-badge sap-badge-error">Vencida</span>
-                                    {% endif %}
-                                </td>
-                                <td style="text-align: right;">
-                                    <a href="{% url 'asignar_candidato' vac.id %}" class="wb-action-link">
-                                        Asignar candidato &rarr;
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="wb-empty-state">
-                                    No tienes vacantes abiertas asignadas en este momento.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-            {% endif %}
-
-            <!-- BLOQUE E: PARA GERENTES OPERATIVOS — MIS SOLICITUDES EN CURSO -->
-            {% if 'Gerentes Operativos' in user_groups and not 'Asesoras' in user_groups and not user.is_superuser %}
-            <section class="wb-panel">
-                <div class="wb-panel-header">
-                    <div class="wb-panel-title-box">
-                        <h2 class="wb-panel-title">Mis Requisiciones de Personal</h2>
-                        <span class="wb-panel-count">{{ mis_solicitudes_gerente|length }}</span>
+                <div class="sap-card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="rh-table">
+                            <thead>
+                                <tr>
+                                    <th>Puesto</th>
+                                    <th>Cobertura</th>
+                                    <th>Días SLA</th>
+                                    <th>Cumplimiento Bono</th>
+                                    <th style="text-align: right;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vac in mis_vacantes_activas %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'puesto_detalle' vac.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
+                                            {{ vac.titulo.nombre }}
+                                        </a>
+                                        <div style="font-size: 0.75rem; color: var(--sap-muted);">{{ vac.agencia }} &bull; {{ vac.get_ciudad_display }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="tabular-nums" style="font-weight: 600;">{{ vac.plazas_cubiertas }}</span>
+                                        <span style="color: var(--sap-muted); font-size: 0.8rem;">de {{ vac.cantidad_vacantes }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="tabular-nums" style="font-weight: 600;">{{ vac.dias_transcurridos }}</span>
+                                        <span style="color: var(--sap-muted); font-size: 0.75rem;">/ {{ vac.dias_meta }}d</span>
+                                        {% if vac.dias_transcurridos > vac.dias_meta %}
+                                            <span class="sap-badge sap-badge-error" style="margin-left: 4px; font-size: 0.7rem; padding: 1px 5px;">Vencida</span>
+                                        {% else %}
+                                            <span class="sap-badge sap-badge-success" style="margin-left: 4px; font-size: 0.7rem; padding: 1px 5px;">En tiempo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if vac.cumplio_meta_bono %}
+                                            <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Meta Bono OK</span>
+                                        {% else %}
+                                            <span class="sap-badge sap-badge-neutral"><span class="sap-badge-dot"></span>Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <a href="{% url 'asignar_candidato' vac.id %}" class="sap-btn sap-btn-positive sap-btn-sm" style="padding: 2px 8px;">
+                                            Buscar candidatos &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem 1rem; color: var(--sap-muted);">
+                                        No hay vacantes abiertas asignadas actualmente.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <a href="{% url 'portal_gerente' %}" class="wb-panel-link">Ver todas &rarr;</a>
                 </div>
-                <div class="table-responsive">
-                    <table class="wb-table">
-                        <thead>
-                            <tr>
-                                <th>Puesto Solicitado</th>
-                                <th>Fecha Solicitud</th>
-                                <th>Estatus Autorización</th>
-                                <th>Asesora Asignada</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for req in mis_solicitudes_gerente %}
-                            <tr>
-                                <td>
-                                    <span class="wb-person-name">{{ req.titulo.nombre }}</span>
-                                    <span class="wb-person-sub">{{ req.marca.nombre }} &bull; {{ req.agencia }}</span>
-                                </td>
-                                <td class="tabular-nums">{{ req.fecha_solicitud|date:"d/m/Y" }}</td>
-                                <td>
-                                    {% if req.estatus_autorizacion == 'AUTORIZADO' %}
-                                        <span class="sap-badge sap-badge-success">Autorizado</span>
-                                    {% elif req.estatus_autorizacion == 'RECHAZADO' %}
-                                        <span class="sap-badge sap-badge-error">Rechazado</span>
-                                    {% else %}
-                                        <span class="sap-badge sap-badge-warning">{{ req.get_estatus_autorizacion_display }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>{% if req.asesora_encargada %}{{ req.asesora_encargada.get_full_name|default:req.asesora_encargada.username }}{% else %}Pendiente{% endif %}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="wb-empty-state">
-                                    No has creado requisiciones de puesto aún.
-                                    <br>
-                                    <a href="{% url 'portal_gerente' %}" style="color: var(--sap-primary); font-weight: 500; text-decoration: none; margin-top: 4px; display: inline-block;">
-                                        Crear nueva solicitud de vacante &rarr;
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            </div>
+
+            <!-- TABLA 3: ÚLTIMO ACCESO DE ASESORAS (Visible exclusivamente para Directora / Gerencia CH) -->
+            {% if es_directora_ch and asesoras_logins %}
+            <div class="sap-card" style="border-top: 3px solid var(--sap-primary);">
+                <div class="sap-card-header">
+                    <div>
+                        <h2 class="sap-card-title">Último Acceso del Equipo de Asesoras (last_login)</h2>
+                        <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
+                            Monitoreo de actividad y conexión de asesoras de Capital Humano
+                        </div>
+                    </div>
+                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ asesoras_logins|length }} usuarias</span>
                 </div>
-            </section>
+                <div class="sap-card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="rh-table">
+                            <thead>
+                                <tr>
+                                    <th>Asesora</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Última Conexión</th>
+                                    <th style="text-align: right;">Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asesora in asesoras_logins %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ asesora.get_full_name|default:asesora.username }}</strong>
+                                        <div style="font-size: 0.75rem; color: var(--sap-muted);">@{{ asesora.username }}</div>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ asesora.email }}" style="color: var(--sap-primary); text-decoration: none;">
+                                            {{ asesora.email|default:"Sin correo" }}
+                                        </a>
+                                    </td>
+                                    <td class="tabular-nums">
+                                        {% if asesora.last_login %}
+                                            <strong>{{ asesora.last_login|date:"d/m/Y, H:i" }}</strong>
+                                        {% else %}
+                                            <span style="color: var(--sap-muted); font-style: italic;">Sin registro de acceso</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        {% if asesora.is_active %}
+                                            <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Activa</span>
+                                        {% else %}
+                                            <span class="sap-badge sap-badge-neutral"><span class="sap-badge-dot"></span>Inactiva</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
             {% endif %}
 
         </div>
 
-        <!-- Columna Lateral: Comunicaciones Internas -->
-        <aside class="wb-sidebar">
-            <div class="wb-sidebar-header">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <svg style="width: 16px; height: 16px; color: var(--sap-primary);" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-                    </svg>
-                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--sap-text);">Avisos Internos</span>
+        <!-- Columna Lateral: Avisos Internos y Accesos Directos -->
+        <aside style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div class="sap-card">
+                <div class="sap-card-header">
+                    <h2 class="sap-card-title">Avisos de Capital Humano</h2>
+                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ avisos|length }}</span>
                 </div>
-                <span class="wb-panel-count">{{ avisos|length }}</span>
+                <div class="sap-card-body" style="padding: 0.85rem 1rem;">
+                    {% for aviso in avisos %}
+                    <div style="border-bottom: 1px solid var(--sap-border-subtle); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="font-weight: 600; font-size: 0.85rem; color: var(--sap-text);">{{ aviso.titulo }}</div>
+                        <div style="font-size: 0.8rem; color: var(--sap-muted); margin-top: 3px; line-height: 1.4;">{{ aviso.contenido|linebreaksbr }}</div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+                            {{ aviso.fecha_creacion|date:"d/m/Y H:i" }} &bull; {{ aviso.creado_por.get_full_name|default:aviso.creado_por.username }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="color: var(--sap-muted); font-size: 0.8125rem; text-align: center; padding: 1.5rem 0;">
+                        No hay avisos internos en este momento.
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
-            {% for aviso in avisos %}
-            <article class="wb-notice-item">
-                <h3 class="wb-notice-title">{{ aviso.titulo }}</h3>
-                <p class="wb-notice-body">{{ aviso.contenido|linebreaksbr }}</p>
-                <div class="wb-notice-meta">
-                    <span>{% if aviso.creado_por %}{{ aviso.creado_por.get_full_name|default:aviso.creado_por.username }}{% else %}Administración{% endif %}</span>
-                    <span>&bull;</span>
-                    <span class="tabular-nums">{{ aviso.fecha_creacion|date:"d/m/Y H:i" }}</span>
+            <!-- Caja de Ayuda Operativa Directa -->
+            <div class="sap-card" style="background: #f8fafc; border-left: 3px solid var(--sap-primary);">
+                <div class="sap-card-body" style="padding: 1rem;">
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--sap-text); margin-bottom: 4px;">
+                        Flujo Rápido de RH
+                    </div>
+                    <ul style="padding-left: 1.15rem; margin: 0; font-size: 0.8rem; color: var(--sap-muted); line-height: 1.5;">
+                        <li><strong>1. Captura:</strong> Carga la requisición firmada en "Registrar Vacante".</li>
+                        <li><strong>2. Asignación:</strong> Selecciona candidatos de la Bolsa de Trabajo.</li>
+                        <li><strong>3. Avance:</strong> Registra entrevistas y confirmación del jefe directo.</li>
+                        <li><strong>4. Cierre:</strong> Al contratar, la plaza se cubre automáticamente.</li>
+                    </ul>
                 </div>
-            </article>
-            {% empty %}
-            <div class="wb-empty-state" style="padding: 2rem 1rem;">
-                No hay avisos internos publicados.
             </div>
-            {% endfor %}
         </aside>
 
     </main>

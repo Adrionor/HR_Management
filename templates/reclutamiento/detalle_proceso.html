@@ -13,7 +13,7 @@
 {% block back_button %}
     <a href="{% url 'mis_procesos' %}" class="sap-btn-back" title="Volver a mis candidatos">
         <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        <span>Mis Candidatos</span>
+        <span>Regresar</span>
     </a>
 {% endblock %}
 
@@ -146,14 +146,37 @@
         <p class="sap-page-subtitle">
             Vacante: <strong>{{ proceso.puesto.titulo.nombre }}</strong> &bull; 
             Etapa actual: <span class="sap-badge sap-badge-info">{{ proceso.get_estatus_proceso_display }}</span>
-            {% if proceso.esta_estancado %}
-                <span class="sap-badge sap-badge-warning" style="margin-left: 4px;">
-                    <span class="sap-badge-dot"></span>Estancado ({{ proceso.dias_en_etapa_actual }} días)
+            {% if proceso.esta_estancado or proceso.dias_en_etapa_actual >= 30 %}
+                <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; border-color: #fca5a5; margin-left: 4px;">
+                    <span class="sap-badge-dot"></span>Detenido +30 días ({{ proceso.dias_en_etapa_actual }}d)
+                </span>
+            {% else %}
+                <span style="font-size: 0.8rem; color: var(--sap-muted); margin-left: 4px;">
+                    ({{ proceso.dias_en_etapa_actual }} día(s) en etapa)
                 </span>
             {% endif %}
         </p>
     </div>
 </div>
+
+<!-- Banner de Alerta si el candidato está detenido +30 días -->
+{% if proceso.esta_estancado or proceso.dias_en_etapa_actual >= 30 %}
+<div class="sap-card" style="border-left: 4px solid #b25900; background: #fff4e5; padding: 0.85rem 1.15rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <svg class="sap-icon" style="color: #b25900; width: 22px; height: 22px; flex-shrink: 0;" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div>
+            <div style="font-weight: 700; color: #b25900; font-size: 0.875rem;">
+                ATENCIÓN OPERATIVA: Candidato Detenido +30 días
+            </div>
+            <div style="font-size: 0.8rem; color: #7c2d12; margin-top: 2px;">
+                Este candidato lleva {{ proceso.dias_en_etapa_actual }} días en la etapa actual sin avance registrado. Actualiza su etapa o descártalo para mantener al día tus indicadores.
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Banner de Alerta Crítica si el candidato es No Contratable -->
 {% if proceso.candidato.es_no_contratable %}

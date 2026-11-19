@@ -11,13 +11,12 @@
 {% block back_button %}
     <a href="{% url 'dashboard' %}" class="sap-btn-back" title="Volver al panel principal">
         <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        <span>Inicio</span>
+        <span>Regresar</span>
     </a>
 {% endblock %}
 
 {% block style %}
 <style>
-    /* Resumen Superior Rápido para Asesoras */
     .sap-kpi-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -46,13 +45,8 @@
         flex-shrink: 0;
     }
 
-    .sap-kpi-info {
-        display: flex;
-        flex-direction: column;
-    }
-
     .sap-kpi-number {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         font-weight: 700;
         color: var(--sap-text);
         line-height: 1.1;
@@ -66,28 +60,30 @@
         margin-top: 2px;
     }
 
-    /* Tabla y Enlaces Operativos */
     .link-puesto {
         font-weight: 600;
-        color: var(--sap-primary);
+        color: var(--sap-text);
         text-decoration: none;
     }
     .link-puesto:hover {
         text-decoration: underline;
-        color: var(--sap-primary-hover);
+        color: var(--sap-primary);
     }
 
-    .link-adjunto {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        color: var(--sap-primary);
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.8125rem;
+    .mini-progress-bar {
+        width: 80px;
+        height: 5px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
     }
-    .link-adjunto:hover {
-        text-decoration: underline;
+    .mini-progress-fill {
+        height: 100%;
+        background: var(--sap-primary);
+    }
+    .mini-progress-fill.complete {
+        background: #16a34a;
     }
 </style>
 {% endblock %}
@@ -103,19 +99,25 @@
             </svg>
             Mis Vacantes Asignadas
         </h1>
-        <p class="sap-page-subtitle">Vacantes abiertas bajo tu responsabilidad. Completa la definición de perfil o busca candidatos para iniciar el proceso.</p>
+        <p class="sap-page-subtitle">Seguimiento de requisiciones activas, cobertura de plazas, cumplimiento de SLA y meta para bono.</p>
+    </div>
+    <div>
+        <a href="{% url 'crear_vacante' %}" class="sap-btn sap-btn-primary sap-btn-sm">
+            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            <span>Nueva Requisición</span>
+        </a>
     </div>
 </div>
 
-<!-- Resumen Visual Rápido para Asesora (Cero Ambigüedad) -->
+<!-- Resumen Visual Rápido para Asesora -->
 <div class="sap-kpi-summary">
     <div class="sap-kpi-card">
         <div class="sap-kpi-icon" style="background-color: var(--sap-info-bg); color: var(--sap-primary);">
             <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
         </div>
-        <div class="sap-kpi-info">
+        <div>
             <div class="sap-kpi-number">{{ vacantes|length }}</div>
-            <div class="sap-kpi-label">Vacantes abiertas asignadas</div>
+            <div class="sap-kpi-label">Vacantes abiertas activas</div>
         </div>
     </div>
 </div>
@@ -124,26 +126,19 @@
 <div class="sap-card">
     <div class="sap-card-header">
         <h2 class="sap-card-title">Listado de Vacantes Activas</h2>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <a href="{% url 'crear_vacante' %}" class="sap-btn sap-btn-primary sap-btn-sm">
-                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                <span>Nueva Requisición</span>
-            </a>
-            <span class="sap-badge sap-badge-neutral tabular-nums">{{ vacantes|length }} registros</span>
-        </div>
+        <span class="sap-badge sap-badge-neutral tabular-nums">{{ vacantes|length }} registros</span>
     </div>
     <div class="sap-card-body" style="padding: 1rem;">
         <div class="table-responsive">
             <table id="vacantesTable" class="display sap-table" style="width:100%">
                 <thead>
                     <tr>
-                        <th>Puesto</th>
-                        <th>Días Abierta</th>
-                        <th>Plazas</th>
-                        <th>Jefe Inmediato</th>
-                        <th>Sueldo Bruto</th>
-                        <th>Documento</th>
-                        <th style="text-align: right;">Siguiente Acción</th>
+                        <th>Puesto / Ubicación</th>
+                        <th>Plazas Cubiertas</th>
+                        <th>Días vs Meta SLA</th>
+                        <th>Meta Bono RH</th>
+                        <th>Requisición Escaneada</th>
+                        <th style="text-align: right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -152,17 +147,26 @@
                         <td>
                             <a href="{% url 'puesto_detalle' vacante.id %}" class="link-puesto">{{ vacante.titulo.nombre }}</a>
                             <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
-                                <strong>{{ vacante.marca.nombre }}</strong> &bull; {{ vacante.get_ciudad_display }}
-                                {% if vacante.es_confidencial %}
-                                    &bull; <span class="sap-badge sap-badge-warning" style="font-size: 0.675rem; padding: 1px 5px;">Confidencial</span>
+                                <strong>{{ vacante.marca.nombre }}</strong> &bull; {{ vacante.agencia }} ({{ vacante.get_ciudad_display }})
+                                {% if vacante.nombre_jefe_inmediato %}
+                                    &bull; Jefe: {{ vacante.nombre_jefe_inmediato }}
                                 {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="tabular-nums" style="font-weight: 600; font-size: 0.85rem;">
+                                {{ vacante.plazas_cubiertas }} de {{ vacante.cantidad_vacantes }}
+                            </div>
+                            <div class="mini-progress-bar">
+                                <div class="mini-progress-fill {% if vacante.esta_completamente_cubierta %}complete{% endif %}"
+                                     style="width: {% widthratio vacante.plazas_cubiertas vacante.cantidad_vacantes 100 %}%;"></div>
                             </div>
                         </td>
                         <td>
                             <div class="tabular-nums" style="font-weight: 600; font-size: 0.85rem;">
                                 {{ vacante.dias_transcurridos }} / {{ vacante.dias_meta }} días
                             </div>
-                            <div style="font-size: 0.725rem; margin-top: 3px; display: flex; flex-direction: column; gap: 2px;">
+                            <div style="margin-top: 3px; display: flex; flex-direction: column; gap: 2px;">
                                 {% if vacante.dias_transcurridos <= vacante.dias_meta %}
                                     <span class="sap-badge sap-badge-success" style="align-self: flex-start;"><span class="sap-badge-dot"></span>En tiempo SLA</span>
                                 {% else %}
@@ -170,32 +174,27 @@
                                 {% endif %}
 
                                 {% if vacante.numero_reinicios > 0 %}
-                                    <span class="sap-badge sap-badge-warning" style="align-self: flex-start;" title="Veces reiniciado el reloj de SLA">
+                                    <span class="sap-badge sap-badge-warning" style="align-self: flex-start;" title="Contador reiniciado">
                                         <span class="sap-badge-dot"></span>Reinicio #{{ vacante.numero_reinicios }}
-                                    </span>
-                                {% endif %}
-
-                                {% if vacante.cumplio_meta_bono %}
-                                    <span class="sap-badge sap-badge-success" style="align-self: flex-start;" title="Cumplió criterio de meta para bono">
-                                        Meta Bono OK
                                     </span>
                                 {% endif %}
                             </div>
                         </td>
                         <td>
-                            <span class="tabular-nums" style="font-weight: 600;">{{ vacante.plazas_cubiertas }}</span>
-                            <span style="color: var(--sap-muted); font-size: 0.8rem;">de {{ vacante.cantidad_vacantes }}</span>
+                            {% if vacante.cumplio_meta_bono %}
+                                <span class="sap-badge sap-badge-success" title="Cumple criterio de bono (>= 3 candidatos enviados a jefe o vacante cubierta en tiempo)"><span class="sap-badge-dot"></span>Cumple Meta Bono</span>
+                            {% else %}
+                                <span class="sap-badge sap-badge-neutral" title="Requiere cubrir las plazas o enviar al menos 3 candidatos a entrevista con jefe"><span class="sap-badge-dot"></span>Pendiente</span>
+                            {% endif %}
                         </td>
-                        <td>{{ vacante.nombre_jefe_inmediato }}</td>
-                        <td class="tabular-nums" style="font-weight: 600;">${{ vacante.sueldo_base|default:"N/A" }}</td>
                         <td>
                             {% if vacante.archivo_justificacion %}
-                                <a href="{{ vacante.archivo_justificacion.url }}" target="_blank" class="link-adjunto">
+                                <a href="{{ vacante.archivo_justificacion.url }}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 8px;" title="Ver requisición firmada en PDF o imagen">
                                     <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                    <span>Ver archivo</span>
+                                    <span>Ver requisición</span>
                                 </a>
                             {% else %}
-                                <span style="color: var(--sap-muted); font-size: 0.8125rem;">Sin archivo</span>
+                                <span style="color: var(--sap-muted); font-size: 0.78rem;">Sin requisición</span>
                             {% endif %}
                         </td>
                         <td style="text-align: right; white-space: nowrap;">
@@ -205,21 +204,23 @@
                                     <span>Buscar candidatos</span>
                                 </a>
 
-                                <form action="{% url 'reiniciar_vacante' vacante.id %}" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('¿Desea reiniciar el conteo del SLA (días meta) para \'{{ vacante.titulo.nombre|escapejs }}\'? Esto iniciará el Ciclo #{{ vacante.numero_reinicios|add:1 }}.');">
+                                {% if vacante.dias_transcurridos > vacante.dias_meta %}
+                                <form action="{% url 'reiniciar_vacante' vacante.id %}" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('¿Desea reiniciar el conteo del SLA a 0 días para \'{{ vacante.titulo.nombre|escapejs }}\'? Esto iniciará el Ciclo #{{ vacante.numero_reinicios|add:1 }}.');">
                                     {% csrf_token %}
-                                    <input type="hidden" name="comentario" value="Reinicio operativo de SLA por vencimiento / nuevo ciclo">
-                                    <button type="submit" class="sap-btn sap-btn-secondary sap-btn-sm" title="Reiniciar reloj de SLA (iniciar nuevo ciclo)">
+                                    <input type="hidden" name="comentario" value="Reinicio operativo de SLA por vencimiento">
+                                    <button type="submit" class="sap-btn sap-btn-warning sap-btn-sm" title="Reiniciar conteo de días SLA">
                                         <svg class="sap-icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                                        <span>Reiniciar SLA</span>
+                                        <span>Reiniciar conteo</span>
                                     </button>
                                 </form>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--sap-muted);">
-                            No tienes vacantes asignadas pendientes de atender.
+                        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: var(--sap-muted);">
+                            No tienes vacantes asignadas en este momento.
                         </td>
                     </tr>
                     {% endfor %}
@@ -235,7 +236,7 @@
     $(document).ready(function() {
         $('#vacantesTable').DataTable({
             "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
-            "order": [[1, "desc"]],
+            "order": [[2, "desc"]],
             "pageLength": 10
         });
     });

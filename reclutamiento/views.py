@@ -170,6 +170,13 @@ def dashboard(request):
     user_groups = list(usuario.groups.values_list('name', flat=True))
     avisos_recientes = Aviso.objects.filter(esta_activo=True).order_by('-fecha_creacion')[:5]
 
+    # Para la Directora / Gerencia CH: listado compacto de último acceso de asesoras
+    asesoras_logins = []
+    if es_directora:
+        asesoras_logins = User.objects.filter(
+            Q(groups__name='Asesoras') | Q(perfilusuario__rol='ASESORA')
+        ).distinct().order_by('-last_login')
+
     contexto = {
         'mis_procesos_count': mis_procesos_count,
         'mis_vacantes_count': mis_vacantes_count,
@@ -179,7 +186,8 @@ def dashboard(request):
         'user_groups': user_groups,
         'avisos': avisos_recientes,
         'es_directora_ch': es_directora,
-        # Variables mantenidas con valor cero para evitar errores en plantillas
+        'asesoras_logins': asesoras_logins,
+        # Variables mantenidas con valor cero para compatibilidad
         'postulaciones_sin_asignar': 0,
         'pendientes_aprobacion': 0,
         'puestos_por_asignar': 0,

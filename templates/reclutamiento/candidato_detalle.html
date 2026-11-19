@@ -1,7 +1,21 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Expediente de Candidato: {{ candidato.nombre_completo }} - SAP Fiori{% endblock %}
+{% block title %}Expediente de Candidato: {{ candidato.nombre_completo }} | Premier Automotriz{% endblock %}
+
+{% block breadcrumb %}
+    <span class="sap-breadcrumb-separator">/</span>
+    <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-breadcrumb-item">Bolsa de Trabajo</a>
+    <span class="sap-breadcrumb-separator">/</span>
+    <span class="sap-breadcrumb-current">{{ candidato.nombre_completo }}</span>
+{% endblock %}
+
+{% block back_button %}
+    <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-btn-back" title="Volver a la bolsa de trabajo">
+        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span>Regresar</span>
+    </a>
+{% endblock %}
 
 {% block style %}
 <style>
