@@ -412,5 +412,146 @@ class HRManagementTests(TestCase):
         self.assertEqual(datos['kpis']['total_vacantes'], 1)
         self.assertEqual(datos['kpis']['total_activas'], 1)
 
+    def test_audit_fecha_ingreso_is_intermediate_active(self):
+        """Hallazgo #1: FECHA_INGRESO se considera etapa activa, no terminal."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand = Candidato.objects.create(nombres='Pedro', apellidos='Infante', email='pedro@example.com')
+        proc = Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.FECHA_INGRESO
+        )
+
+        # 1. proceso_activo debe devolverlo
+        self.assertEqual(cand.proceso_activo, proc)
+
+        # 2. mis_procesos_view debe incluirlo
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.get(reverse('mis_procesos'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(proc, resp.context['procesos'])
+
+    def test_audit_candidato_contratado_reaparece_en_bolsa(self):
+        """Hallazgo #2: Un candidato con historial CONTRATADO_CERRADO puede reaparecer en la bolsa si no tiene proceso activo."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand = Candidato.objects.create(nombres='María', apellidos='Felix', email='maria@example.com')
+        # Proceso finalizado en el pasado
+        Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.CONTRATADO_CERRADO
+        )
+
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.get(reverse('bolsa_trabajo_consulta'))
+        self.assertEqual(resp.status_code, 200)
+        candidatos_ids = [c.id for c in resp.context['candidatos']]
+        self.assertIn(cand.id, candidatos_ids)
+
+    def test_audit_validacion_estatus_detalle_proceso(self):
+        """Hallazgo #3: detalle_proceso_view rechaza cadenas de estatus inválidas."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand = Candidato.objects.create(nombres='Jorge', apellidos='Negrete', email='jorge@example.com')
+        proc = Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.NUEVO
+        )
+
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': 'ESTATUS_TOTALMENTE_INVALIDO',
+            'retroalimentacion': 'Nota de prueba'
+        })
+        self.assertEqual(resp.status_code, 302)
+        proc.refresh_from_db()
+        self.assertEqual(proc.estatus_proceso, Proceso.Estatus.NUEVO)
+
+    def test_audit_supervisar_procesos_sin_asesora_no_truena(self):
+        """Hallazgo #5: Reasignar un proceso con asesora_asignada=None no genera AttributeError."""
+        from django.contrib.auth.models import Group
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.user.groups.add(grupo_ch)
+
+        asesora_nueva = User.objects.create_user(username='asesora_nueva', password='password123')
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            sueldo_base=10000
+        )
+        cand = Candidato.objects.create(nombres='Silvia', apellidos='Pinal', email='silvia@example.com')
+        proc = Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto,
+            asesora_asignada=None,  # Sin asesora previa
+            estatus_proceso=Proceso.Estatus.NUEVO
+        )
+
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.post(reverse('vista_supervisar_procesos'), {
+            'proceso_id': proc.id,
+            'nueva_asesora_id': asesora_nueva.id
+        })
+        self.assertEqual(resp.status_code, 302)
+        proc.refresh_from_db()
+        self.assertEqual(proc.asesora_asignada, asesora_nueva)
+
+    def test_audit_reportes_versioned_cache_invalidation(self):
+        """Hallazgo #8: La invalidación por versión funciona sin cache.clear()."""
+        from reclutamiento.services import ReportesService
+        v1 = ReportesService.get_cache_version()
+        ReportesService.invalidate_user_cache()
+        v2 = ReportesService.get_cache_version()
+        self.assertGreater(v2, v1)
+
+
 
 

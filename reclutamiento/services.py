@@ -16,10 +16,20 @@ class ReportesService:
     CACHE_KEY_PREFIX = 'reportes_'
     
     @staticmethod
+    def get_cache_version():
+        """Obtiene o inicializa el número de versión de caché de reportes"""
+        v = cache.get('reportes_cache_version')
+        if v is None:
+            v = 1
+            cache.set('reportes_cache_version', v, None)
+        return v
+
+    @staticmethod
     def get_cache_key(usuario_id, filtros):
-        """Genera una clave de caché única basada en usuario y filtros"""
+        """Genera una clave de caché única basada en versión, usuario y filtros"""
         filtros_str = json.dumps(filtros, sort_keys=True)
-        return f"{ReportesService.CACHE_KEY_PREFIX}{usuario_id}_{hash(filtros_str)}"
+        version = ReportesService.get_cache_version()
+        return f"{ReportesService.CACHE_KEY_PREFIX}v{version}_{usuario_id}_{hash(filtros_str)}"
     
     @staticmethod
     def get_base_queryset(usuario):
@@ -616,5 +626,9 @@ class ReportesService:
     
     @staticmethod
     def invalidate_user_cache(usuario_id=None):
-        """Invalida la caché de reportes para reflejar cambios inmediatos"""
-        cache.clear()
+        """Invalida la caché de reportes incrementando la versión sin borrar toda la memoria del sistema"""
+        try:
+            cache.incr('reportes_cache_version')
+        except (ValueError, Exception):
+            v = (cache.get('reportes_cache_version') or 1) + 1
+            cache.set('reportes_cache_version', v, None)

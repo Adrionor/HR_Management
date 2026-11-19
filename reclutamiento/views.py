@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db.models import Count, Q
 from django.urls import reverse_lazy
 from django.http import HttpResponse
@@ -17,7 +17,8 @@ from .forms import SolicitudPuestoForm, RegistroCandidatoForm, PublicacionForm, 
 from .models import Candidato, Puesto, Proceso, RegistroActividad, Publicacion, PerfilDePuesto, Aviso, Marca
 from .permissions import (
     es_gerente_operativo, es_gerente_ch, es_gerente_general, es_asesora,
-    puede_ver_operaciones, es_management, puede_ver_confidenciales, puede_ver_reportes
+    puede_ver_operaciones, es_management, puede_ver_confidenciales, puede_ver_reportes,
+    puede_acceder_proceso
 )
 
 # Decorador para borrar cache
@@ -131,37 +132,92 @@ def dashboard(request):
 
     # Se cuentan solo las solicitudes NO confidenciales para el flujo normal de aprobación
     pendientes_aprobacion = 0
-    if es_gerente_general(request.user):
+    solicitudes_pendientes_list = Puesto.objects.none()
+
+    if es_gerente_general(request.user) and hasattr(request.user, 'perfilusuario'):
+        marcas = request.user.perfilusuario.marcas.all()
         pendientes_aprobacion += Puesto.objects.filter(
             estatus_autorizacion=Puesto.EstatusAutorizacion.PENDIENTE,
+            marca__in=marcas,
             es_confidencial=False
         ).count()
-    if request.user.is_staff:
+        solicitudes_pendientes_list = Puesto.objects.filter(
+            estatus_autorizacion=Puesto.EstatusAutorizacion.PENDIENTE,
+            marca__in=marcas,
+            es_confidencial=False
+        ).select_related('titulo', 'marca', 'solicitado_por').order_by('-fecha_solicitud')[:6]
+    elif request.user.is_staff or request.user.is_superuser:
         pendientes_aprobacion += Puesto.objects.filter(
             estatus_autorizacion=Puesto.EstatusAutorizacion.PENDIENTE_DIR,
             es_confidencial=False
         ).count()
+        solicitudes_pendientes_list = Puesto.objects.filter(
+            estatus_autorizacion=Puesto.EstatusAutorizacion.PENDIENTE_DIR,
+            es_confidencial=False
+        ).select_related('titulo', 'marca', 'solicitado_por').order_by('-fecha_solicitud')[:6]
 
     # Contamos solo las vacantes normales (no confidenciales) que están autorizadas y sin asesora.
-    puestos_por_asignar = Puesto.objects.filter(
+    puestos_por_asignar_qs = Puesto.objects.filter(
         estatus_autorizacion='AUTORIZADO',
         asesora_encargada__isnull=True,
         es_confidencial=False
-    ).count()
+    ).select_related('titulo', 'marca', 'solicitado_por').order_by('-fecha_autorizacion')
+    puestos_por_asignar = puestos_por_asignar_qs.count()
+    puestos_por_asignar_list = puestos_por_asignar_qs[:6]
 
     # Candidatos en espera de entrevista con este gerente
-    candidatos_entrevista_count = Proceso.objects.filter(
+    candidatos_entrevista_qs = Proceso.objects.filter(
         puesto__solicitado_por=request.user,
         estatus_proceso=Proceso.Estatus.ENTREVISTA_JEFE
-    ).count()
+    ).select_related('candidato', 'puesto', 'puesto__titulo', 'asesora_asignada').order_by('fecha_inicio_etapa')
+    candidatos_entrevista_count = candidatos_entrevista_qs.count()
+    candidatos_entrevista_list = candidatos_entrevista_qs[:6]
+
+    # Procesos y Vacantes de la asesora (Worklist vivo)
+    mis_procesos_qs = Proceso.objects.filter(
+        asesora_asignada=request.user
+    ).exclude(
+        estatus_proceso__in=[
+            Proceso.Estatus.NO_APROBADO_PSICO,
+            Proceso.Estatus.EN_BOLSA,
+            Proceso.Estatus.CONTRATADO_CERRADO
+        ]
+    ).select_related('candidato', 'puesto', 'puesto__titulo', 'puesto__marca').order_by('-fecha_inicio_etapa')
+
+    mis_procesos_count = mis_procesos_qs.count()
+    mis_procesos_activos = mis_procesos_qs[:8]
+
+    mis_vacantes_qs = Puesto.objects.filter(
+        asesora_encargada=request.user,
+        esta_abierto=True
+    ).select_related('titulo', 'marca').prefetch_related('procesos')
+    mis_vacantes_count = mis_vacantes_qs.count()
+    mis_vacantes_activas = mis_vacantes_qs[:8]
+
+    # Para gerentes operativos: sus vacantes solicitadas en curso
+    mis_solicitudes_gerente = Puesto.objects.filter(
+        solicitado_por=request.user
+    ).select_related('titulo', 'marca', 'asesora_encargada').order_by('-fecha_solicitud')[:6]
+
+    candidatos_bolsa_count = Candidato.objects.count()
 
     user_groups = list(request.user.groups.values_list('name', flat=True))
     avisos_recientes = Aviso.objects.filter(esta_activo=True).order_by('-fecha_creacion')[:5]
+
     contexto = {
         'postulaciones_sin_asignar': postulaciones_sin_asignar,
         'pendientes_aprobacion': pendientes_aprobacion,
         'puestos_por_asignar': puestos_por_asignar,
         'candidatos_entrevista_count': candidatos_entrevista_count,
+        'mis_procesos_count': mis_procesos_count,
+        'mis_vacantes_count': mis_vacantes_count,
+        'candidatos_bolsa_count': candidatos_bolsa_count,
+        'mis_procesos_activos': mis_procesos_activos,
+        'mis_vacantes_activas': mis_vacantes_activas,
+        'candidatos_entrevista_list': candidatos_entrevista_list,
+        'solicitudes_pendientes_list': solicitudes_pendientes_list,
+        'puestos_por_asignar_list': puestos_por_asignar_list,
+        'mis_solicitudes_gerente': mis_solicitudes_gerente,
         'user_groups': user_groups,
         'avisos': avisos_recientes,
     }
@@ -500,9 +556,9 @@ def portal_gerente_view(request):
 @login_required
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def bolsa_trabajo_readonly_view(request):
-    # Define los estatus que NO permiten que un candidato sea reutilizado
-    # (porque está activo o ya fue contratado)
-    estatus_no_disponibles = [
+    # Estatus activos que impiden temporalmente que un candidato sea postulado
+    # (Los procesos cerrados como CONTRATADO_CERRADO, EN_BOLSA o NO_PSICO no bloquean la bolsa)
+    estatus_activos = [
         Proceso.Estatus.NUEVO,
         Proceso.Estatus.INTEGRIDAD,
         Proceso.Estatus.PSICOMETRICOS,
@@ -514,12 +570,11 @@ def bolsa_trabajo_readonly_view(request):
         Proceso.Estatus.FIRMA_CONTRATO,
         Proceso.Estatus.ALTA_SISTEMAS,
         Proceso.Estatus.FECHA_INGRESO,
-        Proceso.Estatus.CONTRATADO_CERRADO
     ]
 
-    # Obtenemos los IDs de todos los candidatos que tienen al menos un proceso en uno de esos estatus
+    # Obtenemos los IDs de candidatos que están en un proceso activo actualmente
     ids_candidatos_no_disponibles = Proceso.objects.filter(
-        estatus_proceso__in=estatus_no_disponibles
+        estatus_proceso__in=estatus_activos
     ).values_list('candidato_id', flat=True)
 
     # Obtenemos los candidatos que NO están en esa lista (limitado a los 500 más recientes para rendimiento)
@@ -561,24 +616,34 @@ def bolsa_trabajo_readonly_view(request):
 def asignar_candidato_view(request, puesto_id):
     puesto = get_object_or_404(Puesto, id=puesto_id)
 
+    # Estatus de procesos activos (no finalizados)
+    estatus_activos = [
+        Proceso.Estatus.NUEVO, Proceso.Estatus.INTEGRIDAD, Proceso.Estatus.PSICOMETRICOS,
+        Proceso.Estatus.REFERENCIAS, Proceso.Estatus.ENTREVISTA_ASESORA, Proceso.Estatus.ENTREVISTA_JEFE,
+        Proceso.Estatus.EXAMENES_MEDICOS, Proceso.Estatus.SOLICITUD_DOCS, Proceso.Estatus.FIRMA_CONTRATO,
+        Proceso.Estatus.ALTA_SISTEMAS, Proceso.Estatus.FECHA_INGRESO
+    ]
+
     if request.method == 'POST':
         candidato_id = request.POST.get('candidato_id')
         candidato = get_object_or_404(Candidato, id=candidato_id)
 
-        # LN-06: Validar si el candidato ya está en un proceso activo para este puesto
-        estatus_activos = [
-            Proceso.Estatus.NUEVO, Proceso.Estatus.INTEGRIDAD, Proceso.Estatus.PSICOMETRICOS,
-            Proceso.Estatus.REFERENCIAS, Proceso.Estatus.ENTREVISTA_ASESORA, Proceso.Estatus.ENTREVISTA_JEFE,
-            Proceso.Estatus.EXAMENES_MEDICOS, Proceso.Estatus.SOLICITUD_DOCS, Proceso.Estatus.FIRMA_CONTRATO,
-            Proceso.Estatus.ALTA_SISTEMAS, Proceso.Estatus.FECHA_INGRESO, Proceso.Estatus.CONTRATADO_CERRADO
-        ]
-        if Proceso.objects.filter(candidato=candidato, puesto=puesto, estatus_proceso__in=estatus_activos).exists():
-            messages.warning(request, f"El candidato '{candidato.nombre_completo}' ya cuenta con un proceso activo o finalizado para este puesto.")
-            return redirect('asignar_candidato', puesto_id=puesto.id)
+        # Validar si el candidato ya tiene algún proceso activo actualmente
+        proceso_activo_existente = Proceso.objects.filter(
+            candidato=candidato,
+            estatus_proceso__in=estatus_activos
+        ).select_related('puesto', 'puesto__titulo').first()
 
-        # Validar si ya está en otro proceso activo en general
-        if Proceso.objects.filter(candidato=candidato, estatus_proceso__in=estatus_activos).exists():
-            messages.warning(request, f"El candidato '{candidato.nombre_completo}' ya se encuentra asignado a un proceso activo en otra vacante.")
+        if proceso_activo_existente:
+            puesto_nombre = (
+                proceso_activo_existente.puesto.titulo.nombre
+                if proceso_activo_existente.puesto and proceso_activo_existente.puesto.titulo
+                else "otra vacante"
+            )
+            messages.warning(
+                request,
+                f"El candidato '{candidato.nombre_completo}' ya cuenta con un proceso activo ({proceso_activo_existente.get_estatus_proceso_display()}) en '{puesto_nombre}'."
+            )
             return redirect('asignar_candidato', puesto_id=puesto.id)
 
         # LN-04: Iniciar en NUEVO
@@ -597,15 +662,10 @@ def asignar_candidato_view(request, puesto_id):
         messages.success(request, f"Candidato '{candidato.nombre_completo}' asignado al proceso para la vacante.")
         return redirect('asignar_candidato', puesto_id=puesto.id)
 
-    # Lógica GET para mostrar la lista de candidatos
-    estatus_no_disponibles = [
-        Proceso.Estatus.NUEVO, Proceso.Estatus.INTEGRIDAD, Proceso.Estatus.PSICOMETRICOS,
-        Proceso.Estatus.REFERENCIAS, Proceso.Estatus.ENTREVISTA_ASESORA, Proceso.Estatus.ENTREVISTA_JEFE,
-        Proceso.Estatus.EXAMENES_MEDICOS, Proceso.Estatus.SOLICITUD_DOCS, Proceso.Estatus.FIRMA_CONTRATO,
-        Proceso.Estatus.ALTA_SISTEMAS, Proceso.Estatus.FECHA_INGRESO, Proceso.Estatus.CONTRATADO_CERRADO
-    ]
-    ids_candidatos_no_disponibles = Proceso.objects.filter(estatus_proceso__in=estatus_no_disponibles).values_list(
-        'candidato_id', flat=True)
+    # Lógica GET para mostrar la lista de candidatos disponibles (sin proceso activo actualmente)
+    ids_candidatos_no_disponibles = Proceso.objects.filter(
+        estatus_proceso__in=estatus_activos
+    ).values_list('candidato_id', flat=True)
     candidatos_disponibles = list(
         Candidato.objects.exclude(id__in=ids_candidatos_no_disponibles).order_by('-fecha_registro')[:500])
 
@@ -661,25 +721,22 @@ def puesto_detalle_view(request, puesto_id):
 @user_passes_test(es_asesora, login_url=reverse_lazy('acceso_denegado'))
 def gestion_perfil_puesto_view(request, puesto_id):
     puesto = get_object_or_404(Puesto, id=puesto_id)
-    # get_or_create sigue siendo la mejor forma de asegurar que el perfil exista
-    perfil, created = PerfilDePuesto.objects.get_or_create(puesto=puesto)
+    try:
+        perfil = puesto.perfil_detallado
+    except ObjectDoesNotExist:
+        perfil = None
 
     if request.method == 'POST':
-        # Ligamos los datos del POST a la instancia del perfil que ya existe
         form = PerfilDePuestoForm(request.POST, instance=perfil)
         if form.is_valid():
-            # --- LÓGICA DE GUARDADO SIMPLIFICADA ---
-
-            # 1. Guardamos el formulario directamente. Esto actualiza el perfil en la BD.
-            perfil_guardado = form.save()
-
-            # 2. Si el perfil se acaba de crear, le asignamos el usuario y lo volvemos a guardar.
-            if created:
+            perfil_guardado = form.save(commit=False)
+            perfil_guardado.puesto = puesto
+            if not perfil or not perfil_guardado.creado_por:
                 perfil_guardado.creado_por = request.user
-                perfil_guardado.save()  # Este segundo guardado solo actualiza el campo 'creado_por'
+            perfil_guardado.save()
 
             messages.success(request, '¡Perfil del puesto guardado exitosamente!')
-            return redirect('mis_vacantes')  # Redirigimos a la lista de vacantes
+            return redirect('mis_vacantes')
     else:
         form = PerfilDePuestoForm(instance=perfil)
 
@@ -714,12 +771,10 @@ def candidato_detalle_view(request, candidato_id):
 @login_required
 @user_passes_test(es_asesora, login_url=reverse_lazy('acceso_denegado'))
 def mis_procesos_view(request):
-    # --- LISTA DE ESTATUS CORREGIDA ---
-    # Usamos los nuevos estatus que definimos como "finales"
+    # Estatus verdaderamente finalizados
     estatus_finalizados = [
         Proceso.Estatus.NO_APROBADO_PSICO,
         Proceso.Estatus.EN_BOLSA,
-        Proceso.Estatus.FECHA_INGRESO,
         Proceso.Estatus.CONTRATADO_CERRADO
     ]
 
@@ -753,14 +808,15 @@ def mis_vacantes_view(request):
 
 
 @login_required
+@user_passes_test(puede_acceder_proceso, login_url=reverse_lazy('acceso_denegado'))
 def detalle_proceso_view(request, proceso_id):
-    proceso = get_object_or_404(Proceso.objects.select_related('candidato', 'puesto__titulo', 'puesto__solicitado_por'), id=proceso_id)
+    proceso = get_object_or_404(Proceso.objects.select_related('candidato', 'puesto__titulo', 'puesto__solicitado_por', 'asesora_asignada'), id=proceso_id)
 
     # SEC-02: Lógica de permisos para la vista (permite ver al jefe solicitante)
     es_solicitante = bool(proceso.puesto and proceso.puesto.solicitado_por == request.user)
     puede_gestionar = es_management(request.user) or (proceso.asesora_asignada == request.user)
 
-    if not (puede_gestionar or es_solicitante):
+    if not (puede_gestionar or es_solicitante or request.user.is_superuser):
         raise PermissionDenied
 
     # Manejo de los diferentes formularios de la página (solo quien puede gestionar puede modificar)
@@ -774,12 +830,17 @@ def detalle_proceso_view(request, proceso_id):
             nuevo_estatus = request.POST.get('estatus_proceso')
             nuevas_notas = request.POST.get('retroalimentacion')
 
+            # Hallazgo #3: Validación estricta del nuevo estatus
+            if nuevo_estatus not in Proceso.Estatus.values:
+                messages.error(request, 'El estatus seleccionado no es válido.')
+                return redirect('detalle_proceso', proceso_id=proceso.id)
+
             proceso.estatus_proceso = nuevo_estatus
             proceso.retroalimentacion = nuevas_notas
             proceso.fecha_inicio_etapa = timezone.now()
             proceso.save()
 
-            # --- LÓGICA CLAVE: CERRAR LA VACANTE AL CONTRATAR ---
+            # Hallazgo #4: Mensaje consolidado único según la acción
             if nuevo_estatus == Proceso.Estatus.CONTRATADO_CERRADO:
                 puesto = proceso.puesto
                 if puesto:
@@ -788,10 +849,13 @@ def detalle_proceso_view(request, proceso_id):
                     if cubiertas >= total:
                         puesto.esta_abierto = False
                         puesto.save()
-                        messages.success(request, f"¡Vacante cubierta al 100%! ({cubiertas} de {total} plazas contratadas). El puesto ha sido cerrado exitosamente.")
+                        messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado y vacante cerrada al 100%! ({cubiertas} de {total} plazas).")
                     else:
-                        messages.info(request, f"Plaza cubierta ({cubiertas} de {total} plazas). La vacante continúa abierta para cubrir las plazas restantes.")
-            # --- FIN DE LA LÓGICA DE CIERRE ---
+                        messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado! Plaza cubierta ({cubiertas} de {total} plazas). La vacante continúa abierta.")
+                else:
+                    messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado exitosamente!")
+            else:
+                messages.success(request, '¡El proceso ha sido actualizado exitosamente!')
 
             RegistroActividad.objects.create(
                 usuario=request.user,
@@ -800,20 +864,20 @@ def detalle_proceso_view(request, proceso_id):
                 id_objeto=proceso.id,
                 detalles=nuevas_notas
             )
-            messages.success(request, '¡El proceso ha sido actualizado exitosamente!')
 
         elif action == 'transferir_proceso':
             nueva_asesora_id = request.POST.get('nueva_asesora_id')
             if nueva_asesora_id:
                 nueva_asesora = get_object_or_404(User, id=nueva_asesora_id)
                 asesora_anterior = proceso.asesora_asignada
+                nombre_anterior = asesora_anterior.username if asesora_anterior else 'Sin asesora previa'
                 proceso.asesora_asignada = nueva_asesora
                 proceso.estatus_proceso = Proceso.Estatus.ENTREVISTA_ASESORA
                 proceso.fecha_inicio_etapa = timezone.now()
                 proceso.save()
                 RegistroActividad.objects.create(
                     usuario=request.user,
-                    accion=f"Transfirió el proceso de '{asesora_anterior.username}' a '{nueva_asesora.username}' para '{proceso.candidato.nombre_completo}'",
+                    accion=f"Transfirió el proceso de '{nombre_anterior}' a '{nueva_asesora.username}' para '{proceso.candidato.nombre_completo}'",
                     tipo_objeto="Proceso", id_objeto=proceso.id
                 )
                 messages.success(request, f'Proceso transferido a {nueva_asesora.username}.')
@@ -879,15 +943,20 @@ def supervisar_procesos_view(request):
         proceso = get_object_or_404(Proceso, id=request.POST.get('proceso_id'))
         nueva_asesora = get_object_or_404(User, id=request.POST.get('nueva_asesora_id'))
         asesora_anterior = proceso.asesora_asignada
+        nombre_anterior = asesora_anterior.username if asesora_anterior else 'Sin asesora previa'
         proceso.asesora_asignada = nueva_asesora
         proceso.save()
-        RegistroActividad.objects.create(usuario=request.user, accion=f"Reasignó el proceso de '{proceso.candidato.nombre_completo}' de '{asesora_anterior.username}' a '{nueva_asesora.username}'", tipo_objeto="Proceso", id_objeto=proceso.id)
+        RegistroActividad.objects.create(
+            usuario=request.user,
+            accion=f"Reasignó el proceso de '{proceso.candidato.nombre_completo}' de '{nombre_anterior}' a '{nueva_asesora.username}'",
+            tipo_objeto="Proceso",
+            id_objeto=proceso.id
+        )
         messages.success(request, f"Proceso reasignado a {nueva_asesora.username} exitosamente.")
         return redirect('vista_supervisar_procesos')
     estatus_finalizados = [
         Proceso.Estatus.NO_APROBADO_PSICO,
         Proceso.Estatus.EN_BOLSA,
-        Proceso.Estatus.FECHA_INGRESO,
         Proceso.Estatus.CONTRATADO_CERRADO
     ]
     procesos_activos = Proceso.objects.exclude(estatus_proceso__in=estatus_finalizados).select_related('candidato',
@@ -904,7 +973,11 @@ def lista_solicitudes_pendientes(request):
     if not (es_gerente_general(usuario_actual) or usuario_actual.is_staff or usuario_actual.is_superuser):
         raise PermissionDenied
 
-    marcas_del_usuario = usuario_actual.perfilusuario.marcas.all() if hasattr(usuario_actual, 'perfilusuario') else []
+    marcas_del_usuario = usuario_actual.perfilusuario.marcas.all() if hasattr(usuario_actual, 'perfilusuario') else Marca.objects.none()
+
+    # Hallazgo #7: Avisar si el usuario no tiene marcas asignadas
+    if not marcas_del_usuario.exists() and not usuario_actual.is_superuser:
+        messages.warning(request, "No tienes marcas asignadas en tu perfil. Contacta al administrador para configurar tu acceso.")
 
     solicitudes_gerente_marca = Puesto.objects.none()
     solicitudes_director = Puesto.objects.none()

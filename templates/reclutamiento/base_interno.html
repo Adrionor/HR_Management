@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gestión de Talento Humano{% endblock %} | Premier Automotriz</title>
     
-    <!-- Tipografía Enterprise (SAP 72 / Segoe UI / Inter) -->
+    <!-- Tipografía Inter Corporativa -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- DataTables & Chart.js -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -17,9 +17,10 @@
 
     <style>
         /* ==========================================================================
-           SISTEMA DE DISEÑO SAP FIORI / HORIZON - PREMIER AUTOMOTRIZ
+           SISTEMA DE DISEÑO EMPRESARIAL SAP FIORI / HORIZON - PREMIER AUTOMOTRIZ
            ========================================================================== */
         :root {
+            /* Paleta Oficial */
             --sap-shell-bg: #1d2d3e;
             --sap-shell-hover: #26384c;
             --sap-primary: #0070f2;
@@ -31,35 +32,42 @@
             --sap-border-subtle: #e5e8ec;
             --sap-text: #1d2d3e;
             --sap-muted: #59697a;
-            --sap-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             
-            /* Semáforos y Estados Semánticos (Sin Emojis) */
-            --sap-success-bg: #e7f6ec;
+            /* Tipografía y Números */
+            --sap-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            
+            /* Estados Semánticos Sobrios (Sin Emojis) */
             --sap-success-text: #107e3e;
+            --sap-success-bg: #e7f6ec;
             --sap-success-border: #bfe7ce;
-            --sap-success-dot: #107e3e;
-
-            --sap-warning-bg: #fff4e5;
+            
             --sap-warning-text: #b25900;
+            --sap-warning-bg: #fff4e5;
             --sap-warning-border: #feddb0;
-            --sap-warning-dot: #b25900;
-
-            --sap-error-bg: #ffeef0;
+            
             --sap-error-text: #bb0000;
+            --sap-error-bg: #ffeef0;
             --sap-error-border: #fcced3;
-            --sap-error-dot: #bb0000;
-
-            --sap-info-bg: #e8f3ff;
+            
             --sap-info-text: #0057b8;
+            --sap-info-bg: #e8f3ff;
             --sap-info-border: #b6d8ff;
-            --sap-info-dot: #0057b8;
-
-            --sap-neutral-bg: #f1f3f5;
+            
             --sap-neutral-text: #495057;
-            --sap-neutral-border: #dee2e6;
+            --sap-neutral-bg: #f1f3f5;
+            --sap-neutral-border: #d9dde3;
+
+            /* Radios y Sombras Discretas */
+            --sap-radius-sm: 4px;
+            --sap-radius-md: 6px;
+            --sap-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --sap-shadow-popover: 0 4px 12px rgba(29, 45, 62, 0.12);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -69,74 +77,91 @@
             font-size: 14px;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Alineación tabular obligatoria en datos numéricos, IDs y contadores */
+        .tabular-nums, .dataTables_info, table.dataTable td, .sap-stat-value, .sap-counter {
+            font-variant-numeric: tabular-nums;
         }
 
         /* --------------------------------------------------------------------------
-           SAP ShellBar (Barra de Navegación Principal)
+           1. SAP ShellBar (Barra Superior Fija de 48px)
            -------------------------------------------------------------------------- */
         .sap-shellbar {
             background-color: var(--sap-shell-bg);
             color: #ffffff;
-            height: 52px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 1.5rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            padding: 0 1.25rem;
             position: sticky;
             top: 0;
             z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
+
         .sap-shellbar-left {
             display: flex;
             align-items: center;
-            gap: 1.2rem;
+            gap: 1.25rem;
+            height: 100%;
         }
+
         .sap-logo-link {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             text-decoration: none;
             color: #ffffff;
         }
+
         .sap-logo-link img {
-            height: 32px;
+            height: 26px;
             width: auto;
-            border-radius: 4px;
+            border-radius: var(--sap-radius-sm);
             background: #ffffff;
             padding: 2px 6px;
         }
+
         .sap-brand-title {
-            font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: 0.3px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
             white-space: nowrap;
         }
+
         .sap-brand-subtitle {
             font-weight: 400;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: #9cb1c9;
             border-left: 1px solid #3c5067;
             padding-left: 10px;
-            margin-left: 4px;
+            margin-left: 2px;
             white-space: nowrap;
         }
 
         .sap-shellbar-nav {
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-left: 1rem;
+            gap: 4px;
+            height: 100%;
         }
+
         .sap-nav-item {
             color: #c9d8ea;
             text-decoration: none;
-            font-size: 0.85rem;
+            font-size: 0.825rem;
             font-weight: 500;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 5px 10px;
+            border-radius: var(--sap-radius-sm);
             transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
+
         .sap-nav-item:hover, .sap-nav-item.active {
             color: #ffffff;
             background-color: var(--sap-shell-hover);
@@ -147,50 +172,60 @@
             align-items: center;
             gap: 12px;
         }
+
         .sap-user-chip {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 4px 8px;
-            border-radius: 20px;
+            padding: 3px 8px;
+            border-radius: var(--sap-radius-sm);
             background-color: var(--sap-shell-hover);
             color: #ffffff;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 500;
         }
+
         .sap-user-avatar {
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background-color: var(--sap-primary);
             color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
         }
+
         .sap-shell-link {
             color: #9cb1c9;
             text-decoration: none;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 500;
+            padding: 4px 8px;
+            border-radius: var(--sap-radius-sm);
             transition: color 0.15s ease;
         }
-        .sap-shell-link:hover { color: #ffffff; }
+
+        .sap-shell-link:hover {
+            color: #ffffff;
+        }
 
         .sap-btn-logout {
             background: transparent;
             border: 1px solid #4a6380;
             color: #c9d8ea;
             font-family: inherit;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 4px;
+            padding: 3px 9px;
+            border-radius: var(--sap-radius-sm);
             cursor: pointer;
             transition: all 0.15s ease;
         }
+
         .sap-btn-logout:hover {
             background-color: #bb0000;
             border-color: #bb0000;
@@ -198,86 +233,240 @@
         }
 
         /* --------------------------------------------------------------------------
-           Estructura de Contenido y Headers SAP
+           2. Sub-Barra de Navegación Operativa (Breadcrumb + Botón Regresar)
            -------------------------------------------------------------------------- */
-        .sap-main-content {
-            padding: 1.5rem 2rem;
-            min-height: calc(100vh - 90px);
-        }
-        @media (max-width: 768px) {
-            .sap-main-content { padding: 1rem; }
-            .sap-brand-subtitle { display: none; }
+        .sap-subbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--sap-border);
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 40px;
         }
 
-        /* --------------------------------------------------------------------------
-           Sistema de Botones SAP Fiori
-           -------------------------------------------------------------------------- */
-        .sap-btn {
-            font-family: var(--sap-font);
-            font-size: 0.85rem;
+        .sap-breadcrumb-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--sap-muted);
+            flex-wrap: wrap;
+        }
+
+        .sap-breadcrumb-item {
+            color: var(--sap-primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sap-breadcrumb-item:hover {
+            text-decoration: underline;
+        }
+
+        .sap-breadcrumb-separator {
+            color: #a0aec0;
+            font-size: 0.75rem;
+            user-select: none;
+        }
+
+        .sap-breadcrumb-current {
+            color: var(--sap-text);
             font-weight: 600;
-            padding: 7px 16px;
-            border-radius: 6px;
-            border: 1px solid transparent;
+        }
+
+        .sap-subbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sap-btn-back {
+            background: #ffffff;
+            border: 1px solid var(--sap-border);
+            color: var(--sap-text);
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: var(--sap-radius-sm);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
             text-decoration: none;
             transition: all 0.15s ease;
-            white-space: nowrap;
         }
-        .sap-btn-primary {
-            background-color: var(--sap-primary);
-            color: #ffffff;
-            border-color: var(--sap-primary);
-        }
-        .sap-btn-primary:hover {
-            background-color: var(--sap-primary-hover);
-            border-color: var(--sap-primary-hover);
-        }
-        .sap-btn-secondary {
-            background-color: #ffffff;
-            color: var(--sap-text);
-            border-color: var(--sap-border);
-        }
-        .sap-btn-secondary:hover {
+
+        .sap-btn-back:hover {
             background-color: #f1f3f5;
             border-color: #b9bec5;
+            color: var(--sap-primary);
         }
-        .sap-btn-positive {
-            background-color: #107e3e;
-            color: #ffffff;
-            border-color: #107e3e;
-        }
-        .sap-btn-positive:hover { background-color: #0b612e; }
-        .sap-btn-negative {
-            background-color: #bb0000;
-            color: #ffffff;
-            border-color: #bb0000;
-        }
-        .sap-btn-negative:hover { background-color: #990000; }
-        .sap-btn-sm { padding: 4px 10px; font-size: 0.78rem; }
 
         /* --------------------------------------------------------------------------
-           Badges y Puntos de Estado Semánticos (CERO EMOJIS)
+           3. Sistema de Mensajes y Alertas Flash (Confirmaciones Visibles)
+           -------------------------------------------------------------------------- */
+        .sap-messages-container {
+            padding: 1rem 1.5rem 0 1.5rem;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .sap-alert {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            border-radius: var(--sap-radius-sm);
+            border: 1px solid transparent;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .sap-alert-success {
+            background-color: var(--sap-success-bg);
+            color: var(--sap-success-text);
+            border-color: var(--sap-success-border);
+        }
+
+        .sap-alert-warning {
+            background-color: var(--sap-warning-bg);
+            color: var(--sap-warning-text);
+            border-color: var(--sap-warning-border);
+        }
+
+        .sap-alert-error {
+            background-color: var(--sap-error-bg);
+            color: var(--sap-error-text);
+            border-color: var(--sap-error-border);
+        }
+
+        .sap-alert-info {
+            background-color: var(--sap-info-bg);
+            color: var(--sap-info-text);
+            border-color: var(--sap-info-border);
+        }
+
+        .sap-alert-close {
+            background: transparent;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.7;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .sap-alert-close:hover {
+            opacity: 1;
+        }
+
+        /* --------------------------------------------------------------------------
+           4. Contenido Principal y Encabezados de Página
+           -------------------------------------------------------------------------- */
+        .sap-main-content {
+            padding: 1.25rem 1.5rem 2rem 1.5rem;
+            min-height: calc(100vh - 128px);
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .sap-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--sap-border-subtle);
+        }
+
+        .sap-page-title {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--sap-text);
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sap-page-subtitle {
+            margin: 0.2rem 0 0 0;
+            font-size: 0.825rem;
+            color: var(--sap-muted);
+            font-weight: 400;
+        }
+
+        .sap-section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--sap-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.6rem;
+        }
+
+        /* --------------------------------------------------------------------------
+           5. Tarjetas y Paneles (border-radius: max 6px, sombra sutil)
+           -------------------------------------------------------------------------- */
+        .sap-card, .sap-panel {
+            background-color: var(--sap-surface);
+            border: 1px solid var(--sap-border);
+            border-radius: var(--sap-radius-md);
+            box-shadow: var(--sap-shadow-card);
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+        }
+
+        .sap-card-header {
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid var(--sap-border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+        }
+
+        .sap-card-title {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--sap-text);
+        }
+
+        .sap-card-body, .sap-panel-body {
+            padding: 1.25rem;
+        }
+
+        /* --------------------------------------------------------------------------
+           6. Estados Semánticos Rectangulares (1px solid, CERO EMOJIS)
            -------------------------------------------------------------------------- */
         .sap-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.78rem;
+            gap: 5px;
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 4px;
+            padding: 2px 7px;
+            border-radius: var(--sap-radius-sm);
             border: 1px solid transparent;
             white-space: nowrap;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.01em;
+            line-height: 1.35;
         }
+
         .sap-badge-dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
             flex-shrink: 0;
@@ -288,28 +477,28 @@
             color: var(--sap-success-text);
             border-color: var(--sap-success-border);
         }
-        .sap-badge-success .sap-badge-dot { background-color: var(--sap-success-dot); }
+        .sap-badge-success .sap-badge-dot { background-color: var(--sap-success-text); }
 
         .sap-badge-warning {
             background-color: var(--sap-warning-bg);
             color: var(--sap-warning-text);
             border-color: var(--sap-warning-border);
         }
-        .sap-badge-warning .sap-badge-dot { background-color: var(--sap-warning-dot); }
+        .sap-badge-warning .sap-badge-dot { background-color: var(--sap-warning-text); }
 
         .sap-badge-error {
             background-color: var(--sap-error-bg);
             color: var(--sap-error-text);
             border-color: var(--sap-error-border);
         }
-        .sap-badge-error .sap-badge-dot { background-color: var(--sap-error-dot); }
+        .sap-badge-error .sap-badge-dot { background-color: var(--sap-error-text); }
 
-        .sap-badge-info {
+        .sap-badge-info, .sap-badge-accent {
             background-color: var(--sap-info-bg);
             color: var(--sap-info-text);
             border-color: var(--sap-info-border);
         }
-        .sap-badge-info .sap-badge-dot { background-color: var(--sap-info-dot); }
+        .sap-badge-info .sap-badge-dot, .sap-badge-accent .sap-badge-dot { background-color: var(--sap-info-text); }
 
         .sap-badge-neutral {
             background-color: var(--sap-neutral-bg);
@@ -319,118 +508,409 @@
         .sap-badge-neutral .sap-badge-dot { background-color: var(--sap-neutral-text); }
 
         /* --------------------------------------------------------------------------
-           Tarjetas y Contenedores SAP
+           7. Botones Corporativos Sobrios
            -------------------------------------------------------------------------- */
-        .sap-card {
-            background-color: var(--sap-surface);
-            border: 1px solid var(--sap-border);
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
-        .sap-card-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--sap-border-subtle);
-            display: flex;
-            justify-content: space-between;
+        .sap-btn {
+            font-family: var(--sap-font);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: var(--sap-radius-sm);
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            line-height: 1.25;
+        }
+
+        .sap-btn-primary {
+            background-color: var(--sap-primary);
+            color: #ffffff;
+            border-color: var(--sap-primary);
+        }
+        .sap-btn-primary:hover {
+            background-color: var(--sap-primary-hover);
+            border-color: var(--sap-primary-hover);
+        }
+
+        .sap-btn-secondary {
             background-color: #ffffff;
-        }
-        .sap-card-title {
-            margin: 0;
-            font-size: 1.05rem;
-            font-weight: 700;
             color: var(--sap-text);
+            border-color: var(--sap-border);
         }
-        .sap-card-body { padding: 1.25rem; }
+        .sap-btn-secondary:hover {
+            background-color: #f1f3f5;
+            border-color: #b9bec5;
+        }
+
+        .sap-btn-positive {
+            background-color: #107e3e;
+            color: #ffffff;
+            border-color: #107e3e;
+        }
+        .sap-btn-positive:hover {
+            background-color: #0b612e;
+            border-color: #0b612e;
+        }
+
+        .sap-btn-negative {
+            background-color: #bb0000;
+            color: #ffffff;
+            border-color: #bb0000;
+        }
+        .sap-btn-negative:hover {
+            background-color: #990000;
+            border-color: #990000;
+        }
+
+        .sap-btn-sm {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+        }
 
         /* --------------------------------------------------------------------------
-           Formularios e Inputs SAP
+           8. Tablas Empresariales Firmes y Espaciadas
            -------------------------------------------------------------------------- */
-        .sap-form-group { margin-bottom: 1.2rem; }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table.dataTable, table.sap-table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            font-size: 0.85rem;
+            margin: 0 !important;
+        }
+
+        table.dataTable thead th, table.sap-table thead th {
+            background-color: #1d2d3e !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            font-size: 0.75rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            padding: 9px 12px !important;
+            border-bottom: 1px solid #101c29 !important;
+            white-space: nowrap;
+        }
+
+        table.dataTable tbody td, table.sap-table tbody td {
+            padding: 9px 12px !important;
+            border-bottom: 1px solid var(--sap-border-subtle) !important;
+            vertical-align: middle;
+            color: var(--sap-text);
+        }
+
+        table.dataTable tbody tr:hover, table.sap-table tbody tr:hover {
+            background-color: #f8fafc !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--sap-primary) !important;
+            color: #ffffff !important;
+            border: 1px solid var(--sap-primary) !important;
+            border-radius: var(--sap-radius-sm) !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid var(--sap-border);
+            border-radius: var(--sap-radius-sm);
+            padding: 4px 8px;
+            font-size: 0.8125rem;
+            outline: none;
+        }
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: var(--sap-primary);
+        }
+
+        /* --------------------------------------------------------------------------
+           9. Formularios Agrupados por Bloques Claros
+           -------------------------------------------------------------------------- */
+        .sap-form-group {
+            margin-bottom: 1.1rem;
+        }
+
         .sap-label {
             display: block;
-            font-size: 0.78rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 600;
             color: var(--sap-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
             margin-bottom: 4px;
         }
-        .sap-input, .sap-select, .sap-textarea {
+
+        .sap-input, .sap-select, .sap-textarea, 
+        input[type="text"], input[type="email"], input[type="number"], 
+        input[type="date"], input[type="password"], select, textarea {
             width: 100%;
-            padding: 8px 12px;
+            padding: 7px 10px;
             font-family: inherit;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             color: var(--sap-text);
             background-color: #ffffff;
             border: 1px solid var(--sap-border);
-            border-radius: 6px;
+            border-radius: var(--sap-radius-sm);
             box-sizing: border-box;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
-        .sap-input:focus, .sap-select:focus, .sap-textarea:focus {
+
+        .sap-input:focus, .sap-select:focus, .sap-textarea:focus,
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--sap-primary);
             box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
         }
 
         /* --------------------------------------------------------------------------
-           Tablas Enterprise DataTables
+           10. Footer Corporativo
            -------------------------------------------------------------------------- */
-        table.dataTable {
-            border-collapse: collapse !important;
-            width: 100% !important;
-            font-size: 0.88rem;
-        }
-        table.dataTable thead th {
-            background-color: #1d2d3e !important;
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            padding: 10px 12px !important;
-            border-bottom: 1px solid #101c29 !important;
-            white-space: nowrap;
-        }
-        table.dataTable tbody td {
-            padding: 10px 12px !important;
-            border-bottom: 1px solid var(--sap-border-subtle) !important;
-            vertical-align: middle;
-            color: var(--sap-text);
-        }
-        table.dataTable tbody tr:hover {
-            background-color: #f8fafc !important;
-        }
-
-        /* Footer */
         .sap-footer {
             border-top: 1px solid var(--sap-border);
             background-color: #ffffff;
-            padding: 1rem 2rem;
-            font-size: 0.8rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.75rem;
             color: var(--sap-muted);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
-        /* Íconos SVG Utility (24x24 estándar, 16x16 pequeño) */
+        /* Íconos SVG Estándar */
         .sap-icon {
             display: inline-block;
-            width: 16px;
-            height: 16px;
+            width: 15px;
+            height: 15px;
             vertical-align: middle;
             fill: currentColor;
             flex-shrink: 0;
         }
-        .sap-icon-lg { width: 22px; height: 22px; }
+
+        /* --------------------------------------------------------------------------
+           11. Bloques Desplegables para Formularios Secundarios (<details>)
+           -------------------------------------------------------------------------- */
+        details.sap-details {
+            background-color: #ffffff;
+            border: 1px solid var(--sap-border);
+            border-radius: var(--sap-radius-md);
+            margin-top: 1rem;
+            overflow: hidden;
+            transition: border-color 0.15s ease;
+        }
+        details.sap-details[open] {
+            border-color: #b9bec5;
+        }
+        summary.sap-details-summary {
+            padding: 0.75rem 1rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--sap-text);
+            cursor: pointer;
+            background-color: #fafbfc;
+            border-bottom: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+            list-style: none;
+        }
+        summary.sap-details-summary::-webkit-details-marker {
+            display: none;
+        }
+        summary.sap-details-summary::after {
+            content: "+";
+            font-size: 1.15rem;
+            font-weight: 400;
+            color: var(--sap-muted);
+            line-height: 1;
+        }
+        details.sap-details[open] summary.sap-details-summary {
+            border-bottom: 1px solid var(--sap-border-subtle);
+        }
+        details.sap-details[open] summary.sap-details-summary::after {
+            content: "−";
+        }
+        .sap-details-content {
+            padding: 1rem;
+            background-color: #ffffff;
+        }
+
+        /* --------------------------------------------------------------------------
+           12. Stepper Horizontal Guiado de Procesos (Barra de Progreso)
+           -------------------------------------------------------------------------- */
+        .sap-stepper-container {
+            background-color: #ffffff;
+            border: 1px solid var(--sap-border);
+            border-radius: var(--sap-radius-md);
+            padding: 1.25rem 1.5rem 1rem 1.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: var(--sap-shadow-card);
+        }
+        .sap-stepper-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--sap-border-subtle);
+        }
+        .sap-stepper-header-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--sap-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .sap-stepper-header-status {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: var(--sap-primary);
+        }
+        .sap-stepper {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            overflow-x: auto;
+        }
+        .sap-stepper::before {
+            content: '';
+            position: absolute;
+            top: 14px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: var(--sap-border);
+            z-index: 1;
+        }
+        .sap-step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            min-width: 85px;
+            background: transparent;
+        }
+        .sap-step-indicator {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 2px solid var(--sap-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--sap-muted);
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+        }
+        .sap-step.completed .sap-step-indicator {
+            background-color: var(--sap-success-text);
+            border-color: var(--sap-success-text);
+            color: #ffffff;
+        }
+        .sap-step.active .sap-step-indicator {
+            background-color: var(--sap-primary);
+            border-color: var(--sap-primary);
+            color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(0, 112, 242, 0.25);
+        }
+        .sap-step-title {
+            font-size: 0.725rem;
+            font-weight: 600;
+            color: var(--sap-muted);
+            line-height: 1.25;
+            padding: 0 4px;
+        }
+        .sap-step.active .sap-step-title {
+            color: var(--sap-primary);
+            font-weight: 700;
+        }
+        .sap-step.completed .sap-step-title {
+            color: var(--sap-text);
+        }
+
+        /* --------------------------------------------------------------------------
+           13. Tarjetas de Acción Directa y Estadísticas de Tiles
+           -------------------------------------------------------------------------- */
+        .sap-tile-stat {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--sap-text);
+            line-height: 1.1;
+            margin: 0.25rem 0 0.15rem 0;
+            font-variant-numeric: tabular-nums;
+        }
+        .sap-tile-stat-label {
+            font-size: 0.75rem;
+            color: var(--sap-muted);
+            font-weight: 500;
+        }
+        .sap-tile-action-btn {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--sap-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sap-tile:hover .sap-tile-action-btn {
+            color: var(--sap-primary-hover);
+            text-decoration: underline;
+        }
+
+        /* --------------------------------------------------------------------------
+           14. Llamado a la Acción Destacado (Callout Guiado)
+           -------------------------------------------------------------------------- */
+        .sap-action-callout {
+            background-color: #f0f7ff;
+            border: 1px solid #c7e0ff;
+            border-left: 4px solid var(--sap-primary);
+            border-radius: var(--sap-radius-sm);
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .sap-action-callout-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sap-action-callout-title {
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #00418a;
+        }
+        .sap-action-callout-desc {
+            font-size: 0.8rem;
+            color: #26384c;
+        }
 
         {% block style %}{% endblock %}
     </style>
 </head>
 <body>
 
-    <!-- SAP ShellBar -->
+    <!-- 1. SAP ShellBar (48px) -->
     <header class="sap-shellbar">
         <div class="sap-shellbar-left">
             <a href="{% url 'dashboard' %}" class="sap-logo-link">
@@ -461,15 +941,56 @@
         </div>
     </header>
 
-    <!-- Contenido Principal -->
+    <!-- 2. Sub-Barra de Navegación Operativa (Ruta Breadcrumb + Botón Regresar) -->
+    <div class="sap-subbar">
+        <nav class="sap-breadcrumb-nav" aria-label="Ruta de navegación">
+            <a href="{% url 'dashboard' %}" class="sap-breadcrumb-item">
+                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Inicio</span>
+            </a>
+            {% block breadcrumb %}
+            {% endblock %}
+        </nav>
+        <div class="sap-subbar-actions">
+            {% block back_button %}
+            <button type="button" onclick="history.back()" class="sap-btn-back" title="Volver a la vista anterior">
+                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                <span>Regresar</span>
+            </button>
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- 3. Mensajes de Confirmación y Alertas del Sistema -->
+    {% if messages %}
+    <div class="sap-messages-container">
+        {% for message in messages %}
+        <div class="sap-alert {% if message.tags == 'error' %}sap-alert-error{% elif message.tags == 'warning' %}sap-alert-warning{% elif message.tags == 'success' %}sap-alert-success{% else %}sap-alert-info{% endif %}" role="alert">
+            <div>
+                {% if message.tags == 'success' %}
+                    <strong>Confirmado:</strong>
+                {% elif message.tags == 'error' %}
+                    <strong>Atención:</strong>
+                {% elif message.tags == 'warning' %}
+                    <strong>Aviso:</strong>
+                {% endif %}
+                {{ message }}
+            </div>
+            <button type="button" class="sap-alert-close" onclick="this.parentElement.style.display='none';">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 4. Contenido Principal -->
     <main class="sap-main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer Corporativo -->
+    <!-- 5. Footer Corporativo -->
     <footer class="sap-footer">
-        <div>Premier Automotriz &bull; Sistema de Atracción, Selección y Business Intelligence</div>
-        <div>Confidencial &bull; Uso Interno Corporativo &bull; {% now "Y" %}</div>
+        <div>Premier Automotriz &bull; Sistema de Atracción, Selección y Analítica de Talento</div>
+        <div>Uso Confidencial Interno &bull; {% now "Y" %}</div>
     </footer>
 
     <!-- Scripts Base -->

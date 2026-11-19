@@ -413,7 +413,6 @@ class Candidato(models.Model):
         estados_finalizados = [
             Proceso.Estatus.NO_APROBADO_PSICO,
             Proceso.Estatus.EN_BOLSA,
-            Proceso.Estatus.FECHA_INGRESO,
             Proceso.Estatus.CONTRATADO_CERRADO,
         ]
         return self.procesos.exclude(estatus_proceso__in=estados_finalizados).first()
@@ -460,12 +459,20 @@ class Proceso(models.Model):
 
 @receiver([post_save, post_delete], sender=Puesto)
 def invalidar_cache_puesto(sender, instance, **kwargs):
-    cache.clear()
+    try:
+        from .services import ReportesService
+        ReportesService.invalidate_user_cache()
+    except Exception:
+        pass
 
 
 @receiver([post_save, post_delete], sender=Proceso)
 def invalidar_cache_proceso(sender, instance, **kwargs):
-    cache.clear()
+    try:
+        from .services import ReportesService
+        ReportesService.invalidate_user_cache()
+    except Exception:
+        pass
 
 
 class RegistroActividad(models.Model):

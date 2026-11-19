@@ -51,3 +51,16 @@ def puede_ver_reportes(user):
     return user.is_staff or user.is_superuser or user.groups.filter(
         name__in=['Gerentes de Capital Humano', 'Gerente General de Marca', 'Asesoras', 'Gerentes Operativos']
     ).exists()
+
+
+def puede_acceder_proceso(user):
+    """
+    Permite acceder a la vista de seguimiento de proceso a roles operativos y de gestión.
+    El control fino de autorización (solicitante vs asignado) se valida a nivel de objeto.
+    """
+    if not user or not user.is_authenticated:
+        return False
+    return (
+        user.is_superuser or user.is_staff or
+        user.groups.filter(name__in=['Asesoras', 'Gerentes de Capital Humano', 'Gerentes Operativos']).exists()
+    )

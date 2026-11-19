@@ -1,280 +1,353 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Gestión de Proceso: {{ proceso.candidato.nombre_completo }} - SAP Fiori{% endblock %}
+{% block title %}{{ proceso.candidato.nombre_completo }} | Seguimiento de Candidato{% endblock %}
+
+{% block breadcrumb %}
+    <span class="sap-breadcrumb-separator">/</span>
+    <a href="{% url 'mis_procesos' %}" class="sap-breadcrumb-item">Mis Candidatos</a>
+    <span class="sap-breadcrumb-separator">/</span>
+    <span class="sap-breadcrumb-current">{{ proceso.candidato.nombre_completo }}</span>
+{% endblock %}
+
+{% block back_button %}
+    <a href="{% url 'mis_procesos' %}" class="sap-btn-back" title="Volver a mis candidatos">
+        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span>Mis Candidatos</span>
+    </a>
+{% endblock %}
 
 {% block style %}
 <style>
-    .sap-workbench-header {
-        background: #ffffff;
-        border-radius: var(--sap-radius);
-        border: 1px solid var(--sap-border);
-        box-shadow: var(--sap-shadow-card);
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    .sap-workbench-title h1 {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: var(--sap-text);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .sap-workbench-title p {
-        margin: 0.25rem 0 0 0;
-        font-size: 0.85rem;
-        color: var(--sap-text-secondary);
-    }
-    .workbench-grid {
+    /* Distribución de Paneles del Candidato */
+    .candidate-workbench-grid {
         display: grid;
         grid-template-columns: 1.15fr 0.85fr;
-        gap: 1.5rem;
+        gap: 1.25rem;
         align-items: start;
     }
     @media (max-width: 992px) {
-        .workbench-grid {
+        .candidate-workbench-grid {
             grid-template-columns: 1fr;
         }
     }
-    .sap-panel {
-        background: #ffffff;
-        border-radius: var(--sap-radius);
-        border: 1px solid var(--sap-border);
-        box-shadow: var(--sap-shadow-card);
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    .sap-panel-title {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: var(--sap-text);
-        border-bottom: 2px solid var(--sap-border);
-        padding-bottom: 0.6rem;
-        margin: 0 0 1.25rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
+
+    /* Datos Clave del Candidato */
     .candidate-facts {
-        display: flex;
-        gap: 1.25rem;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
         margin-bottom: 1.25rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--sap-border);
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--sap-border-subtle);
     }
+
     .candidate-fact-item {
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;
+        gap: 3px;
     }
+
     .fact-label {
-        font-size: 0.75rem;
+        font-size: 0.725rem;
         text-transform: uppercase;
         font-weight: 600;
-        color: var(--sap-text-secondary);
+        color: var(--sap-muted);
+        letter-spacing: 0.05em;
     }
+
     .fact-value {
-        font-size: 0.95rem;
+        font-size: 0.875rem;
         font-weight: 600;
         color: var(--sap-text);
+        word-break: break-word;
     }
-    
-    /* SAP Feed / Timeline */
+
+    /* Bitácora de Movimientos */
     .sap-feed-list {
         list-style: none;
         padding: 0;
         margin: 0;
         position: relative;
     }
+
     .sap-feed-list::before {
         content: '';
         position: absolute;
         top: 8px;
         bottom: 8px;
-        left: 11px;
+        left: 8px;
         width: 2px;
         background: var(--sap-border);
     }
+
     .sap-feed-item {
         position: relative;
-        padding-left: 2rem;
-        margin-bottom: 1.25rem;
+        padding-left: 1.75rem;
+        margin-bottom: 1.15rem;
     }
+
     .sap-feed-item:last-child {
         margin-bottom: 0;
     }
+
     .sap-feed-marker {
         position: absolute;
-        left: 4px;
+        left: 3px;
         top: 4px;
-        width: 16px;
-        height: 16px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         background: #ffffff;
-        border: 3px solid var(--sap-primary);
+        border: 2px solid var(--sap-primary);
     }
+
     .sap-feed-time {
-        font-size: 0.775rem;
-        color: var(--sap-text-secondary);
-        margin-bottom: 0.25rem;
+        font-size: 0.725rem;
+        color: var(--sap-muted);
+        margin-bottom: 0.2rem;
     }
+
     .sap-feed-action {
         font-weight: 600;
         color: var(--sap-text);
-        font-size: 0.875rem;
+        font-size: 0.825rem;
     }
+
     .sap-feed-details {
-        margin-top: 0.4rem;
+        margin-top: 0.35rem;
         background: #f8fafc;
         border: 1px solid var(--sap-border);
-        border-radius: 4px;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.825rem;
-        color: var(--sap-text-secondary);
-    }
-    
-    .sap-form-group {
-        margin-bottom: 1.25rem;
-    }
-    .sap-form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: var(--sap-text);
-        margin-bottom: 0.4rem;
-    }
-    .sap-form-control {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 0.65rem 0.75rem;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius);
-        font-family: inherit;
-        font-size: 0.875rem;
-        color: var(--sap-text);
-        background: #ffffff;
-    }
-    .sap-form-control:focus {
-        outline: none;
-        border-color: var(--sap-primary);
-        box-shadow: 0 0 0 2px rgba(0, 112, 242, 0.15);
-    }
-    textarea.sap-form-control {
-        min-height: 90px;
-        resize: vertical;
+        border-radius: var(--sap-radius-sm);
+        padding: 0.5rem 0.65rem;
+        font-size: 0.78rem;
+        color: var(--sap-muted);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="sap-container">
-    <!-- Header -->
-    <div class="sap-workbench-header">
-        <div class="sap-workbench-title">
-            <h1>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <polyline points="17 11 19 13 23 9"></polyline>
-                </svg>
-                Gestión de Proceso de Reclutamiento
-            </h1>
-            <p>Control operativo del candidato, estatus del embudo y seguimiento de publicaciones de vacante.</p>
-        </div>
+<!-- Encabezado del Candidato -->
+<div class="sap-page-header">
+    <div>
+        <h1 class="sap-page-title">
+            <svg class="sap-icon" style="width: 20px; height: 20px; color: var(--sap-primary);" viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
+            </svg>
+            {{ proceso.candidato.nombre_completo }}
+        </h1>
+        <p class="sap-page-subtitle">
+            Vacante: <strong>{{ proceso.puesto.titulo.nombre }}</strong> &bull; 
+            Etapa actual: <span class="sap-badge sap-badge-info">{{ proceso.get_estatus_proceso_display }}</span>
+        </p>
+    </div>
+</div>
+
+<!-- Barra de Progreso Horizontal (Flujo Guiado) o Banner de Estado Terminal -->
+{% if proceso.estatus_proceso == 'NO_PSICO' %}
+<div class="sap-card" style="border-left: 4px solid #bb0000; background: #fff5f5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+        <svg class="sap-icon" style="color: #bb0000; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
         <div>
-            <a href="{% url 'mis_procesos' %}" class="sap-btn sap-btn-secondary">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                Mis Procesos
-            </a>
+            <div style="font-weight: 600; color: #bb0000; font-size: 0.95rem;">Proceso Concluido &bull; No Aprobó Evaluaciones</div>
+            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+                El candidato no cubrió las evaluaciones requeridas (Psicometría o Integridad). El proceso operativo se encuentra cerrado.
+            </div>
         </div>
     </div>
-
-    <div class="workbench-grid">
-        <!-- Columna Izquierda: Información de Candidato y Publicaciones -->
+</div>
+{% elif proceso.estatus_proceso == 'EN_BOLSA' %}
+<div class="sap-card" style="border-left: 4px solid #b25900; background: #fffbf0; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+        <svg class="sap-icon" style="color: #b25900; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+            <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+        </svg>
         <div>
-            <!-- Expediente Candidato Panel -->
-            <div class="sap-panel">
-                <h2 class="sap-panel-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
+            <div style="font-weight: 600; color: #b25900; font-size: 0.95rem;">Proceso Concluido &bull; Enviado a Bolsa de Trabajo</div>
+            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+                El candidato no continuó en este proceso y se encuentra disponible en la Bolsa de Trabajo para otras vacantes de la empresa.
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="sap-stepper-container">
+    <div class="sap-stepper-header">
+        <span class="sap-stepper-header-title">Progreso del Proceso de Selección</span>
+        <span class="sap-stepper-header-status">
+            Etapa actual: {{ proceso.get_estatus_proceso_display }}
+        </span>
+    </div>
+
+    {% with s=proceso.estatus_proceso %}
+    <ol class="sap-stepper">
+        <!-- Paso 1: Evaluaciones Iniciales -->
+        <li class="sap-step {% if s == 'NUEVO' or s == 'INTEG' or s == 'PSICO' %}active{% elif s == 'ENT_AS' or s == 'REF' or s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+            <div class="sap-step-indicator">
+                {% if s == 'ENT_AS' or s == 'REF' or s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                {% else %}
+                    1
+                {% endif %}
+            </div>
+            <div class="sap-step-title">1. Evaluaciones</div>
+        </li>
+
+        <!-- Paso 2: Entrevista Asesora y Referencias -->
+        <li class="sap-step {% if s == 'ENT_AS' or s == 'REF' %}active{% elif s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+            <div class="sap-step-indicator">
+                {% if s == 'ENT_JF' or s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                {% else %}
+                    2
+                {% endif %}
+            </div>
+            <div class="sap-step-title">2. Entrevista Asesora</div>
+        </li>
+
+        <!-- Paso 3: Entrevista con Jefe Inmediato -->
+        <li class="sap-step {% if s == 'ENT_JF' %}active{% elif s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+            <div class="sap-step-indicator">
+                {% if s == 'MEDIC' or s == 'DOCS' or s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                {% else %}
+                    3
+                {% endif %}
+            </div>
+            <div class="sap-step-title">3. Entrevista Jefe</div>
+        </li>
+
+        <!-- Paso 4: Exámenes y Documentación -->
+        <li class="sap-step {% if s == 'MEDIC' or s == 'DOCS' %}active{% elif s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}completed{% endif %}">
+            <div class="sap-step-indicator">
+                {% if s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' or s == 'CONTRATADO' %}
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                {% else %}
+                    4
+                {% endif %}
+            </div>
+            <div class="sap-step-title">4. Documentación</div>
+        </li>
+
+        <!-- Paso 5: Contratación e Ingreso -->
+        <li class="sap-step {% if s == 'FIRMA' or s == 'ALTA' or s == 'INGRESO' %}active{% elif s == 'CONTRATADO' %}completed{% endif %}">
+            <div class="sap-step-indicator">
+                {% if s == 'CONTRATADO' %}
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                {% else %}
+                    5
+                {% endif %}
+            </div>
+            <div class="sap-step-title">5. Contratación</div>
+        </li>
+    </ol>
+    {% endwith %}
+</div>
+{% endif %}
+
+<!-- Llamado de Acción Guiado: ¿Qué hacer hoy con este candidato? -->
+<div class="sap-action-callout">
+    <div class="sap-action-callout-content">
+        <div class="sap-action-callout-title">
+            ¿Qué hacer hoy con este candidato?
+        </div>
+        <div class="sap-action-callout-desc">
+            {% if proceso.estatus_proceso == 'ENT_JF' %}
+                El candidato está en entrevista con su jefe inmediato. Cuando recibas su retroalimentación, selecciona la siguiente etapa y guarda las observaciones en el panel derecho.
+            {% elif proceso.estatus_proceso == 'ENT_AS' %}
+                Realiza la entrevista inicial con el candidato. Si califica para la vacante, selecciona la siguiente etapa y pulsa "Guardar y avanzar etapa".
+            {% elif proceso.estatus_proceso == 'CONTRATADO' %}
+                ¡Candidato contratado! La vacante ha sido completada y cerrada exitosamente.
+            {% elif proceso.estatus_proceso == 'EN_BOLSA' %}
+                El candidato no continuó en este proceso y se encuentra disponible en la bolsa de trabajo para otras oportunidades.
+            {% elif proceso.estatus_proceso == 'NO_PSICO' %}
+                El candidato no aprobó las evaluaciones requeridas. El proceso se encuentra cerrado.
+            {% else %}
+                Revisa el avance del candidato. Para continuar el proceso, utiliza el formulario "Avanzar Etapa" ubicado en el panel derecho.
+            {% endif %}
+        </div>
+    </div>
+    {% if proceso.estatus_proceso != 'CONTRATADO' and proceso.estatus_proceso != 'EN_BOLSA' and proceso.estatus_proceso != 'NO_PSICO' %}
+    <div>
+        <a href="#panelAvanzar" class="sap-btn sap-btn-primary sap-btn-sm">
+            <span>Avanzar etapa &darr;</span>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Layout de Dos Columnas: Ficha del Candidato (Izq) y Acción Operativa (Der) -->
+<div class="candidate-workbench-grid">
+    <!-- Columna Izquierda: Expediente y Canales Opcionales -->
+    <div>
+        <!-- Ficha del Candidato -->
+        <div class="sap-card">
+            <div class="sap-card-header">
+                <h2 class="sap-card-title">Datos del Candidato</h2>
+                {% if proceso.candidato.cv %}
+                <a href="{{ proceso.candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" title="Abrir currículum vitae en pestaña nueva">
+                    <svg class="sap-icon" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
-                    Ficha del Candidato
-                </h2>
-                
+                    <span>Ver CV</span>
+                </a>
+                {% endif %}
+            </div>
+            <div class="sap-card-body">
                 <div class="candidate-facts">
                     <div class="candidate-fact-item">
-                        <span class="fact-label">Nombre Completo</span>
-                        <span class="fact-value">{{ proceso.candidato.nombre_completo }}</span>
-                    </div>
-                    <div class="candidate-fact-item">
                         <span class="fact-label">Correo Electrónico</span>
-                        <span class="fact-value"><a href="mailto:{{ proceso.candidato.email }}" style="color: var(--sap-primary); text-decoration: none;">{{ proceso.candidato.email }}</a></span>
-                    </div>
-                    <div class="candidate-fact-item">
-                        <span class="fact-label">Teléfono Móvil</span>
-                        <span class="fact-value">{{ proceso.candidato.telefono|default:"No registrado" }}</span>
-                    </div>
-                    {% if proceso.candidato.cv %}
-                    <div class="candidate-fact-item">
-                        <span class="fact-label">Curriculum Vitae</span>
                         <span class="fact-value">
-                            <a href="{{ proceso.candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-secondary" style="padding: 3px 8px; font-size: 0.8rem;">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                </svg>
-                                Ver CV Adjunto
+                            <a href="mailto:{{ proceso.candidato.email }}" style="color: var(--sap-primary); text-decoration: none;">
+                                {{ proceso.candidato.email }}
                             </a>
                         </span>
                     </div>
-                    {% endif %}
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">Teléfono</span>
+                        <span class="fact-value tabular-nums">{{ proceso.candidato.telefono|default:"No registrado" }}</span>
+                    </div>
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">RFC</span>
+                        <span class="fact-value">{{ proceso.candidato.rfc|default:"No registrado" }}</span>
+                    </div>
+                    <div class="candidate-fact-item">
+                        <span class="fact-label">Nivel de Estudios</span>
+                        <span class="fact-value">{{ proceso.candidato.get_nivel_educativo_display|default:"No especificado" }}</span>
+                    </div>
                 </div>
 
-                <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius); padding: 1rem;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--sap-text-secondary); margin-bottom: 0.25rem;">Vacante de Postulación</div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--sap-text); margin-bottom: 0.35rem;">
+                <!-- Vacante Asignada -->
+                <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); padding: 0.85rem 1rem;">
+                    <div class="sap-section-label" style="margin-bottom: 2px;">Vacante Objetivo</div>
+                    <div style="font-size: 0.95rem; font-weight: 600; color: var(--sap-text);">
                         {{ proceso.puesto.titulo.nombre }}
                     </div>
-                    <div style="font-size: 0.85rem; color: var(--sap-text-secondary);">
-                        <strong>Marca:</strong> {{ proceso.puesto.marca.nombre }} &nbsp;|&nbsp; 
-                        <strong>Agencia:</strong> {{ proceso.puesto.agencia }} &nbsp;|&nbsp; 
-                        <strong>Ciudad:</strong> {{ proceso.puesto.get_ciudad_display }}
+                    <div style="font-size: 0.8rem; color: var(--sap-muted); margin-top: 2px;">
+                        {{ proceso.puesto.marca.nombre }} &bull; {{ proceso.puesto.agencia }} &bull; {{ proceso.puesto.get_ciudad_display }}
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Publicaciones Panel -->
-            <div class="sap-panel">
-                <h2 class="sap-panel-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18" cy="5" r="3"></circle>
-                        <circle cx="6" cy="12" r="3"></circle>
-                        <circle cx="18" cy="19" r="3"></circle>
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                    </svg>
-                    Publicaciones y Fuentes de Atracción
-                </h2>
-
-                <div class="table-responsive" style="margin-bottom: 1.25rem;">
+        <!-- Formulario Opcional Desplegable: Canales de Publicación -->
+        <details class="sap-details">
+            <summary class="sap-details-summary">
+                <span>Canales y Fuentes de Publicación (Opcional)</span>
+            </summary>
+            <div class="sap-details-content">
+                <div class="table-responsive" style="margin-bottom: 1rem;">
                     <table class="sap-table" style="width: 100%;">
                         <thead>
                             <tr>
                                 <th>Plataforma</th>
                                 <th>Enlace</th>
-                                <th>Inversión (MXN)</th>
+                                <th>Inversión</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -282,21 +355,16 @@
                             <tr>
                                 <td><span class="sap-badge sap-badge-neutral">{{ pub.get_plataforma_display }}</span></td>
                                 <td>
-                                    <a href="{{ pub.enlace }}" target="_blank" rel="noopener noreferrer" style="color: var(--sap-primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;">
-                                        Ver Publicación
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                            <polyline points="15 3 21 3 21 9"></polyline>
-                                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                                        </svg>
+                                    <a href="{{ pub.enlace }}" target="_blank" rel="noopener noreferrer" style="color: var(--sap-primary); text-decoration: none; font-weight: 500;">
+                                        Ver publicación &rarr;
                                     </a>
                                 </td>
-                                <td><strong>${{ pub.monto_inversion|default:"0.00" }}</strong></td>
+                                <td class="tabular-nums" style="font-weight: 600;">${{ pub.monto_inversion|default:"0.00" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="3" style="text-align: center; color: var(--sap-text-secondary); padding: 1.25rem;">
-                                    No se han registrado fuentes de publicación adicionales para este puesto.
+                                <td colspan="3" style="text-align: center; color: var(--sap-muted); padding: 1rem;">
+                                    No hay publicaciones registradas para esta vacante.
                                 </td>
                             </tr>
                             {% endfor %}
@@ -305,97 +373,90 @@
                 </div>
 
                 <!-- Formulario Añadir Publicación -->
-                <div style="background: #fbfcfd; border: 1px solid var(--sap-border); border-radius: var(--sap-radius); padding: 1rem;">
-                    <h3 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; font-weight: 700; color: var(--sap-text);">Registrar Nueva Publicación</h3>
+                <div style="background: #fbfcfd; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); padding: 0.85rem;">
+                    <div class="sap-section-label">Registrar nueva publicación</div>
                     <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="add_publication">
-                        {% if form_publicacion.non_field_errors %}
-                            <div class="sap-badge sap-badge-error" style="margin-bottom: 0.75rem; width: 100%; box-sizing: border-box;">{{ form_publicacion.non_field_errors }}</div>
-                        {% endif %}
                         <div class="sap-form-group">
-                            <label for="{{ form_publicacion.plataforma.id_for_label }}">Canal / Plataforma:</label>
+                            <label class="sap-label" for="{{ form_publicacion.plataforma.id_for_label }}">Plataforma:</label>
                             {{ form_publicacion.plataforma }}
                         </div>
                         <div class="sap-form-group">
-                            <label for="{{ form_publicacion.enlace.id_for_label }}">Enlace URL del Post:</label>
+                            <label class="sap-label" for="{{ form_publicacion.enlace.id_for_label }}">Enlace URL:</label>
                             {{ form_publicacion.enlace }}
                         </div>
                         <div class="sap-form-group">
-                            <label for="{{ form_publicacion.monto_inversion.id_for_label }}">Presupuesto Invertido (MXN):</label>
+                            <label class="sap-label" for="{{ form_publicacion.monto_inversion.id_for_label }}">Inversión (MXN):</label>
                             {{ form_publicacion.monto_inversion }}
                         </div>
-                        <button type="submit" class="sap-btn sap-btn-secondary" style="width: 100%;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Guardar Publicación
+                        <button type="submit" class="sap-btn sap-btn-secondary sap-btn-sm" style="width: 100%;">
+                            Guardar publicación
                         </button>
                     </form>
                 </div>
             </div>
-        </div>
+        </details>
+    </div>
 
-        <!-- Columna Derecha: Actualización y Registro de Actividad -->
-        <div>
-            <!-- Formulario Actualizar Estatus -->
-            <div class="sap-panel">
-                <h2 class="sap-panel-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                    Actualizar Estatus de Selección
-                </h2>
+    <!-- Columna Derecha: Acción Directa (Avanzar Etapa) y Bitácora -->
+    <div>
+        <!-- Formulario Principal: Avanzar Etapa -->
+        <div class="sap-card" id="panelAvanzar" style="border-top: 3px solid var(--sap-primary);">
+            <div class="sap-card-header">
+                <div>
+                    <h2 class="sap-card-title">Avanzar Etapa de Selección</h2>
+                    <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
+                        Selecciona la nueva etapa y registra las notas del candidato
+                    </div>
+                </div>
+            </div>
+            <div class="sap-card-body">
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="actualizar_estatus">
+                    
                     <div class="sap-form-group">
-                        <label for="estatus_proceso">Fase Actual del Proceso:</label>
-                        <select name="estatus_proceso" id="estatus_proceso" class="sap-form-control">
+                        <label class="sap-label" for="estatus_proceso">Nueva Etapa del Proceso:</label>
+                        <select name="estatus_proceso" id="estatus_proceso" class="sap-select">
                             {% for value, text in proceso.Estatus.choices %}
-                            <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>{{ text }}</option>
+                            <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>
+                                {{ text }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
+
                     <div class="sap-form-group">
-                        <label for="retroalimentacion">Bitácora de Observaciones / Feedback:</label>
-                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-form-control" placeholder="Escribe el resultado de la entrevista, evaluación psicométrica o referencias...">{{ proceso.retroalimentacion }}</textarea>
+                        <label class="sap-label" for="retroalimentacion">Observaciones / Notas de Seguimiento:</label>
+                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-textarea" rows="4" placeholder="Escribe el resultado de la entrevista, evaluación o notas para la siguiente etapa...">{{ proceso.retroalimentacion }}</textarea>
                     </div>
-                    <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%;">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        Guardar Cambio de Estatus
+
+                    <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%; padding: 8px 12px; font-size: 0.875rem;">
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                        <span>Guardar y avanzar etapa</span>
                     </button>
                 </form>
             </div>
+        </div>
 
-            <!-- Transferencia Condicional -->
-            {% if proceso.asesora_asignada == user and proceso.estatus_proceso == 'REF' %}
-            <div class="sap-panel" style="border-left: 4px solid var(--sap-warning);">
-                <h2 class="sap-panel-title" style="color: var(--sap-warning-text);">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="16 3 21 3 21 8"></polyline>
-                        <line x1="4" y1="20" x2="21" y2="3"></line>
-                        <polyline points="21 16 21 21 16 21"></polyline>
-                        <line x1="15" y1="15" x2="21" y2="21"></line>
-                        <line x1="4" y1="4" x2="9" y2="9"></line>
-                    </svg>
-                    Transferencia de Proceso
-                </h2>
-                <p style="font-size: 0.85rem; color: var(--sap-text-secondary); margin-top: 0;">
-                    El candidato ha concluido la fase de referencias. Transfiere la responsabilidad operativa a la asesora de la plaza correspondiente.
+        <!-- Formulario Condicional: Transferir a Otra Asesora -->
+        {% if proceso.asesora_asignada == user and proceso.estatus_proceso == 'REF' %}
+        <div class="sap-card" style="border-left: 3px solid var(--sap-warning-text);">
+            <div class="sap-card-header">
+                <h2 class="sap-card-title" style="color: var(--sap-warning-text);">Transferir a Asesora de Agencia</h2>
+            </div>
+            <div class="sap-card-body">
+                <p style="font-size: 0.8125rem; color: var(--sap-muted); margin: 0 0 0.85rem 0;">
+                    El candidato ha concluido la validación de referencias. Puedes transferir la responsabilidad a la asesora de la agencia correspondiente.
                 </p>
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="transferir_proceso">
                     <div class="sap-form-group">
-                        <label for="nueva_asesora_id">Seleccionar Nueva Asesora Encargada:</label>
-                        <select name="nueva_asesora_id" id="nueva_asesora_id" class="sap-form-control" required>
-                            <option value="">-- Elige asesora receptora --</option>
+                        <label class="sap-label" for="nueva_asesora_id">Asesora Receptora:</label>
+                        <select name="nueva_asesora_id" id="nueva_asesora_id" class="sap-select" required>
+                            <option value="">-- Seleccionar asesora --</option>
                             {% for asesora in asesoras_disponibles %}
                                 {% if asesora != user %}
                                 <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
@@ -403,28 +464,26 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button type="submit" class="sap-btn sap-btn-warning" style="width: 100%;">
-                        Confirmar Transferencia
+                    <button type="submit" class="sap-btn sap-btn-warning sap-btn-sm" style="width: 100%;">
+                        Confirmar transferencia
                     </button>
                 </form>
             </div>
-            {% endif %}
+        </div>
+        {% endif %}
 
-            <!-- Historial de Actividad (SAP Feed) -->
-            <div class="sap-panel">
-                <h2 class="sap-panel-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 14 14"></polyline>
-                    </svg>
-                    Bitácora de Trazabilidad
-                </h2>
+        <!-- Bitácora de Movimientos (Historial de Auditoría) -->
+        <div class="sap-card">
+            <div class="sap-card-header">
+                <h2 class="sap-card-title">Bitácora de Movimientos</h2>
+            </div>
+            <div class="sap-card-body">
                 <ul class="sap-feed-list">
                     {% for registro in proceso.registros_de_actividad %}
                     <li class="sap-feed-item">
                         <span class="sap-feed-marker"></span>
-                        <div class="sap-feed-time">
-                            {{ registro.fecha_hora|date:"d/m/Y, H:i" }} &bull; <strong>{{ registro.usuario.username }}</strong>
+                        <div class="sap-feed-time tabular-nums">
+                            {{ registro.fecha_hora|date:"d/m/Y, H:i" }} &bull; <strong>{{ registro.usuario.username|default:"Sistema" }}</strong>
                         </div>
                         <div class="sap-feed-action">{{ registro.accion }}</div>
                         {% if registro.detalles %}
@@ -432,8 +491,8 @@
                         {% endif %}
                     </li>
                     {% empty %}
-                    <li style="color: var(--sap-text-secondary); font-size: 0.85rem; padding: 0.5rem 0;">
-                        No existen eventos históricos registrados para este proceso.
+                    <li style="color: var(--sap-muted); font-size: 0.8125rem; padding: 0.5rem 0;">
+                        No hay movimientos registrados para este candidato.
                     </li>
                     {% endfor %}
                 </ul>
