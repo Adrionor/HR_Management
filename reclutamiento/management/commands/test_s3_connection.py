@@ -1,5 +1,10 @@
-import boto3
-from botocore.exceptions import ClientError, NoCredentialsError
+try:
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError
+except ImportError:
+    boto3 = None
+    ClientError = Exception
+    NoCredentialsError = Exception
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
@@ -8,6 +13,10 @@ class Command(BaseCommand):
     help = "Prueba la conexión a AWS S3 (versión simplificada)"
 
     def handle(self, *args, **options):
+        if boto3 is None:
+            self.stdout.write(self.style.ERROR("❌ boto3 no está instalado en este entorno."))
+            return
+
         self.stdout.write("🔍 Probando conexión S3...")
 
         # Verificar variables críticas

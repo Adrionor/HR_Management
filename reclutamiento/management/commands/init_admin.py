@@ -3,16 +3,23 @@ from django.contrib.auth.models import User, Group
 from reclutamiento.models import Marca, PerfilUsuario
 
 class Command(BaseCommand):
-    help = 'Crea o actualiza de manera segura e idempotente los usuarios iniciales y administrador.'
+    help = 'Crea o actualiza de manera segura e idempotente los usuarios del departamento de Capital Humano (RH).'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write("Inicializando roles y usuarios base...")
+        self.stdout.write("Inicializando roles y usuarios exclusivos del departamento de RH...")
 
-        # Grupos de permisos
+        # 1. Eliminar grupos y usuarios externos si existen
+        grupos_externos = ['Gerentes Operativos', 'Gerente General de Marca']
+        for g_ext in grupos_externos:
+            Group.objects.filter(name=g_ext).delete()
+
+        usuarios_externos = ['gerente.operativo', 'gerente.marca']
+        for u_ext in usuarios_externos:
+            User.objects.filter(username=u_ext).delete()
+
+        # 2. Grupos de Capital Humano
         grupos_nombres = [
-            'Gerentes Operativos',
             'Gerentes de Capital Humano',
-            'Gerente General de Marca',
             'Asesoras'
         ]
         grupos = {}
@@ -20,7 +27,7 @@ class Command(BaseCommand):
             grp, _ = Group.objects.get_or_create(name=g_nom)
             grupos[g_nom] = grp
 
-        # Marcas iniciales
+        # 3. Marcas de Premier Automotriz
         marcas_nombres = ['Toyota Premier', 'Honda Premier', 'Hyundai Premier', 'Kia Premier', 'Chevrolet Premier']
         marcas = {}
         for m_nom in marcas_nombres:
@@ -37,21 +44,20 @@ class Command(BaseCommand):
             user.set_password('password123')
             user.save()
             if group_name and group_name in grupos:
+                user.groups.clear()
                 user.groups.add(grupos[group_name])
             if marcas_list and hasattr(user, 'perfilusuario'):
                 user.perfilusuario.marcas.set(marcas_list)
             status_text = "creado" if created else "actualizado"
-            self.stdout.write(f" -> Usuario '{username}' ({status_text}) con contraseña 'password123'")
+            self.stdout.write(f" -> Usuario RH '{username}' ({status_text}) con contraseña 'password123'")
             return user
 
-        # 1. Superusuario Administrador Principal
+        # 4. Superusuario Administrador Principal
         get_or_create_user('jorge.guzman', 'jorge@gmail.com', 'Jorge', 'Guzmán', is_staff=True, is_super=True)
 
-        # 2. Usuarios por rol operativo
+        # 5. Equipo de Capital Humano
         get_or_create_user('gerente.ch', 'ch.director@premier.com', 'Patricia', 'Aréchiga', 'Gerentes de Capital Humano', is_staff=True)
-        get_or_create_user('gerente.operativo', 'operativo@premier.com', 'Roberto', 'Mendoza', 'Gerentes Operativos')
-        get_or_create_user('gerente.marca', 'gm.toyota@premier.com', 'Carlos', 'Villanueva', 'Gerente General de Marca', marcas_list=[marcas['Toyota Premier'], marcas['Honda Premier']])
-        get_or_create_user('asesora.arely', 'arely.trujillo@premier.com', 'Arely', 'Trujillo', 'Asesoras')
-        get_or_create_user('asesora.sofia', 'sofia.navarro@premier.com', 'Sofía', 'Navarro', 'Asesoras')
+        get_or_create_user('asesora.arely', 'arely.trujillo@premier.com', 'Arely', 'Trujillo', 'Asesoras', is_staff=True)
+        get_or_create_user('asesora.sofia', 'sofia.navarro@premier.com', 'Sofía', 'Navarro', 'Asesoras', is_staff=True)
 
-        self.stdout.write(self.style.SUCCESS("Usuarios base inicializados correctamente."))
+        self.stdout.write(self.style.SUCCESS("Equipo de Capital Humano inicializado exitosamente (sin usuarios externos)."))
