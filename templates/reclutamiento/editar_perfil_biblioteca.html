@@ -1,0 +1,341 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% block title %}Editar Perfil - {{ perfil.puesto.titulo.nombre }}{% endblock %}
+
+{% block style %}
+<style>
+    /* Reset específico para esta página */
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: #f4f7f6;
+    }
+    
+    /* Contenedor principal optimizado */
+    .editar-perfil-container {
+        max-width: 1400px !important;
+        width: 95% !important;
+        margin: 10px auto !important;
+        background-color: #ffffff !important;
+        padding: 20px 30px !important;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        min-height: calc(100vh - 200px);
+        box-sizing: border-box;
+    }
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px !important;
+        padding-bottom: 10px !important;
+        border-bottom: 2px solid #ecf0f1;
+    }
+    .header h1 {
+        color: #2c3e50 !important;
+        font-size: 1.5em !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .boton-volver {
+        background-color: #95a5a6;
+        color: white;
+        text-decoration: none;
+        padding: 0.7em 1.5em;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+    .boton-volver:hover {
+        background-color: #7f8c8d;
+    }
+    
+    /* Caja de información */
+    .info-box {
+        background-color: #f8f9fa;
+        border-left: 4px solid #3498db;
+        padding: 10px 15px !important;
+        margin-bottom: 15px !important;
+        border-radius: 5px;
+    }
+    .info-box p {
+        margin: 5px 0 !important;
+        color: #555;
+        font-size: 0.85em;
+    }
+    .info-box strong {
+        color: #2c3e50;
+    }
+    
+    /* Estilos del formulario */
+    .form-layout {
+        background-color: #fff;
+    }
+    .form-group {
+        margin-bottom: 15px !important;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5em;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    .form-group input[type="text"],
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.6em;
+        border: 1px solid #dcdde1;
+        border-radius: 5px;
+        font-size: 0.95em;
+        transition: border-color 0.2s;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #3498db;
+    }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+    
+    /* Radio buttons */
+    .radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1em;
+        margin-top: 0.5em;
+    }
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        font-weight: normal;
+        margin-bottom: 0;
+    }
+    .radio-group input[type="radio"] {
+        margin-right: 0.5em;
+    }
+    
+    /* Campos condicionales */
+    .campo-condicional {
+        display: none;
+        margin-left: 2em;
+        padding-left: 1em;
+        border-left: 3px solid #f1c40f;
+    }
+    
+    /* Botón de guardar */
+    .boton-guardar {
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        padding: 0.8em 2em;
+        border-radius: 5px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 1em;
+    }
+    .boton-guardar:hover {
+        background-color: #229954;
+    }
+    
+    /* Texto de ayuda */
+    .help-text {
+        color: #7f8c8d;
+        font-size: 0.9em;
+        margin-top: 0.3em;
+        display: block;
+    }
+    
+    /* Información del puesto */
+    .puesto-info {
+        background-color: #ecf0f1;
+        padding: 10px 15px !important;
+        border-radius: 5px;
+        margin-bottom: 15px !important;
+    }
+    .puesto-info h3 {
+        color: #34495e !important;
+        margin-top: 0 !important;
+        margin-bottom: 8px !important;
+        font-size: 1em !important;
+    }
+    .puesto-info p {
+        margin: 3px 0 !important;
+        color: #555;
+        font-size: 0.85em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editar-perfil-container">
+    <div class="header">
+        <h1>Editar Perfil: {{ perfil.puesto.titulo.nombre }}</h1>
+        <a href="{% url 'biblioteca_perfiles' %}" class="boton-volver">← Volver a Biblioteca</a>
+    </div>
+    
+    <!-- Información de auditoría -->
+    <div class="info-box">
+        <p><strong>Creado por:</strong> {{ perfil.creado_por.get_full_name|default:perfil.creado_por.username|default:"No registrado" }}</p>
+        <p><strong>Fecha de creación:</strong> {{ perfil.fecha_creacion|date:"d/m/Y H:i" }}</p>
+        {% if perfil.modificado_por %}
+            <p><strong>Última modificación por:</strong> {{ perfil.modificado_por.get_full_name|default:perfil.modificado_por.username }}</p>
+            <p><strong>Fecha última modificación:</strong> {{ perfil.fecha_ultima_modificacion|date:"d/m/Y H:i" }}</p>
+        {% endif %}
+    </div>
+    
+    <!-- Información del puesto -->
+    <div class="puesto-info">
+        <h3>Información del Puesto</h3>
+        <p><strong>Puesto:</strong> {{ puesto.titulo.nombre }}</p>
+        <p><strong>Agencia:</strong> {{ puesto.agencia }} - {{ puesto.get_ciudad_display }}</p>
+        <p><strong>Área:</strong> {{ puesto.get_area_display }}</p>
+        <p><strong>Jefe Inmediato:</strong> {{ puesto.nombre_jefe_inmediato }}</p>
+        <p><strong>Sueldo Base:</strong> ${{ puesto.sueldo_base|floatformat:2 }}</p>
+    </div>
+    
+    <!-- Formulario de edición -->
+    <form method="post" class="form-layout">
+        {% csrf_token %}
+        
+        <!-- 1. Rango de edad -->
+        <div class="form-group">
+            {{ form.rango_edad.label_tag }}
+            {{ form.rango_edad }}
+            {% if form.rango_edad.errors %}
+                <span class="error-message">{{ form.rango_edad.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 2. Preferencia de sexo -->
+        <div class="form-group">
+            {{ form.preferencia_sexo.label_tag }}
+            <div class="radio-group">
+                {{ form.preferencia_sexo }}
+            </div>
+            {% if form.preferencia_sexo.errors %}
+                <span class="error-message">{{ form.preferencia_sexo.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 3. Motivo de preferencia (condicional) -->
+        <div class="form-group campo-condicional" id="motivo_sexo_wrapper">
+            {{ form.motivo_preferencia_sexo.label_tag }}
+            <div class="radio-group">
+                {{ form.motivo_preferencia_sexo }}
+            </div>
+            {% if form.motivo_preferencia_sexo.errors %}
+                <span class="error-message">{{ form.motivo_preferencia_sexo.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 4. Área de experiencia -->
+        <div class="form-group">
+            {{ form.area_experiencia_enfoque.label_tag }}
+            {{ form.area_experiencia_enfoque }}
+            {% if form.area_experiencia_enfoque.errors %}
+                <span class="error-message">{{ form.area_experiencia_enfoque.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 5. Importancia de apariencia -->
+        <div class="form-group">
+            {{ form.importancia_apariencia.label_tag }}
+            <div class="radio-group">
+                {{ form.importancia_apariencia }}
+            </div>
+            {% if form.importancia_apariencia.errors %}
+                <span class="error-message">{{ form.importancia_apariencia.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 5a. Justificación de apariencia (condicional) -->
+        <div class="form-group campo-condicional" id="justificacion_apariencia_wrapper">
+            {{ form.justificacion_apariencia.label_tag }}
+            <small class="help-text">Ej: Se encarga de presentaciones públicas, atención directa a clientes VIP, etc.</small>
+            {{ form.justificacion_apariencia }}
+            {% if form.justificacion_apariencia.errors %}
+                <span class="error-message">{{ form.justificacion_apariencia.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 6. Feedback anterior -->
+        <div class="form-group">
+            {{ form.feedback_anterior.label_tag }}
+            {{ form.feedback_anterior }}
+            {% if form.feedback_anterior.errors %}
+                <span class="error-message">{{ form.feedback_anterior.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- 7. Requiere licencia -->
+        <div class="form-group">
+            {{ form.requiere_licencia.label_tag }}
+            <div class="radio-group">
+                {{ form.requiere_licencia }}
+            </div>
+            {% if form.requiere_licencia.errors %}
+                <span class="error-message">{{ form.requiere_licencia.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- Comentarios adicionales -->
+        <div class="form-group">
+            {{ form.comentarios_adicionales.label_tag }}
+            {{ form.comentarios_adicionales }}
+            {% if form.comentarios_adicionales.errors %}
+                <span class="error-message">{{ form.comentarios_adicionales.errors.0 }}</span>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="boton-guardar">Actualizar Perfil</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Lógica para el campo de preferencia de sexo
+    const sexoSelect = $('input[name="preferencia_sexo"]');
+    const motivoSexoWrapper = $('#motivo_sexo_wrapper');
+    
+    function toggleMotivoSexo() {
+        const selectedValue = $('input[name="preferencia_sexo"]:checked').val();
+        if (selectedValue === 'H' || selectedValue === 'M') {
+            motivoSexoWrapper.slideDown();
+        } else {
+            motivoSexoWrapper.slideUp();
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    toggleMotivoSexo();
+    
+    // Ejecutar cuando cambia la selección
+    sexoSelect.on('change', toggleMotivoSexo);
+    
+    // Lógica para el campo de importancia de apariencia
+    const aparienciaSelect = $('input[name="importancia_apariencia"]');
+    const justificacionWrapper = $('#justificacion_apariencia_wrapper');
+    
+    function toggleJustificacion() {
+        const selectedValue = $('input[name="importancia_apariencia"]:checked').val();
+        if (selectedValue === 'ALTA') {
+            justificacionWrapper.slideDown();
+        } else {
+            justificacionWrapper.slideUp();
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    toggleJustificacion();
+    
+    // Ejecutar cuando cambia la selección
+    aparienciaSelect.on('change', toggleJustificacion);
+});
+</script>
+{% endblock %}

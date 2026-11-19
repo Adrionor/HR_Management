@@ -1,39 +1,42 @@
 # reclutamiento/admin.py
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-
-# Importamos todos nuestros modelos
 from .models import (
     Marca,
     PerfilUsuario,
+    CatalogoPuesto,
     Puesto,
     Candidato,
     Proceso,
-    RegistroActividad, PerfilDePuesto, Aviso,CatalogoPuesto
+    RegistroActividad,
+    Publicacion,
+    PerfilDePuesto,
+    Aviso,
 )
 
 # --------------------------------------------------------------------------
-# --- CONFIGURACIÓN PARA MOSTRAR EL PERFIL DENTRO DE LA PÁGINA DE USUARIO ---
+# --- PERSONALIZACIÓN DEL MODELO USER PARA INCLUIR PERFILUSUARIO ---
 # --------------------------------------------------------------------------
 
-# Primero, definimos cómo se verá el "inline" del perfil
 class PerfilUsuarioInline(admin.StackedInline):
     model = PerfilUsuario
     can_delete = False
-    verbose_name_plural = 'Perfiles de Usuario y Marcas'
-    # 'filter_horizontal' crea un widget más amigable para seleccionar muchas marcas
-    filter_horizontal = ('marcas',)
+    verbose_name_plural = 'Perfil de Usuario (Marcas Asignadas)'
+    fk_name = 'usuario'
 
-# Luego, definimos un nuevo admin de Usuario que incluya nuestro perfil inline
 class UserAdmin(BaseUserAdmin):
     inlines = (PerfilUsuarioInline,)
 
-# Finalmente, damos de baja el User admin por defecto y registramos el nuestro
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-admin.site.register(CatalogoPuesto)
+
+@admin.register(CatalogoPuesto)
+class CatalogoPuestoAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'dias_meta')
+    search_fields = ('nombre',)
+    list_filter = ('dias_meta',)
+    ordering = ('nombre',)
 
 # --------------------------------------------------------------------------
 # --- REGISTRO DEL RESTO DE LOS MODELOS (PARA VERLOS EN EL ADMIN) ---
@@ -52,7 +55,7 @@ class PuestoAdmin(admin.ModelAdmin):
 
 @admin.register(Candidato)
 class CandidatoAdmin(admin.ModelAdmin):
-    list_display = ('nombres', 'apellidos', 'email', 'telefono', 'puesto_de_interes')
+    list_display = ('nombres', 'apellidos', 'email', 'telefono', 'ciudad_residencia', 'puesto_de_interes')
     search_fields = ('nombres', 'apellidos', 'email', 'rfc', 'habilidades')
 
 @admin.register(Proceso)
@@ -63,27 +66,23 @@ class ProcesoAdmin(admin.ModelAdmin):
 
 @admin.register(RegistroActividad)
 class RegistroActividadAdmin(admin.ModelAdmin):
-    list_display = ('fecha_hora', 'usuario', 'accion', 'tipo_objeto', 'id_objeto')
-    list_filter = ('usuario', 'tipo_objeto', 'fecha_hora')
-    search_fields = ('accion', 'usuario__username')
-
+    list_display = ('usuario', 'accion', 'fecha_hora', 'tipo_objeto', 'id_objeto')
+    list_filter = ('usuario', 'tipo_objeto')
+    search_fields = ('accion', 'detalles')
+    readonly_fields = ('usuario', 'accion', 'fecha_hora', 'tipo_objeto', 'id_objeto', 'detalles')
 
 @admin.register(PerfilDePuesto)
 class PerfilDePuestoAdmin(admin.ModelAdmin):
     list_display = ('puesto', 'creado_por', 'fecha_actualizacion')
     list_filter = ('puesto__marca', 'creado_por')
     search_fields = ('puesto__titulo__nombre', 'comentarios_adicionales')
-# Nota: El modelo PerfilUsuario no necesita registrarse por separado
-# porque ya lo estamos mostrando "inline" dentro del Usuario.
+
+@admin.register(Publicacion)
+class PublicacionAdmin(admin.ModelAdmin):
+    list_display = ('puesto', 'plataforma', 'monto_inversion', 'fecha_publicacion')
 
 @admin.register(Aviso)
 class AvisoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'creado_por', 'fecha_creacion', 'esta_activo')
-    list_filter = ('esta_activo', 'creado_por')
+    list_filter = ('esta_activo', 'fecha_creacion')
     search_fields = ('titulo', 'contenido')
-
-    def save_model(self, request, obj, form, change):
-        # Asigna el usuario actual automáticamente si el campo está vacío
-        if not obj.creado_por:
-            obj.creado_por = request.user
-        super().save_model(request, obj, form, change)

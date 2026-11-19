@@ -1115,3 +1115,94 @@ def rechazar_solicitud(request, puesto_id):
     )
     messages.warning(request, f"La solicitud para el puesto '{puesto.titulo}' ha sido rechazada.")
     return redirect('lista_solicitudes')
+
+
+# ==============================================================================
+# VISTAS AGREGADAS POR PYME (PORTADAS Y ADAPTADAS)
+# ==============================================================================
+
+@login_required
+@user_passes_test(puede_ver_biblioteca, login_url=reverse_lazy("acceso_denegado"))
+def editar_perfil_biblioteca_view(request, perfil_id):
+    """
+    Vista para editar un perfil desde la biblioteca.
+    Solo el creador del perfil, Gerentes CH o superusers pueden editar.
+    """
+    perfil = get_object_or_404(PerfilDePuesto, id=perfil_id)
+
+    puede_editar = (
+        (perfil.creado_por and request.user == perfil.creado_por) or
+        es_gerente_ch(request.user) or
+        request.user.is_superuser
+    )
+
+    if not puede_editar:
+        messages.error(request, "No tienes permiso para editar este perfil")
+        return redirect('biblioteca_perfiles')
+
+    if request.method == "POST":
+        form = PerfilDePuestoForm(request.POST, instance=perfil)
+        if form.is_valid():
+            perfil_guardado = form.save(commit=False)
+
+            if not perfil_guardado.creado_por:
+                perfil_guardado.creado_por = request.user
+
+            perfil_guardado.modificado_por = request.user
+            perfil_guardado.fecha_ultima_modificacion = timezone.now()
+            perfil_guardado.save()
+
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion=f"Editó perfil de {perfil.puesto.titulo.nombre} desde biblioteca",
+                tipo_objeto="PerfilDePuesto",
+                id_objeto=perfil.id,
+                detalles=f"Perfil editado para puesto en {perfil.puesto.get_ciudad_display()}"
+            )
+
+            messages.success(request, "¡Perfil actualizado exitosamente!")
+            return redirect('biblioteca_perfiles')
+    else:
+        form = PerfilDePuestoForm(instance=perfil)
+
+    contexto = {
+        'form': form,
+        'perfil': perfil,
+        'puesto': perfil.puesto,
+        'es_edicion_biblioteca': True
+    }
+    return render(request, 'reclutamiento/editar_perfil_biblioteca.html', contexto)
+
+
+@login_required
+def descargar_cv_view(request, candidato_id):
+    """Vista para servir CVs con URLs firmadas de S3 o descarga local"""
+    from django.http import HttpResponseRedirect, Http404
+    candidato = get_object_or_404(Candidato, id=candidato_id)
+
+    if not candidato.cv:
+        raise Http404("CV no encontrado")
+
+    try:
+        cv_url = candidato.cv.url
+        return HttpResponseRedirect(cv_url)
+    except Exception:
+        raise Http404("Error al acceder al archivo del CV")
+
+
+def verificar_unicidad_view(request):
+    """Vista AJAX para verificar unicidad de email y RFC en registro"""
+    from django.http import JsonResponse
+
+    email = request.GET.get("email", "").strip()
+    rfc = request.GET.get("rfc", "").strip()
+
+    response = {"email_unico": True, "rfc_unico": True}
+
+    if email:
+        response["email_unico"] = not Candidato.objects.filter(email=email).exists()
+
+    if rfc:
+        response["rfc_unico"] = not Candidato.objects.filter(rfc=rfc).exists()
+
+    return JsonResponse(response)

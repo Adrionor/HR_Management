@@ -1,8 +1,12 @@
 # reclutamiento/forms.py
+import os
 from django import forms
 from .models import Puesto, Candidato, Publicacion, PerfilDePuesto
 from django.core.exceptions import ValidationError
-import filetype # Importamos la librería para la validación de archivos
+try:
+    import filetype
+except ImportError:
+    filetype = None
 
 
 class SolicitudPuestoForm(forms.ModelForm):
@@ -32,8 +36,22 @@ class SolicitudPuestoForm(forms.ModelForm):
             'reemplaza_a': forms.TextInput(attrs={'placeholder': 'Nombre del colaborador anterior'}),
         }
 
+    def clean_archivo_justificacion(self):
+        archivo = self.cleaned_data.get("archivo_justificacion", False)
+        if not archivo:
+            return None
 
-# reclutamiento/forms.py
+        # Validación de Tamaño (máx. 5MB)
+        if archivo.size > 5 * 1024 * 1024:
+            raise ValidationError("El archivo es demasiado grande. El máximo permitido es 5 MB.")
+
+        allowed_extensions = [".pdf", ".docx", ".doc", ".jpg", ".jpeg", ".png"]
+        file_extension = os.path.splitext(archivo.name)[1].lower()
+        if file_extension not in allowed_extensions:
+            raise ValidationError(f"Tipo de archivo no válido ({file_extension}). Se permiten PDF, DOCX o imágenes.")
+
+        return archivo
+
 
 class PerfilDePuestoForm(forms.ModelForm):
     class Meta:
@@ -84,6 +102,7 @@ class PerfilDePuestoForm(forms.ModelForm):
 
         return cleaned_data
 
+
 class RegistroCandidatoForm(forms.ModelForm):
     # Sobreescribimos el campo para tener control total
     puesto_de_interes = forms.ChoiceField(
@@ -117,6 +136,7 @@ class RegistroCandidatoForm(forms.ModelForm):
         # Excluimos 'puesto_de_interes' de aquí porque ya lo definimos arriba
         fields = [
             'nombres', 'apellidos', 'email', 'telefono',
+            'ciudad_residencia',
             'nivel_educativo', 'años_de_experiencia',
             'ultimo_puesto', 'ultima_empresa',
             'es_colaborador_actual', 'motivo_busqueda',
@@ -124,10 +144,11 @@ class RegistroCandidatoForm(forms.ModelForm):
             'rfc', 'fecha_nacimiento', 'cv'
         ]
         labels = {
-            'nombres': 'Nombre(s)', # Nuevo label
-            'apellidos': 'Apellidos', # Nuevo label
+            'nombres': 'Nombre(s)',
+            'apellidos': 'Apellidos',
             'email': 'Correo Electrónico',
             'telefono': 'Teléfono de Contacto',
+            'ciudad_residencia': 'Ciudad de Residencia Actual',
             'puesto_de_interes': '¿Te interesa un puesto en particular?',
             'cv': 'Sube tu CV (PDF o DOCX, máx. 5MB)',
             'nivel_educativo': 'Máximo Nivel Educativo Alcanzado',
@@ -142,34 +163,39 @@ class RegistroCandidatoForm(forms.ModelForm):
         widgets = {
             'nombres': forms.TextInput(attrs={'placeholder': 'Ej: Ana Sofía'}),
             'apellidos': forms.TextInput(attrs={'placeholder': 'Ej: García López'}),
+            'ciudad_residencia': forms.Select(),
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
             'motivo_busqueda': forms.Select(),
         }
 
-    # --- VALIDACIÓN DE ARCHIVO COMPLETA USANDO PYTHON-MAGIC ---
     def clean_cv(self):
         cv = self.cleaned_data.get('cv', False)
         if not cv:
             return None
 
-        # Validación de Tamaño (sigue igual)
+        # Validación de Tamaño (máx. 5MB)
         if cv.size > 5 * 1024 * 1024:
             raise ValidationError("El archivo es demasiado grande. El máximo permitido es 5 MB.")
 
-        # Validación de Tipo de Archivo con 'filetype'
-        try:
-            kind = filetype.guess(cv)
-            cv.seek(0) # Rebobinamos el archivo
-        except Exception:
-            raise ValidationError("No se pudo leer el archivo. Intenta con otro.")
+        allowed_extensions = ['.pdf', '.docx', '.doc']
+        file_extension = os.path.splitext(cv.name)[1].lower()
+        if file_extension not in allowed_extensions:
+            raise ValidationError(f"Tipo de archivo no válido ({file_extension}). Solo se permiten PDF y DOCX.")
 
-        if kind is None:
-            raise ValidationError('Tipo de archivo no reconocido. Sube un PDF o DOCX válido.')
-
-        allowed_mime_types = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-
-        if kind.mime not in allowed_mime_types:
-            raise ValidationError(f"Tipo de archivo no válido ({kind.mime}). Solo se permiten PDF y DOCX.")
+        # Validación MIME opcional con filetype
+        if filetype:
+            try:
+                kind = filetype.guess(cv)
+                cv.seek(0)
+                allowed_mime_types = [
+                    'application/pdf',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/msword'
+                ]
+                if kind and kind.mime not in allowed_mime_types:
+                    raise ValidationError(f"Tipo de archivo no válido ({kind.mime}). Solo se permiten PDF y DOCX.")
+            except Exception:
+                pass
 
         return cv
 
@@ -179,14 +205,13 @@ class PublicacionForm(forms.ModelForm):
     monto_inversion = forms.DecimalField(
         max_digits=8,
         decimal_places=2,
-        required=False, # <-- Permite que el campo se envíe vacío
+        required=False,
         label="Monto Invertido (MXN)",
         widget=forms.NumberInput(attrs={'placeholder': '0.00'})
     )
 
     class Meta:
         model = Publicacion
-        # Cambiamos tuvo_inversion por monto_inversion
         fields = ['plataforma', 'enlace', 'monto_inversion']
         labels = {
             'plataforma': 'Plataforma',

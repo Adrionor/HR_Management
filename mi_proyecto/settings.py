@@ -11,11 +11,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
-import dj_database_url
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Cargar variables de entorno desde archivo .env si existe
 env_file = BASE_DIR / '.env'
@@ -46,8 +48,13 @@ ALLOWED_HOSTS = list(set(parsed_hosts + [
     '*',
     '.herokuapp.com',
     '.pythonanywhere.com',
+    '.elasticbeanstalk.com',
+    '.amazonaws.com',
+    'talentopremier.com',
+    'www.talentopremier.com',
     'localhost',
     '127.0.0.1',
+    '0.0.0.0',
 ]))
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -55,6 +62,11 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 CSRF_TRUSTED_ORIGINS = [
     'https://*.herokuapp.com',
     'https://*.pythonanywhere.com',
+    'https://*.elasticbeanstalk.com',
+    'https://talentopremier.com',
+    'https://www.talentopremier.com',
+    'http://talentopremier.com',
+    'http://www.talentopremier.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
@@ -89,9 +101,7 @@ ROOT_URLCONF = 'mi_proyecto.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # --- LA LÍNEA CLAVE A MODIFICAR ---
         'DIRS': [BASE_DIR / 'templates'],
-        # ---------------------------------
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -107,67 +117,83 @@ WSGI_APPLICATION = 'mi_proyecto.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# Configuración automática para PostgreSQL en Heroku (DATABASE_URL)
+# Soporta:
+# 1. AWS RDS / Elastic Beanstalk (cuando USE_SQLITE=False o en producción con DB_ENGINE postgres)
+# 2. Heroku / Render (DATABASE_URL)
+# 3. SQLite local por defecto para desarrollo y pruebas seguras sin tocar RDS en vivo
+USE_SQLITE = os.environ.get('USE_SQLITE', 'True').lower() in ('true', '1', 't')
+DB_HOST = os.environ.get('DB_HOST')
+DB_NAME = os.environ.get('DB_NAME')
 database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600)
+
+if not USE_SQLITE and DB_HOST and DB_NAME:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'GrupoPremier433'),
+            'HOST': DB_HOST,
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
+elif database_url and dj_database_url:
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'es-mx'
-
-TIME_ZONE = 'America/Mexico_City'
-
+TIME_ZONE = 'America/Mazatlan'  # Zona horaria de Culiacán / Premier
 USE_I18N = True
-
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# Static & Media files
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'reclutamiento/static'),
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_REDIRECT_URL = 'dashboard' # Redirige al dashboard por su nombre
-LOGIN_URL = 'login'              # La página de login
-LOGOUT_REDIRECT_URL = 'login'    # A dónde ir después de cerrar sesión
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# AWS S3 Configuration (para CVs y Requisiciones)
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
+AWS_S3_SIGNATURE_VERSION = os.environ.get("AWS_S3_SIGNATURE_VERSION", "s3v4")
+AWS_DEFAULT_ACL = "private"
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_VERIFY = True
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = 'login'
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+
 
 # ==============================================================================
 # CONFIGURACIÓN DE CACHÉ
@@ -182,44 +208,19 @@ CACHES = {
     }
 }
 
-# Para producción, usar Redis o Memcached:
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-#         'LOCATION': 'redis://127.0.0.1:6379/1',
-#         'OPTIONS': {
-#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-#         }
-#     }
-# }
-
-# mi_proyecto/settings.py
 
 # --- CONFIGURACIÓN DE DJANGO JAZZMIN ---
 JAZZMIN_SETTINGS = {
-    # Título que aparece en la pestaña del navegador y en la página de login
     "site_title": "Portal de Administración",
     "custom_css": "reclutamiento/css/admin_custom.css",
-    # Título en la parte superior de la barra de navegación
     "site_header": "Bolsa de Trabajo",
-
-    # Texto o logo para la barra de navegación (puedes usar HTML)
     "site_brand": "Premier Automotriz",
-
-    # Logo para la página de login
-    # "login_logo": "/ruta/a/tu/logo.png", # Opcional
-
-    # Copyright en el pie de página
     "copyright": "Bolsa de Trabajo Premier",
-
-    # Menú superior con enlaces útiles
     "topmenu_links": [
         {"name": "Inicio (Dashboard)", "url": "/dashboard", "permissions": ["auth.view_user"]},
         {"name": "Ver Sitio Público", "url": "/", "new_window": True},
-        {"model": "auth.User"}, # Enlace al modelo de Usuarios
+        {"model": "auth.User"},
     ],
-
-    # Ajustes de la interfaz de usuario
     "ui_tweaks": {
         "theme": "flatly",
         "dark_mode_theme": "darkly",
@@ -240,11 +241,3 @@ JAZZMIN_SETTINGS = {
         "sidebar_nav_flat_style": False
     }
 }
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'reclutamiento/static'),
-]
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATIC_ROOT.mkdir(parents=True, exist_ok=True)
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

@@ -6,6 +6,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.cache import cache
+from .storage import CVStorage, RequisicionStorage
 
 class Marca(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -22,6 +23,12 @@ class PerfilUsuario(models.Model):
 
 class CatalogoPuesto(models.Model):
     nombre = models.CharField(max_length=200, unique=True, verbose_name="Nombre del Puesto")
+    dias_meta = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Días Meta para Contratación",
+        help_text="Número de días objetivo para completar el proceso de contratación de este puesto"
+    )
 
     class Meta:
         ordering = ['nombre']
@@ -115,6 +122,14 @@ class Puesto(models.Model):
     )
     es_confidencial = models.BooleanField(default=False, verbose_name="¿Es una vacante confidencial?")
     motivo_rechazo = models.TextField(null=True, blank=True, verbose_name="Motivo de Rechazo")
+    archivo_justificacion = models.FileField(
+        upload_to="requisiciones/",
+        null=True,
+        blank=True,
+        storage=RequisicionStorage(),
+        verbose_name="Archivo de Justificación (Opcional)",
+        help_text="Suba un archivo PDF o imagen que justifique la solicitud de este puesto",
+    )
 
     # --- Flujo de Aprobación y Asignación (campos que ya teníamos) ---
     estatus_autorizacion = models.CharField(max_length=20, choices=EstatusAutorizacion.choices, default=EstatusAutorizacion.PENDIENTE, db_index=True)
@@ -399,7 +414,36 @@ class Candidato(models.Model):
                                    help_text="Ej: Liderazgo, Excel Avanzado, Ventas, SAP, etc. (separadas por comas)")
     expectativa_salarial = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
                                                verbose_name="Expectativa Salarial Mensual (Bruta)")
-    cv = models.FileField(upload_to='cvs/', blank=True, null=True)
+    CIUDADES_RESIDENCIA_CHOICES = [
+        ("CUL", "Culiacán"),
+        ("MZT", "Mazatlán"),
+        ("LMM", "Los Mochis"),
+        ("GVE", "Guasave"),
+        ("CJM", "Cajeme"),
+        ("HMO", "Hermosillo"),
+        ("MXL", "Mexicali"),
+        ("TIJ", "Tijuana"),
+        ("LPZ", "La Paz"),
+        ("LCB", "Los Cabos"),
+        ("CDMX", "CDMX"),
+        ("MTY", "Monterrey"),
+        ("OTRA", "Otra ciudad"),
+    ]
+    ciudad_residencia = models.CharField(
+        max_length=4,
+        choices=CIUDADES_RESIDENCIA_CHOICES,
+        default="CUL",
+        verbose_name="Ciudad de Residencia",
+        help_text="Ciudad donde reside actualmente el candidato",
+    )
+    cv = models.FileField(
+        upload_to="cvs/",
+        blank=True,
+        null=True,
+        storage=CVStorage(),
+        verbose_name="Curriculum Vitae",
+        help_text="Suba el CV en formato PDF o Word",
+    )
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     # --- PROPIEDAD RESTAURADA Y ESENCIAL ---
@@ -547,6 +591,21 @@ class PerfilDePuesto(models.Model):
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    # Nuevos campos de auditoría para tracking de modificaciones (PYME)
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='perfiles_modificados',
+        verbose_name="Última modificación por"
+    )
+    fecha_ultima_modificacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de última modificación"
+    )
 
     def __str__(self):
         return f"Perfil para {self.puesto.titulo.nombre}"
