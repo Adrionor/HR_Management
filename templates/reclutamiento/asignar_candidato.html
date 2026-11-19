@@ -4,17 +4,19 @@
 {% block title %}Asignar Candidato | {{ puesto_seleccionado.titulo.nombre }}{% endblock %}
 
 {% block breadcrumb %}
-    <span class="sap-breadcrumb-separator">/</span>
-    <a href="{% url 'mis_vacantes' %}" class="sap-breadcrumb-item">Mis Vacantes</a>
-    <span class="sap-breadcrumb-separator">/</span>
-    <span class="sap-breadcrumb-current">Asignar Candidato</span>
+<span class="sap-breadcrumb-separator">/</span>
+<a href="{% url 'mis_vacantes' %}" class="sap-breadcrumb-item">Mis Vacantes</a>
+<span class="sap-breadcrumb-separator">/</span>
+<span class="sap-breadcrumb-current">Asignar Candidato</span>
 {% endblock %}
 
 {% block back_button %}
-    <a href="{% url 'mis_vacantes' %}" class="sap-btn-back" title="Volver a mis vacantes">
-        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        <span>Regresar</span>
-    </a>
+<a href="{% url 'mis_vacantes' %}" class="sap-btn-back" title="Volver a mis vacantes">
+    <svg class="sap-icon" viewBox="0 0 24 24">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+    </svg>
+    <span>Regresar</span>
+</a>
 {% endblock %}
 
 {% block style %}
@@ -32,15 +34,18 @@
         gap: 0.75rem;
         font-size: 0.875rem;
     }
+
     .link-candidato {
         font-weight: 600;
         color: var(--sap-primary);
         text-decoration: none;
     }
+
     .link-candidato:hover {
         text-decoration: underline;
         color: var(--sap-primary-hover);
     }
+
     .sap-filter-bar {
         background: #f8fafc;
         border: 1px solid var(--sap-border);
@@ -48,6 +53,7 @@
         padding: 1rem;
         margin-bottom: 1.25rem;
     }
+
     .sap-filter-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -69,7 +75,8 @@
             </svg>
             Asignar Candidato a Vacante
         </h1>
-        <p class="sap-page-subtitle">Selecciona un candidato disponible de la bolsa para iniciar su proceso de selección en este puesto.</p>
+        <p class="sap-page-subtitle">Selecciona un candidato disponible de la bolsa para iniciar su proceso de selección
+            en este puesto.</p>
     </div>
 </div>
 
@@ -77,10 +84,12 @@
 <div class="position-context-box">
     <div>
         Vacante: <strong>{{ puesto_seleccionado.titulo.nombre }}</strong> &bull;
-        <span style="color: var(--sap-muted);">{{ puesto_seleccionado.marca.nombre }} - {{ puesto_seleccionado.agencia }} ({{ puesto_seleccionado.get_ciudad_display }})</span>
+        <span style="color: var(--sap-muted);">{{ puesto_seleccionado.marca.nombre }} - {{ puesto_seleccionado.agencia
+            }} ({{ puesto_seleccionado.get_ciudad_display }})</span>
     </div>
     <div>
-        <a href="{% url 'puesto_detalle' puesto_seleccionado.id %}" target="_blank" style="font-weight: 600; color: var(--sap-primary); text-decoration: none; font-size: 0.8125rem;">
+        <a href="{% url 'puesto_detalle' puesto_seleccionado.id %}" target="_blank"
+            style="font-weight: 600; color: var(--sap-primary); text-decoration: none; font-size: 0.8125rem;">
             Ver requisitos del puesto &rarr;
         </a>
     </div>
@@ -92,7 +101,8 @@
         <div class="sap-filter-grid">
             <div class="sap-form-group" style="margin-bottom: 0;">
                 <label class="sap-label" for="q_puesto" style="font-size: 0.75rem;">Puesto de Interés:</label>
-                <input type="text" name="q_puesto" id="q_puesto" class="sap-input" style="font-size: 0.8125rem;" placeholder="Ej. Asesor de Ventas..." value="{{ filtros.q_puesto }}">
+                <input type="text" name="q_puesto" id="q_puesto" class="sap-input" style="font-size: 0.8125rem;"
+                    placeholder="Ej. Asesor de Ventas..." value="{{ filtros.q_puesto }}">
             </div>
 
             <div class="sap-form-group" style="margin-bottom: 0;">
@@ -107,22 +117,29 @@
 
             <div class="sap-form-group" style="margin-bottom: 0;">
                 <label class="sap-label" for="q_busqueda" style="font-size: 0.75rem;">Búsqueda General:</label>
-                <input type="text" name="q_busqueda" id="q_busqueda" class="sap-input" style="font-size: 0.8125rem;" placeholder="Nombre, email, RFC..." value="{{ filtros.q_busqueda }}">
+                <input type="text" name="q_busqueda" id="q_busqueda" class="sap-input" style="font-size: 0.8125rem;"
+                    placeholder="Nombre, email, RFC..." value="{{ filtros.q_busqueda }}">
             </div>
 
             <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                 <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="flex: 1;">
-                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <svg class="sap-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
                     <span>Filtrar</span>
                 </button>
-                <a href="{% url 'asignar_candidato' puesto_seleccionado.id %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                <a href="{% url 'asignar_candidato' puesto_seleccionado.id %}"
+                    class="sap-btn sap-btn-secondary sap-btn-sm">
                     Limpiar
                 </a>
             </div>
         </div>
 
-        <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--sap-text); cursor: pointer;">
+        <div
+            style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <label
+                style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--sap-text); cursor: pointer;">
                 <input type="checkbox" name="mostrar_expirados" value="1" {% if filtros.mostrar_expirados %}checked{% endif %} onchange="this.form.submit();">
                 <span>Mostrar candidatos inactivos o con evaluaciones expiradas (> 365 días)</span>
             </label>
@@ -165,80 +182,95 @@
                                 {{ candidato.nombre_completo }}
                             </a>
                             {% if candidato.es_no_contratable %}
-                                <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; font-weight: 700; margin-left: 4px;">
-                                    <span class="sap-badge-dot"></span>NO CONTRATABLE
-                                </span>
-                                {% if candidato.motivo_no_contratable %}
-                                    <div style="font-size: 0.72rem; color: #991b1b; font-weight: 500; margin-top: 2px;">
-                                        {{ candidato.motivo_no_contratable }}
-                                    </div>
-                                {% endif %}
+                            <span class="sap-badge sap-badge-error"
+                                style="background: #fee2e2; color: #991b1b; font-weight: 700; margin-left: 4px;">
+                                <span class="sap-badge-dot"></span>NO CONTRATABLE
+                            </span>
+                            {% if candidato.motivo_no_contratable %}
+                            <div style="font-size: 0.72rem; color: #991b1b; font-weight: 500; margin-top: 2px;">
+                                {{ candidato.motivo_no_contratable }}
+                            </div>
+                            {% endif %}
                             {% elif candidato.alerta == 'NO_APROBADO' %}
-                                <span class="sap-badge sap-badge-error" style="margin-left: 4px;"><span class="sap-badge-dot"></span>No Aprobó</span>
+                            <span class="sap-badge sap-badge-error" style="margin-left: 4px;"><span
+                                    class="sap-badge-dot"></span>No Aprobó</span>
                             {% elif candidato.alerta == 'EXPIRADO_REINICIABLE' %}
-                                <span class="sap-badge sap-badge-info" style="margin-left: 4px;" title="Reprobó hace más de 1 año: elegible para reiniciar evaluaciones">
-                                    <span class="sap-badge-dot"></span>Examen Vencido (Reiniciable)
-                                </span>
+                            <span class="sap-badge sap-badge-info" style="margin-left: 4px;"
+                                title="Reprobó hace más de 1 año: elegible para reiniciar evaluaciones">
+                                <span class="sap-badge-dot"></span>Examen Vencido (Reiniciable)
+                            </span>
                             {% elif candidato.alerta == 'INACTIVO' %}
-                                <span class="sap-badge sap-badge-warning" style="margin-left: 4px;" title="Sin actividad en el sistema en más de 365 días">
-                                    <span class="sap-badge-dot"></span>Inactivo (> 1 año)
-                                </span>
+                            <span class="sap-badge sap-badge-warning" style="margin-left: 4px;"
+                                title="Sin actividad en el sistema en más de 365 días">
+                                <span class="sap-badge-dot"></span>Inactivo (> 1 año)
+                            </span>
                             {% elif candidato.alerta == 'EN_BOLSA' %}
-                                <span class="sap-badge sap-badge-neutral" style="margin-left: 4px;"><span class="sap-badge-dot"></span>En Bolsa</span>
+                            <span class="sap-badge sap-badge-neutral" style="margin-left: 4px;"><span
+                                    class="sap-badge-dot"></span>En Bolsa</span>
                             {% endif %}
                         </td>
                         <td>{{ candidato.get_ciudad_residencia_display|default:candidato.ciudad_residencia }}</td>
                         <td>
                             {% if candidato.es_colaborador_actual %}
-                                <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Interno</span>
+                            <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Interno</span>
                             {% else %}
-                                <span style="color: var(--sap-muted); font-size: 0.8125rem;">Externo</span>
+                            <span style="color: var(--sap-muted); font-size: 0.8125rem;">Externo</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if candidato.puesto_de_interes %}
-                                {{ candidato.puesto_de_interes.titulo.nombre }}
+                            {{ candidato.puesto_de_interes.titulo.nombre }}
                             {% elif candidato.interes_custom %}
-                                <span style="font-style: italic;">{{ candidato.interes_custom }}</span>
+                            <span style="font-style: italic;">{{ candidato.interes_custom }}</span>
                             {% else %}
-                                <span style="color: var(--sap-muted);">General</span>
+                            <span style="color: var(--sap-muted);">General</span>
                             {% endif %}
                         </td>
                         <td class="tabular-nums">{{ candidato.telefono|default_if_none:"N/A" }}</td>
                         <td>{{ candidato.get_nivel_educativo_display|default_if_none:"N/A" }}</td>
                         <td>
                             {% if candidato.cv %}
-                                <a href="{{ candidato.cv.url }}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
-                                    Ver CV
-                                </a>
+                            <a href="{{ candidato.cv.url }}" target="_blank"
+                                class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
+                                Ver CV
+                            </a>
                             {% else %}
-                                <span style="color: var(--sap-muted); font-size: 0.75rem;">Sin CV</span>
+                            <span style="color: var(--sap-muted); font-size: 0.75rem;">Sin CV</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if candidato.alerta or candidato.es_no_contratable %}
-                                <a href="{% url 'historial_candidato' candidato.id %}" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
-                                    Consultar
-                                </a>
+                            <a href="{% url 'historial_candidato' candidato.id %}" target="_blank"
+                                class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
+                                Consultar
+                            </a>
                             {% else %}
-                                <span style="color: var(--sap-muted); font-size: 0.75rem;">Sin historial</span>
+                            <span style="color: var(--sap-muted); font-size: 0.75rem;">Sin historial</span>
                             {% endif %}
                         </td>
                         <td style="text-align: right;">
                             {% if candidato.es_no_contratable %}
-                                <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" disabled style="opacity: 0.65; cursor: not-allowed; border-color: #fca5a5; color: #991b1b; background: #fef2f2;" title="Candidato no contratable: {{ candidato.motivo_no_contratable|escape }}">
-                                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                    <span>Bloqueado</span>
-                                </button>
+                            <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" disabled
+                                style="opacity: 0.65; cursor: not-allowed; border-color: #fca5a5; color: #991b1b; background: #fef2f2;"
+                                title="Candidato no contratable: {{ candidato.motivo_no_contratable|escape }}">
+                                <svg class="sap-icon" viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                                </svg>
+                                <span>Bloqueado</span>
+                            </button>
                             {% else %}
-                                <form action="{% url 'asignar_candidato' puesto_id=puesto_seleccionado.id %}" method="POST" style="margin: 0; display: inline;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
-                                    <button type="submit" class="sap-btn sap-btn-positive sap-btn-sm">
-                                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                                        <span>Asignar a puesto</span>
-                                    </button>
-                                </form>
+                            <form action="{% url 'asignar_candidato' puesto_id=puesto_seleccionado.id %}" method="POST"
+                                style="margin: 0; display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="candidato_id" value="{{ candidato.id }}">
+                                <button type="submit" class="sap-btn sap-btn-positive sap-btn-sm">
+                                    <svg class="sap-icon" viewBox="0 0 24 24">
+                                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                                    </svg>
+                                    <span>Asignar a puesto</span>
+                                </button>
+                            </form>
                             {% endif %}
                         </td>
                     </tr>
@@ -258,12 +290,12 @@
 
 {% block scripts %}
 <script>
-$(document).ready(function() {
-    $('#candidatosTable').DataTable({
-        "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
-        "pageLength": 25,
-        "order": []
+    $(document).ready(function () {
+        $('#candidatosTable').DataTable({
+            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
+            "pageLength": 25,
+            "order": []
+        });
     });
-});
 </script>
 {% endblock %}

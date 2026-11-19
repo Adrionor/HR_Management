@@ -174,7 +174,7 @@ def dashboard(request):
     asesoras_logins = []
     if es_directora:
         asesoras_logins = User.objects.filter(
-            Q(groups__name='Asesoras') | Q(perfilusuario__rol='ASESORA')
+            Q(groups__name='Asesoras') | Q(puestos_asignados__isnull=False)
         ).distinct().order_by('-last_login')
 
     contexto = {
@@ -211,109 +211,111 @@ def reportes_view(request):
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     from .services import ReportesService
     
-    # Recopilar filtros del request
+    # Recopilar filtros del request (Enfoque 100% RH)
     filtros = {
         'fecha_desde': request.GET.get('fecha_desde', '').strip(),
         'fecha_hasta': request.GET.get('fecha_hasta', '').strip(),
-        'marca': request.GET.get('marca', '').strip(),
-        'agencia': request.GET.get('agencia', '').strip(),
-        'ciudad': request.GET.get('ciudad', '').strip(),
         'asesora': request.GET.get('asesora', '').strip(),
+        'puesto': request.GET.get('puesto', '').strip(),
+        'agencia': request.GET.get('agencia', '').strip(),
+        'marca': request.GET.get('marca', '').strip(),
+        'ciudad': request.GET.get('ciudad', '').strip(),
         'sla': request.GET.get('sla', '').strip(),
         'etapa': request.GET.get('etapa', '').strip(),
     }
     
-    # Generar datos usando el service layer
-    datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
-    
-    # 3. Exportación a CSV según tipo solicitado
-    export_type = request.GET.get('export')
+    # 1. Exportaciones directas a Excel (.xlsx con openpyxl)
+    export_type = request.GET.get('export', '').strip()
     if export_type:
         timestamp_str = timezone.now().strftime("%Y%m%d_%H%M")
-        response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-        writer = csv.writer(response)
+        xlsx_content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        
+        # Reporte 1 — Resumen Ejecutivo por Periodo (.xlsx)
+        if export_type in ['resumen_ejecutivo', 'excel_1']:
+            buffer = ReportesService.generar_excel_resumen_ejecutivo(filtros, request.user)
+            response = HttpResponse(buffer.getvalue(), content_type=xlsx_content_type)
+            response['Content-Disposition'] = f'attachment; filename="reporte_resumen_ejecutivo_{timestamp_str}.xlsx"'
+            return response
+            
+        # Reporte 2 — Auditoría y Bono por Asesora (.xlsx)
+        elif export_type in ['auditoria_bono', 'excel_2']:
+            buffer = ReportesService.generar_excel_auditoria_bono(filtros, request.user)
+            response = HttpResponse(buffer.getvalue(), content_type=xlsx_content_type)
+            response['Content-Disposition'] = f'attachment; filename="reporte_auditoria_bono_{timestamp_str}.xlsx"'
+            return response
+            
+        # Reporte 3 — Sábana Histórica Filtrable (.xlsx)
+        elif export_type in ['sabana_historica', 'excel_3']:
+            buffer = ReportesService.generar_excel_sabana_historica(filtros, request.user)
+            response = HttpResponse(buffer.getvalue(), content_type=xlsx_content_type)
+            response['Content-Disposition'] = f'attachment; filename="reporte_sabana_historica_{timestamp_str}.xlsx"'
+            return response
 
-        if export_type in ['csv', 'csv_master']:
+        # Compatibilidad con descargas CSV existentes
+        elif export_type in ['csv', 'csv_master']:
+            datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
+            response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
             response['Content-Disposition'] = f'attachment; filename="reporte_vacantes_maestro_{timestamp_str}.csv"'
+            writer = csv.writer(response)
             writer.writerow([
                 'ID Vacante', 'Puesto', 'Marca', 'Agencia', 'Ciudad',
-                'Solicitado Por', 'Asesora Encargada', 'Fecha Requisición',
-                'Días Transcurridos', 'Días Meta', 'Estatus SLA',
-                'Etapa Operativa', 'Plazas Solicitadas', 'Plazas Cubiertas',
-                'Candidato Más Avanzado', 'Última Observación'
+                'Asesora Encargada', 'Fecha Requisición', 'Días Transcurridos', 'Días Meta', 'Estatus SLA',
+                'Plazas Solicitadas', 'Plazas Cubiertas', 'Meta Bono OK'
             ])
             for p in datos_reporte['puestos']:
-                cand = p.candidato_mas_avanzado
                 writer.writerow([
                     p.id,
                     p.titulo.nombre if p.titulo else "N/A",
                     p.marca.nombre if p.marca else "N/A",
                     p.agencia,
                     p.get_ciudad_display(),
-                    p.solicitado_por.get_full_name() or p.solicitado_por.username if p.solicitado_por else "N/A",
                     p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
                     p.fecha_solicitud.strftime('%Y-%m-%d'),
                     p.dias_transcurridos,
                     p.dias_meta,
                     p.estatus_sla,
-                    p.etapa_operativa,
                     p.cantidad_vacantes,
                     p.plazas_cubiertas,
-                    cand.nombre_completo if cand else "Sin candidatos",
-                    p.ultima_observacion
+                    "SI" if p.cumplio_meta_bono else "NO"
                 ])
             return response
 
         elif export_type == 'csv_agencias':
+            datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
+            response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
             response['Content-Disposition'] = f'attachment; filename="scorecard_agencias_{timestamp_str}.csv"'
+            writer = csv.writer(response)
             writer.writerow([
                 'Marca', 'Agencia', 'Ciudad', 'Total Vacantes', 'Vacantes Activas',
-                'En Tiempo', 'Por Vencer', 'Vencidas', 'Cubiertas',
-                'Plazas Solicitadas', 'Plazas Cubiertas', '% Cumplimiento SLA',
-                'Días Promedio', '% Tasa Cobertura'
+                'En Tiempo', 'Vencidas', 'Cubiertas', 'Plazas Solicitadas', 'Plazas Cubiertas', '% Cumplimiento SLA'
             ])
             for ag in datos_reporte['agencias_scorecard']:
                 writer.writerow([
                     ag['marca'], ag['agencia'], ag['ciudad'], ag['total_vacantes'],
-                    ag['activas'], ag['en_tiempo'], ag['por_vencer'], ag['vencidas'],
-                    ag['cubiertas'], ag['plazas_solicitadas'], ag['plazas_cubiertas'],
-                    f"{ag['cumplimiento_sla']}%", ag['promedio_dias'], f"{ag['tasa_cobertura']}%"
+                    ag['activas'], ag['en_tiempo'], ag['vencidas'], ag['cubiertas'],
+                    ag['plazas_solicitadas'], ag['plazas_cubiertas'], f"{ag['cumplimiento_sla']}%"
                 ])
             return response
 
         elif export_type == 'csv_asesoras':
+            datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
+            response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
             response['Content-Disposition'] = f'attachment; filename="monitor_asesoras_{timestamp_str}.csv"'
+            writer = csv.writer(response)
             writer.writerow([
-                'Asesora', 'Email', 'Nivel de Carga', 'Vacantes Asignadas', 'Activas',
-                'En Tiempo', 'Por Vencer', 'Vencidas', 'Cubiertas',
-                'Plazas Solicitadas', 'Plazas Cubiertas', '% Efectividad',
-                '% Cumplimiento SLA', 'Días Promedio', 'Candidatos en Proceso'
+                'Asesora', 'Email', 'Vacantes Asignadas', 'Activas', 'Vencidas', 'Cubiertas',
+                'Meta Bono OK', 'Plazas Cubiertas', '% Conversión'
             ])
             for as_data in datos_reporte['asesoras_scorecard']:
                 writer.writerow([
-                    as_data['nombre'], as_data['email'], as_data['nivel_carga'],
-                    as_data['total_asignadas'], as_data['activas'], as_data['en_tiempo'],
-                    as_data['por_vencer'], as_data['vencidas'], as_data['cubiertas'],
-                    as_data['plazas_solicitadas'], as_data['plazas_cubiertas'],
-                    f"{as_data['efectividad']}%", f"{as_data['cumplimiento_sla']}%",
-                    as_data['promedio_dias'], as_data['candidatos_proceso_total']
+                    as_data['nombre'], as_data['email'], as_data['total_asignadas'], as_data['activas'],
+                    as_data['vencidas'], as_data['cubiertas'], as_data['bono_cumplido'],
+                    as_data['plazas_cubiertas'], f"{as_data['tasa_conversion']}%"
                 ])
             return response
 
-        elif export_type == 'csv_solicitantes':
-            response['Content-Disposition'] = f'attachment; filename="seguimiento_jefes_solicitantes_{timestamp_str}.csv"'
-            writer.writerow([
-                'Jefe Solicitante', 'Puesto del Jefe', 'Agencias', 'Total Requisiciones',
-                'Vacantes Activas', 'Candidatos Esperando Entrevista con Jefe', 'Cubiertas', 'Días Promedio'
-            ])
-            for s_data in datos_reporte['solicitantes_scorecard']:
-                writer.writerow([
-                    s_data['nombre'], s_data['puesto_jefe'], s_data['agencias_str'],
-                    s_data['total_requisiciones'], s_data['activas'],
-                    s_data['pendientes_entrevista_jefe'], s_data['cubiertas'],
-                    s_data['promedio_dias']
-                ])
-            return response
+    # Generar datos usando el service layer
+    datos_reporte = ReportesService.generate_reporte_data(request.user, filtros)
     
     # Implementar paginación para la sábana maestra
     puestos_paginados = datos_reporte['puestos']
@@ -328,11 +330,7 @@ def reportes_view(request):
         puestos_page = paginator.page(paginator.num_pages)
     
     # Pestaña activa por defecto o solicitada
-    active_tab = request.GET.get('tab', 'cockpit')
-    if filtros.get('agencia') and not request.GET.get('tab'):
-        active_tab = 'agencias'
-    elif filtros.get('asesora') and not request.GET.get('tab'):
-        active_tab = 'asesoras'
+    active_tab = request.GET.get('tab', 'semaforos')
 
     # Preparar contexto para el template
     contexto = {
@@ -348,37 +346,42 @@ def reportes_view(request):
         'por_vencer_count': datos_reporte['kpis']['por_vencer_count'],
         'en_tiempo_count': datos_reporte['kpis']['en_tiempo_count'],
         'total_cubiertas': datos_reporte['kpis']['total_cubiertas'],
+        'total_canceladas': datos_reporte['kpis']['total_canceladas'],
         'total_plazas_solicitadas': datos_reporte['kpis']['total_plazas_solicitadas'],
         'total_plazas_cubiertas': datos_reporte['kpis']['total_plazas_cubiertas'],
+        'total_plazas_pendientes': datos_reporte['kpis']['total_plazas_pendientes'],
         'cumplimiento_sla': datos_reporte['kpis']['cumplimiento_sla'],
         'promedio_dias_cobertura': datos_reporte['kpis']['promedio_dias_cobertura'],
-        'candidatos_esperando_jefe': datos_reporte['kpis'].get('candidatos_esperando_jefe', 0),
-        'indice_criticidad': datos_reporte['kpis'].get('indice_criticidad', 0.0),
-        'tasa_efectividad_plazas': datos_reporte['kpis'].get('tasa_efectividad_plazas', 0.0),
+        'candidatos_listos_ingreso': datos_reporte['kpis']['candidatos_listos_ingreso'],
+        'candidatos_en_proceso': datos_reporte['kpis']['candidatos_en_proceso'],
+        'candidatos_estancados': datos_reporte['kpis']['candidatos_estancados'],
 
-        # Scorecards por Agencia y por Usuario
+        # Semáforos visuales de control operativo
+        'vacantes_vencidas': datos_reporte['vacantes_vencidas'],
+        'puestos_mas_vacantes': datos_reporte['puestos_mas_vacantes'],
+        'vacantes_mayor_antiguedad': datos_reporte['vacantes_mayor_antiguedad'],
+
+        # Scorecards por Agencia y por Asesora
         'agencias_scorecard': datos_reporte['agencias_scorecard'],
         'asesoras_scorecard': datos_reporte['asesoras_scorecard'],
-        'solicitantes_scorecard': datos_reporte['solicitantes_scorecard'],
 
         # Filtros y Catálogos
         'marcas_disponibles': datos_reporte['catalogos']['marcas'],
+        'puestos_disponibles': datos_reporte['catalogos']['puestos'],
         'agencias_disponibles': datos_reporte['catalogos']['agencias'],
         'ciudades_disponibles': datos_reporte['catalogos']['ciudades'],
         'asesoras_disponibles': datos_reporte['catalogos']['asesoras'],
-        'etapas_disponibles': datos_reporte['chart_data']['etapas_disponibles'],
         'filtros_aplicados': datos_reporte['filtros_aplicados'],
 
         # Datos JSON para Chart.js
         'chart_embudo_labels_json': json.dumps(datos_reporte['chart_data']['embudo_labels']),
         'chart_embudo_data_json': json.dumps(datos_reporte['chart_data']['embudo_data']),
-        'chart_agencias_labels_json': json.dumps(datos_reporte['chart_data']['agencias_labels']),
-        'chart_agencias_en_tiempo_json': json.dumps(datos_reporte['chart_data']['agencias_en_tiempo']),
-        'chart_agencias_vencidas_json': json.dumps(datos_reporte['chart_data']['agencias_vencidas']),
         'chart_asesoras_labels_json': json.dumps(datos_reporte['chart_data']['asesoras_labels']),
         'chart_asesoras_activas_json': json.dumps(datos_reporte['chart_data']['asesoras_activas']),
         'chart_asesoras_cubiertas_json': json.dumps(datos_reporte['chart_data']['asesoras_cubiertas']),
     }
+    
+    return render(request, 'reclutamiento/reportes.html', contexto)
     return render(request, 'reclutamiento/reportes.html', contexto)
 
 

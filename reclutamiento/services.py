@@ -1,16 +1,70 @@
 """
-Service layer para lógica de negocio de reportes
-Separa la lógica de los views para mejor mantenibilidad y testabilidad
+Service layer para lógica de negocio de reportes de Reclutamiento y Selección.
+Esquema 100% Capital Humano: métricas operativas de vacantes, asesoras,
+semáforos visuales y 3 exportaciones directas en Excel (.xlsx con openpyxl).
 """
-from django.db.models import Count, Q, F
+import io
+import json
+from datetime import datetime
+from django.db.models import Count, Q, F, Sum
 from django.core.cache import cache
 from django.utils import timezone
-from datetime import timedelta
-import json
+from django.contrib.auth import get_user_model
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+# Constantes de Estilo Openpyxl Corporativo (Fiori / Horizon Inter)
+COLOR_SHELL = "1D2D3E"
+COLOR_ACCENT = "0070F2"
+COLOR_LIGHT_BG = "F5F6F8"
+COLOR_BORDER = "D9DDE3"
+COLOR_GREEN = "107E3E"
+COLOR_RED = "BB0000"
+
+FILL_HEADER = PatternFill(start_color=COLOR_SHELL, end_color=COLOR_SHELL, fill_type="solid")
+FILL_SUBHEADER = PatternFill(start_color=COLOR_ACCENT, end_color=COLOR_ACCENT, fill_type="solid")
+FILL_LIGHT = PatternFill(start_color=COLOR_LIGHT_BG, end_color=COLOR_LIGHT_BG, fill_type="solid")
+FILL_SUCCESS = PatternFill(start_color="E7F6EC", end_color="E7F6EC", fill_type="solid")
+FILL_WARNING = PatternFill(start_color="FFF4E5", end_color="FFF4E5", fill_type="solid")
+FILL_DANGER = PatternFill(start_color="FFEEF0", end_color="FFEEF0", fill_type="solid")
+
+FONT_HEADER = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+FONT_TITLE = Font(name="Calibri", size=14, bold=True, color=COLOR_SHELL)
+FONT_SUBTITLE = Font(name="Calibri", size=10, italic=True, color="59697A")
+FONT_SECTION = Font(name="Calibri", size=11, bold=True, color=COLOR_SHELL)
+FONT_BOLD = Font(name="Calibri", size=10, bold=True, color="1D2D3E")
+FONT_REGULAR = Font(name="Calibri", size=10, color="1D2D3E")
+FONT_GREEN_BOLD = Font(name="Calibri", size=10, bold=True, color=COLOR_GREEN)
+FONT_RED_BOLD = Font(name="Calibri", size=10, bold=True, color=COLOR_RED)
+
+BORDER_THIN = Border(
+    left=Side(style='thin', color=COLOR_BORDER),
+    right=Side(style='thin', color=COLOR_BORDER),
+    top=Side(style='thin', color=COLOR_BORDER),
+    bottom=Side(style='thin', color=COLOR_BORDER)
+)
+
+ALIGN_LEFT = Alignment(horizontal="left", vertical="center")
+ALIGN_CENTER = Alignment(horizontal="center", vertical="center")
+ALIGN_RIGHT = Alignment(horizontal="right", vertical="center")
+
+
+def _autofit_columns(ws, min_width=12, max_width=55):
+    """Ajusta automáticamente el ancho de las columnas de una hoja de cálculo"""
+    for col in ws.columns:
+        max_len = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            val = str(cell.value or '')
+            if '\n' in val:
+                val = max(val.split('\n'), key=len)
+            max_len = max(max_len, len(val))
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, min_width), max_width)
 
 
 class ReportesService:
-    """Servicio para manejar la lógica de reportes de reclutamiento"""
+    """Servicio para manejar la lógica de reportes de reclutamiento y exportación Excel"""
     
     CACHE_TIMEOUT = 60 * 15  # 15 minutos
     CACHE_KEY_PREFIX = 'reportes_'
@@ -62,6 +116,7 @@ class ReportesService:
         agencia_filtro = filtros.get('agencia', '').strip()
         ciudad_filtro = filtros.get('ciudad', '').strip()
         asesora_filtro = filtros.get('asesora', '').strip()
+        puesto_filtro = filtros.get('puesto', '').strip()
         
         if fecha_desde:
             queryset = queryset.filter(fecha_solicitud__date__gte=fecha_desde)
@@ -75,6 +130,11 @@ class ReportesService:
             queryset = queryset.filter(ciudad=ciudad_filtro)
         if asesora_filtro and asesora_filtro.isdigit():
             queryset = queryset.filter(asesora_encargada_id=int(asesora_filtro))
+        if puesto_filtro:
+            if puesto_filtro.isdigit():
+                queryset = queryset.filter(titulo_id=int(puesto_filtro))
+            else:
+                queryset = queryset.filter(titulo__nombre__icontains=puesto_filtro)
         
         return queryset
     
@@ -82,22 +142,17 @@ class ReportesService:
     def get_catalogos_optimizados(queryset):
         """
         Obtiene los catálogos para filtros de forma optimizada
-        Evita consultas duplicadas
         """
-        from .models import Marca
-        from django.contrib.auth.models import User
+        from .models import Marca, CatalogoPuesto
+        User = get_user_model()
         
-        # Marcas - usar distinct en lugar de values_list
-        marcas_disponibles = Marca.objects.filter(
-            id__in=queryset.values_list('marca_id', flat=True).distinct()
-        ).order_by('nombre')
+        marcas_disponibles = Marca.objects.all().order_by('nombre')
+        puestos_catalogo = CatalogoPuesto.objects.all().order_by('nombre')
         
-        # Agencias - usar set para eliminar duplicados en memoria
         agencias_disponibles = sorted(list(set(
             queryset.exclude(agencia__isnull=True).exclude(agencia='').values_list('agencia', flat=True)
         )))
         
-        # Ciudades - mapear códigos a nombres
         from .models import Puesto
         ciudades_codigos = sorted(list(set(
             queryset.exclude(ciudad__isnull=True).exclude(ciudad='').values_list('ciudad', flat=True)
@@ -107,14 +162,14 @@ class ReportesService:
             {'codigo': c, 'nombre': ciudades_map.get(c, c)} for c in ciudades_codigos
         ]
         
-        # Asesoras - solo las que tienen puestos asignados
+        # Asesoras de RH activas
         asesoras_disponibles = User.objects.filter(
-            id__in=queryset.filter(asesora_encargada__isnull=False)
-            .values_list('asesora_encargada_id', flat=True).distinct()
-        ).order_by('first_name', 'username')
+            Q(groups__name='Asesoras') | Q(puestos_asignados__isnull=False) | Q(is_staff=True)
+        ).distinct().order_by('first_name', 'username')
         
         return {
             'marcas': marcas_disponibles,
+            'puestos': puestos_catalogo,
             'agencias': agencias_disponibles,
             'ciudades': ciudades_disponibles,
             'asesoras': asesoras_disponibles
@@ -123,49 +178,63 @@ class ReportesService:
     @staticmethod
     def compute_kpis(puestos):
         """
-        Calcula los KPIs ejecutivos de forma optimizada
-        Args:
-            puestos: lista de objetos Puesto
-        Returns:
-            dict con los KPIs calculados
+        Calcula los KPIs ejecutivos de RH de forma optimizada y matemáticamente consistente.
         """
+        from .models import Puesto, Proceso
+        
         if not puestos:
             return ReportesService.get_empty_kpis()
         
         vacantes_activas = [p for p in puestos if p.esta_abierto]
         total_activas = len(vacantes_activas)
         
-        # Clasificar por SLA
-        vencidas = [p for p in vacantes_activas if p.estatus_sla == 'VENCIDA']
+        vencidas = [p for p in vacantes_activas if p.estatus_sla == 'VENCIDA' or p.dias_transcurridos > p.dias_meta]
         por_vencer = [p for p in vacantes_activas if p.estatus_sla == 'POR_VENCER']
-        en_tiempo = [p for p in vacantes_activas if p.estatus_sla == 'EN_TIEMPO']
+        en_tiempo = [p for p in vacantes_activas if p.estatus_sla == 'EN_TIEMPO' and p.dias_transcurridos <= p.dias_meta]
         
-        # Vacantes cubiertas
-        from .models import Puesto
         cubiertas = [p for p in puestos if not p.esta_abierto and p.estatus_autorizacion != Puesto.EstatusAutorizacion.RECHAZADO]
+        canceladas = [p for p in puestos if p.estatus_autorizacion == Puesto.EstatusAutorizacion.RECHAZADO]
         total_cubiertas = len(cubiertas)
+        total_canceladas = len(canceladas)
         
-        # Plazas
         total_plazas_solicitadas = sum(p.cantidad_vacantes for p in puestos)
         total_plazas_cubiertas = sum(p.plazas_cubiertas for p in puestos)
+        total_plazas_canceladas = sum(p.cantidad_vacantes for p in canceladas)
         
-        # SLA cumplimiento
+        # Cuadre matemático: Solicitadas - Cubiertas - Canceladas
+        total_plazas_pendientes = max(0, total_plazas_solicitadas - total_plazas_cubiertas - total_plazas_canceladas)
+        
         cumplimiento_sla = round(
             ((len(en_tiempo) + len(por_vencer)) / total_activas * 100), 1
         ) if total_activas > 0 else 100.0
         
-        # Promedio días cobertura
         tiempos = [p.dias_transcurridos for p in puestos]
         promedio_dias_cobertura = round(sum(tiempos) / len(tiempos), 1) if tiempos else 0
         
-        # Candidatos en espera de entrevista con jefe (Lead Time crítico de RH)
-        from .models import Proceso
-        candidatos_esperando_jefe = sum(
-            len([pr for pr in p.procesos.all() if pr.estatus_proceso == Proceso.Estatus.ENTREVISTA_JEFE])
-            for p in vacantes_activas
-        )
-        indice_criticidad = round((len(vencidas) / total_activas * 100), 1) if total_activas > 0 else 0.0
-        tasa_efectividad_plazas = round((total_plazas_cubiertas / total_plazas_solicitadas * 100), 1) if total_plazas_solicitadas > 0 else 0.0
+        # Pipeline de candidatos
+        etapas_listas_ingreso = [
+            Proceso.Estatus.MEDICO,
+            Proceso.Estatus.DOCS,
+            Proceso.Estatus.INGRESO_PROG,
+            Proceso.Estatus.ALTA_ADMIN,
+        ]
+        etapas_en_proceso = [
+            Proceso.Estatus.NUEVO,
+            Proceso.Estatus.CONTACTO,
+            Proceso.Estatus.PRUEBAS,
+            Proceso.Estatus.ENT_CH,
+            Proceso.Estatus.REF,
+            Proceso.Estatus.ENT_JF,
+            Proceso.Estatus.CONF_JF,
+        ]
+        
+        todos_procesos = []
+        for p in vacantes_activas:
+            todos_procesos.extend(p.procesos.all())
+            
+        candidatos_listos_ingreso = sum(1 for pr in todos_procesos if pr.estatus_proceso in etapas_listas_ingreso)
+        candidatos_en_proceso = sum(1 for pr in todos_procesos if pr.estatus_proceso in etapas_en_proceso)
+        candidatos_estancados = sum(1 for pr in todos_procesos if pr.dias_en_etapa_actual >= 30 and pr.estatus_proceso not in [Proceso.Estatus.CONTRATADO, Proceso.Estatus.DESCARTADO_CH, Proceso.Estatus.NO_PRUEBAS, Proceso.Estatus.ABANDONO])
 
         return {
             'total_vacantes': len(puestos),
@@ -174,13 +243,16 @@ class ReportesService:
             'por_vencer_count': len(por_vencer),
             'en_tiempo_count': len(en_tiempo),
             'total_cubiertas': total_cubiertas,
+            'total_canceladas': total_canceladas,
             'total_plazas_solicitadas': total_plazas_solicitadas,
             'total_plazas_cubiertas': total_plazas_cubiertas,
+            'total_plazas_canceladas': total_plazas_canceladas,
+            'total_plazas_pendientes': total_plazas_pendientes,
             'cumplimiento_sla': cumplimiento_sla,
             'promedio_dias_cobertura': promedio_dias_cobertura,
-            'candidatos_esperando_jefe': candidatos_esperando_jefe,
-            'indice_criticidad': indice_criticidad,
-            'tasa_efectividad_plazas': tasa_efectividad_plazas
+            'candidatos_listos_ingreso': candidatos_listos_ingreso,
+            'candidatos_en_proceso': candidatos_en_proceso,
+            'candidatos_estancados': candidatos_estancados,
         }
     
     @staticmethod
@@ -193,123 +265,71 @@ class ReportesService:
             'por_vencer_count': 0,
             'en_tiempo_count': 0,
             'total_cubiertas': 0,
+            'total_canceladas': 0,
             'total_plazas_solicitadas': 0,
             'total_plazas_cubiertas': 0,
+            'total_plazas_canceladas': 0,
+            'total_plazas_pendientes': 0,
             'cumplimiento_sla': 100.0,
             'promedio_dias_cobertura': 0,
-            'candidatos_esperando_jefe': 0,
-            'indice_criticidad': 0.0,
-            'tasa_efectividad_plazas': 0.0
+            'candidatos_listos_ingreso': 0,
+            'candidatos_en_proceso': 0,
+            'candidatos_estancados': 0,
         }
-    
+
     @staticmethod
     def prepare_chart_data(puestos):
-        """
-        Prepara los datos para los gráficos de Chart.js
-        Optimiza el cálculo de agregaciones
-        """
-        from .models import Puesto
-        
-        # Etapas operativas
+        """Prepara los datos para los gráficos de la suite analítica"""
         etapas_orden = [
-            '1. En Aprobación', '2. Por Asignar Asesora', '3. Por Definir Perfil',
-            '4. En Búsqueda', '5. En Filtros y Evaluaciones', '6. En Entrevista con Jefe Inmediato',
-            '7. En Trámites de Ingreso', '8. Cubierta / Cerrada'
+            '1. En Búsqueda', '2. Pruebas / Filtros', '3. Entrevista CH',
+            '4. Entrevista Jefe', '5. Trámites / Médico', '6. Cubierta / Cerrada'
         ]
-        conteo_etapas = {etapa: 0 for etapa in etapas_orden}
-        
+        conteo_etapas = {e: 0 for e in etapas_orden}
         for p in puestos:
-            etapa = p.etapa_operativa
-            if etapa in conteo_etapas:
-                conteo_etapas[etapa] += 1
-            elif 'Rechazada' in etapa:
-                conteo_etapas['8. Cubierta / Cerrada'] += 1
-        
-        # SLA por Agencia (Top 8)
-        vacantes_activas = [p for p in puestos if p.esta_abierto]
-        agencias_conteo = {}
-        
-        for p in vacantes_activas:
-            ag = p.agencia or "Sin Agencia"
-            if ag not in agencias_conteo:
-                agencias_conteo[ag] = {'en_tiempo': 0, 'vencida': 0}
-            if p.estatus_sla == 'VENCIDA':
-                agencias_conteo[ag]['vencida'] += 1
+            if not p.esta_abierto:
+                conteo_etapas['6. Cubierta / Cerrada'] += 1
             else:
-                agencias_conteo[ag]['en_tiempo'] += 1
-        
-        top_agencias = sorted(
-            agencias_conteo.items(), 
-            key=lambda x: (x[1]['en_tiempo'] + x[1]['vencida']), 
-            reverse=True
-        )[:8]
+                procs = list(p.procesos.all())
+                if not procs:
+                    conteo_etapas['1. En Búsqueda'] += 1
+                elif any(pr.estatus_proceso in ['MEDICO', 'DOCS', 'INGRESO_PROG', 'ALTA_ADMIN'] for pr in procs):
+                    conteo_etapas['5. Trámites / Médico'] += 1
+                elif any(pr.estatus_proceso in ['ENT_JF', 'CONF_JF'] for pr in procs):
+                    conteo_etapas['4. Entrevista Jefe'] += 1
+                elif any(pr.estatus_proceso in ['ENT_CH', 'REF'] for pr in procs):
+                    conteo_etapas['3. Entrevista CH'] += 1
+                else:
+                    conteo_etapas['2. Pruebas / Filtros'] += 1
         
         # Carga por Asesora
         asesoras_conteo = {}
         for p in puestos:
-            if p.asesora_encargada:
-                asesora_nom = p.asesora_encargada.get_full_name() or p.asesora_encargada.username
-            else:
-                asesora_nom = "Sin Asignar"
-                
-            if asesora_nom not in asesoras_conteo:
-                asesoras_conteo[asesora_nom] = {'activas': 0, 'cubiertas': 0}
+            nom = p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar"
+            if nom not in asesoras_conteo:
+                asesoras_conteo[nom] = {'activas': 0, 'cubiertas': 0}
             if p.esta_abierto:
-                asesoras_conteo[asesora_nom]['activas'] += 1
+                asesoras_conteo[nom]['activas'] += 1
             else:
-                asesoras_conteo[asesora_nom]['cubiertas'] += 1
-        
+                asesoras_conteo[nom]['cubiertas'] += 1
+
         top_asesoras = sorted(
             asesoras_conteo.items(), 
             key=lambda x: (x[1]['activas'] + x[1]['cubiertas']), 
             reverse=True
         )
-        
+
         return {
             'embudo_labels': list(conteo_etapas.keys()),
             'embudo_data': list(conteo_etapas.values()),
-            'agencias_labels': [item[0] for item in top_agencias],
-            'agencias_en_tiempo': [item[1]['en_tiempo'] for item in top_agencias],
-            'agencias_vencidas': [item[1]['vencida'] for item in top_agencias],
             'asesoras_labels': [item[0] for item in top_asesoras],
             'asesoras_activas': [item[1]['activas'] for item in top_asesoras],
             'asesoras_cubiertas': [item[1]['cubiertas'] for item in top_asesoras],
-            'etapas_disponibles': etapas_orden
         }
-    
-    @staticmethod
-    def apply_computed_filters(puestos, sla_filtro, etapa_filtro):
-        """
-        Aplica filtros que dependen de propiedades computadas
-        Estos filtros se aplican después de convertir a lista
-        """
-        if sla_filtro:
-            puestos = [p for p in puestos if p.estatus_sla == sla_filtro]
-        if etapa_filtro:
-            puestos = [p for p in puestos if p.etapa_operativa == etapa_filtro]
-        return puestos
-    
-    @staticmethod
-    def sort_puestos(puestos):
-        """
-        Ordena puestos según criterios de negocio
-        Prioridad: abiertas, vencidas, luego por fecha
-        """
-        def orden_puesto(p):
-            peso_sla = {
-                'VENCIDA': 0, 'POR_VENCER': 1, 'EN_TIEMPO': 2, 
-                'CUBIERTA': 3, 'CANCELADA': 4
-            }.get(p.estatus_sla, 5)
-            return (not p.esta_abierto, peso_sla, -p.fecha_solicitud.timestamp())
-        
-        return sorted(puestos, key=orden_puesto)
-    
+
     @staticmethod
     def compute_agencias_scorecard(puestos):
-        """
-        Genera la matriz analítica consolidada por Marca, Agencia y Ciudad.
-        Permite a la Dirección evaluar el desempeño y cumplimiento de SLAs por centro de trabajo.
-        """
+        """Genera matriz consolidada por Marca, Agencia y Ciudad."""
+        from .models import Proceso
         agencias_dict = {}
         for p in puestos:
             ag = (p.agencia or "Sin Agencia").strip()
@@ -325,49 +345,43 @@ class ReportesService:
                     'total_vacantes': 0,
                     'activas': 0,
                     'en_tiempo': 0,
-                    'por_vencer': 0,
                     'vencidas': 0,
                     'cubiertas': 0,
+                    'canceladas': 0,
                     'plazas_solicitadas': 0,
                     'plazas_cubiertas': 0,
-                    'dias_acumulados': 0,
-                    'vacantes_lista': []
+                    'plazas_canceladas': 0,
+                    'candidatos_listos': 0,
+                    'candidatos_proceso': 0,
                 }
             
             entry = agencias_dict[key]
             entry['total_vacantes'] += 1
             entry['plazas_solicitadas'] += p.cantidad_vacantes
             entry['plazas_cubiertas'] += p.plazas_cubiertas
-            entry['dias_acumulados'] += p.dias_transcurridos
             
             if p.esta_abierto:
                 entry['activas'] += 1
-                if p.estatus_sla == 'VENCIDA':
+                if p.estatus_sla == 'VENCIDA' or p.dias_transcurridos > p.dias_meta:
                     entry['vencidas'] += 1
-                elif p.estatus_sla == 'POR_VENCER':
-                    entry['por_vencer'] += 1
                 else:
                     entry['en_tiempo'] += 1
+                for pr in p.procesos.all():
+                    if pr.estatus_proceso in [Proceso.Estatus.MEDICO, Proceso.Estatus.DOCS, Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN]:
+                        entry['candidatos_listos'] += 1
+                    elif pr.estatus_proceso in [Proceso.Estatus.NUEVO, Proceso.Estatus.CONTACTO, Proceso.Estatus.PRUEBAS, Proceso.Estatus.ENT_CH, Proceso.Estatus.REF, Proceso.Estatus.ENT_JF, Proceso.Estatus.CONF_JF]:
+                        entry['candidatos_proceso'] += 1
             else:
-                entry['cubiertas'] += 1
-                
-            entry['vacantes_lista'].append({
-                'id': p.id,
-                'titulo': p.titulo.nombre if p.titulo else "N/A",
-                'etapa': p.etapa_operativa,
-                'sla': p.estatus_sla,
-                'dias': p.dias_transcurridos,
-                'meta': p.dias_meta,
-                'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar"
-            })
-            
+                if p.estatus_autorizacion == 'RECHAZADO':
+                    entry['canceladas'] += 1
+                    entry['plazas_canceladas'] += p.cantidad_vacantes
+                else:
+                    entry['cubiertas'] += 1
+                    
         scorecard = []
         for key, data in agencias_dict.items():
-            activas = data['activas']
-            cumplimiento = round(((data['en_tiempo'] + data['por_vencer']) / activas * 100), 1) if activas > 0 else 100.0
-            promedio_dias = round(data['dias_acumulados'] / data['total_vacantes'], 1) if data['total_vacantes'] > 0 else 0
-            tasa_cobertura = round((data['plazas_cubiertas'] / data['plazas_solicitadas'] * 100), 1) if data['plazas_solicitadas'] > 0 else 0.0
-            
+            plazas_pendientes = max(0, data['plazas_solicitadas'] - data['plazas_cubiertas'] - data['plazas_canceladas'])
+            cumplimiento = round((data['en_tiempo'] / data['activas'] * 100), 1) if data['activas'] > 0 else 100.0
             scorecard.append({
                 'marca': data['marca'],
                 'agencia': data['agencia'],
@@ -375,189 +389,140 @@ class ReportesService:
                 'total_vacantes': data['total_vacantes'],
                 'activas': data['activas'],
                 'en_tiempo': data['en_tiempo'],
-                'por_vencer': data['por_vencer'],
                 'vencidas': data['vencidas'],
                 'cubiertas': data['cubiertas'],
+                'canceladas': data['canceladas'],
                 'plazas_solicitadas': data['plazas_solicitadas'],
                 'plazas_cubiertas': data['plazas_cubiertas'],
+                'plazas_canceladas': data['plazas_canceladas'],
+                'plazas_pendientes': plazas_pendientes,
                 'cumplimiento_sla': cumplimiento,
-                'promedio_dias': promedio_dias,
-                'tasa_cobertura': tasa_cobertura,
-                'vacantes_lista': data['vacantes_lista']
+                'candidatos_listos': data['candidatos_listos'],
+                'candidatos_proceso': data['candidatos_proceso'],
             })
             
-        return sorted(scorecard, key=lambda x: (x['vencidas'], x['activas'], x['total_vacantes']), reverse=True)
+        return sorted(scorecard, key=lambda x: (x['vencidas'], x['activas']), reverse=True)
 
     @staticmethod
     def compute_asesoras_scorecard(puestos):
         """
-        Genera el monitor de desempeño, efectividad y carga de trabajo por Asesora/Reclutadora.
-        Evalúa el balance operativo y cumplimiento de SLAs individual.
+        Monitor de desempeño, auditoría de bono y desglose de embudo por Asesora de RH.
         """
+        from .models import Proceso
         asesoras_dict = {}
+        
         for p in puestos:
             if p.asesora_encargada:
-                asesora_id = p.asesora_encargada.id
+                a_id = p.asesora_encargada.id
                 nombre = p.asesora_encargada.get_full_name() or p.asesora_encargada.username
                 email = p.asesora_encargada.email or ""
             else:
-                asesora_id = 0
+                a_id = 0
                 nombre = "Sin Asignar"
                 email = ""
                 
-            if asesora_id not in asesoras_dict:
-                asesoras_dict[asesora_id] = {
-                    'asesora_id': asesora_id,
+            if a_id not in asesoras_dict:
+                asesoras_dict[a_id] = {
+                    'asesora_id': a_id,
                     'nombre': nombre,
                     'email': email,
                     'total_asignadas': 0,
                     'activas': 0,
-                    'en_tiempo': 0,
-                    'por_vencer': 0,
-                    'vencidas': 0,
                     'cubiertas': 0,
+                    'bono_cumplido': 0,
+                    'vencidas': 0,
+                    'reiniciadas': 0,
                     'plazas_solicitadas': 0,
                     'plazas_cubiertas': 0,
-                    'dias_acumulados': 0,
-                    'candidatos_proceso_total': 0,
-                    'vacantes_lista': []
+                    'integridad_aprobados': 0,
+                    'integridad_reprobados': 0,
+                    'pyxoom_aprobados': 0,
+                    'pyxoom_reprobados': 0,
+                    'descartados': 0,
+                    'enviados_jefe': 0,
+                    'confirmados_jefe': 0,
+                    'abandonos': 0,
+                    'contratados': 0,
+                    'total_candidatos': 0,
                 }
                 
-            entry = asesoras_dict[asesora_id]
+            entry = asesoras_dict[a_id]
             entry['total_asignadas'] += 1
             entry['plazas_solicitadas'] += p.cantidad_vacantes
             entry['plazas_cubiertas'] += p.plazas_cubiertas
-            entry['dias_acumulados'] += p.dias_transcurridos
-            entry['candidatos_proceso_total'] += len(p.procesos.all())
             
+            if p.cumplio_meta_bono:
+                entry['bono_cumplido'] += 1
+            if p.numero_reinicios > 0:
+                entry['reiniciadas'] += 1
+                
             if p.esta_abierto:
                 entry['activas'] += 1
-                if p.estatus_sla == 'VENCIDA':
+                if p.estatus_sla == 'VENCIDA' or p.dias_transcurridos > p.dias_meta:
                     entry['vencidas'] += 1
-                elif p.estatus_sla == 'POR_VENCER':
-                    entry['por_vencer'] += 1
-                else:
-                    entry['en_tiempo'] += 1
             else:
                 entry['cubiertas'] += 1
                 
-            entry['vacantes_lista'].append({
-                'id': p.id,
-                'titulo': p.titulo.nombre if p.titulo else "N/A",
-                'marca': p.marca.nombre if p.marca else "N/A",
-                'agencia': p.agencia,
-                'etapa': p.etapa_operativa,
-                'sla': p.estatus_sla,
-                'dias': p.dias_transcurridos,
-                'meta': p.dias_meta
-            })
-            
+            for pr in p.procesos.all():
+                entry['total_candidatos'] += 1
+                if pr.resultado_integridad == Proceso.ResultadoIntegridad.APROBADO:
+                    entry['integridad_aprobados'] += 1
+                elif pr.resultado_integridad == Proceso.ResultadoIntegridad.NO_APROBADO:
+                    entry['integridad_reprobados'] += 1
+                    
+                if pr.resultado_pyxoom in [Proceso.ResultadoPyxoom.OPTIMO, Proceso.ResultadoPyxoom.IDEAL]:
+                    entry['pyxoom_aprobados'] += 1
+                elif pr.resultado_pyxoom in [Proceso.ResultadoPyxoom.REPROBADO, Proceso.ResultadoPyxoom.BAJO]:
+                    entry['pyxoom_reprobados'] += 1
+                    
+                if pr.estatus_proceso == Proceso.Estatus.DESCARTADO_CH:
+                    entry['descartados'] += 1
+                elif pr.estatus_proceso in [Proceso.Estatus.ENT_JF, Proceso.Estatus.CONF_JF, Proceso.Estatus.MEDICO, Proceso.Estatus.DOCS, Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN, Proceso.Estatus.CONTRATADO]:
+                    entry['enviados_jefe'] += 1
+                if pr.estatus_proceso in [Proceso.Estatus.CONF_JF, Proceso.Estatus.MEDICO, Proceso.Estatus.DOCS, Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN, Proceso.Estatus.CONTRATADO]:
+                    entry['confirmados_jefe'] += 1
+                if pr.estatus_proceso == Proceso.Estatus.ABANDONO:
+                    entry['abandonos'] += 1
+                if pr.estatus_proceso == Proceso.Estatus.CONTRATADO:
+                    entry['contratados'] += 1
+
         scorecard = []
         for a_id, data in asesoras_dict.items():
-            activas = data['activas']
-            cumplimiento = round(((data['en_tiempo'] + data['por_vencer']) / activas * 100), 1) if activas > 0 else 100.0
-            efectividad = round((data['plazas_cubiertas'] / data['plazas_solicitadas'] * 100), 1) if data['plazas_solicitadas'] > 0 else 0.0
-            promedio_dias = round(data['dias_acumulados'] / data['total_asignadas'], 1) if data['total_asignadas'] > 0 else 0
+            tot = data['total_candidatos']
+            conversion = round((data['contratados'] / tot * 100), 1) if tot > 0 else 0.0
+            bono_pct = round((data['bono_cumplido'] / data['total_asignadas'] * 100), 1) if data['total_asignadas'] > 0 else 0.0
             
-            # Nivel de saturación de capacidad
-            if activas <= 3:
-                nivel_carga = 'BAJA'
-                nivel_color = '#10b981'
-            elif activas <= 7:
-                nivel_carga = 'EQUILIBRADA'
-                nivel_color = '#3b82f6'
-            else:
-                nivel_carga = 'SOBRECARGA'
-                nivel_color = '#ef4444'
-                
             scorecard.append({
                 'asesora_id': data['asesora_id'],
                 'nombre': data['nombre'],
                 'email': data['email'],
                 'total_asignadas': data['total_asignadas'],
                 'activas': data['activas'],
-                'en_tiempo': data['en_tiempo'],
-                'por_vencer': data['por_vencer'],
-                'vencidas': data['vencidas'],
                 'cubiertas': data['cubiertas'],
+                'bono_cumplido': data['bono_cumplido'],
+                'bono_pct': bono_pct,
+                'vencidas': data['vencidas'],
+                'reiniciadas': data['reiniciadas'],
                 'plazas_solicitadas': data['plazas_solicitadas'],
                 'plazas_cubiertas': data['plazas_cubiertas'],
-                'cumplimiento_sla': cumplimiento,
-                'efectividad': efectividad,
-                'promedio_dias': promedio_dias,
-                'candidatos_proceso_total': data['candidatos_proceso_total'],
-                'nivel_carga': nivel_carga,
-                'nivel_color': nivel_color,
-                'vacantes_lista': data['vacantes_lista']
+                'integridad_aprobados': data['integridad_aprobados'],
+                'integridad_reprobados': data['integridad_reprobados'],
+                'pyxoom_aprobados': data['pyxoom_aprobados'],
+                'pyxoom_reprobados': data['pyxoom_reprobados'],
+                'descartados': data['descartados'],
+                'enviados_jefe': data['enviados_jefe'],
+                'confirmados_jefe': data['confirmados_jefe'],
+                'abandonos': data['abandonos'],
+                'contratados': data['contratados'],
+                'total_candidatos': data['total_candidatos'],
+                'tasa_conversion': conversion,
             })
             
-        return sorted(scorecard, key=lambda x: (x['activas'], x['vencidas']), reverse=True)
-
-    @staticmethod
-    def compute_solicitantes_scorecard(puestos):
-        """
-        Monitorea a los Gerentes Operativos y Jefes Solicitantes.
-        Identifica cuellos de botella por demoras en entrevistas técnicas con jefe.
-        """
-        from .models import Proceso
-        solicitantes_dict = {}
-        for p in puestos:
-            if p.solicitado_por:
-                s_id = p.solicitado_por.id
-                nombre = p.solicitado_por.get_full_name() or p.solicitado_por.username
-            else:
-                s_id = 0
-                nombre = p.nombre_jefe_inmediato or "Sin Registro"
-                
-            if s_id not in solicitantes_dict:
-                solicitantes_dict[s_id] = {
-                    'solicitante_id': s_id,
-                    'nombre': nombre,
-                    'puesto_jefe': p.puesto_jefe_inmediato or "Gerente",
-                    'agencias': set(),
-                    'total_requisiciones': 0,
-                    'activas': 0,
-                    'pendientes_entrevista_jefe': 0,
-                    'cubiertas': 0,
-                    'dias_acumulados': 0
-                }
-                
-            entry = solicitantes_dict[s_id]
-            entry['total_requisiciones'] += 1
-            if p.agencia:
-                entry['agencias'].add(p.agencia)
-            entry['dias_acumulados'] += p.dias_transcurridos
-            
-            if p.esta_abierto:
-                entry['activas'] += 1
-                procesos_ent_jf = [proc for proc in p.procesos.all() if proc.estatus_proceso == Proceso.Estatus.ENTREVISTA_JEFE]
-                entry['pendientes_entrevista_jefe'] += len(procesos_ent_jf)
-            else:
-                entry['cubiertas'] += 1
-                
-        scorecard = []
-        for s_id, data in solicitantes_dict.items():
-            promedio_dias = round(data['dias_acumulados'] / data['total_requisiciones'], 1) if data['total_requisiciones'] > 0 else 0
-            scorecard.append({
-                'solicitante_id': data['solicitante_id'],
-                'nombre': data['nombre'],
-                'puesto_jefe': data['puesto_jefe'],
-                'agencias_str': ", ".join(sorted(data['agencias'])) if data['agencias'] else "N/A",
-                'total_requisiciones': data['total_requisiciones'],
-                'activas': data['activas'],
-                'pendientes_entrevista_jefe': data['pendientes_entrevista_jefe'],
-                'cubiertas': data['cubiertas'],
-                'promedio_dias': promedio_dias
-            })
-            
-        return sorted(scorecard, key=lambda x: (x['pendientes_entrevista_jefe'], x['activas']), reverse=True)
+        return sorted(scorecard, key=lambda x: (x['bono_cumplido'], x['cubiertas']), reverse=True)
 
     @staticmethod
     def generate_reporte_data(usuario, filtros, use_cache=True):
-        """
-        Genera todos los datos necesarios para el reporte
-        Implementa caché para mejorar rendimiento
-        """
+        """Genera los datos consolidados y semáforos de reporte de RH"""
         cache_key = ReportesService.get_cache_key(usuario.id, filtros)
         
         if use_cache:
@@ -565,66 +530,654 @@ class ReportesService:
             if cached_data:
                 return cached_data
         
-        # Obtener queryset base con optimizaciones
         queryset = ReportesService.get_base_queryset(usuario)
-        
-        # Aplicar filtros de base de datos
         queryset = ReportesService.apply_filters(queryset, filtros)
+        queryset = queryset.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos', 'procesos__candidato')
         
-        # Optimizar queries con select_related y prefetch_related
-        queryset = queryset.select_related(
-            'titulo', 'marca', 'solicitado_por', 'asesora_encargada', 'perfil_detallado'
-        ).prefetch_related('procesos', 'procesos__candidato')
-        
-        # Convertir a lista para filtros computados
         lista_puestos = list(queryset)
         
-        # Aplicar filtros computados
-        sla_filtro = filtros.get('sla', '').strip()
-        etapa_filtro = filtros.get('etapa', '').strip()
-        lista_puestos = ReportesService.apply_computed_filters(
-            lista_puestos, sla_filtro, etapa_filtro
-        )
-        
-        # Ordenar resultados
-        lista_puestos = ReportesService.sort_puestos(lista_puestos)
-        
-        # Calcular KPIs
         kpis = ReportesService.compute_kpis(lista_puestos)
-        
-        # Preparar datos para gráficos
         chart_data = ReportesService.prepare_chart_data(lista_puestos)
-        
-        # Obtener catálogos
-        catálogos = ReportesService.get_catalogos_optimizados(queryset)
-
-        # Generar Scorecards por Agencia, por Asesora y por Solicitante
+        catalogos = ReportesService.get_catalogos_optimizados(queryset)
         agencias_scorecard = ReportesService.compute_agencias_scorecard(lista_puestos)
         asesoras_scorecard = ReportesService.compute_asesoras_scorecard(lista_puestos)
-        solicitantes_scorecard = ReportesService.compute_solicitantes_scorecard(lista_puestos)
+        
+        # 1. Semáforo: Vacantes Vencidas
+        vacantes_vencidas = [
+            p for p in lista_puestos
+            if p.esta_abierto and (p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA')
+        ]
+        vacantes_vencidas.sort(key=lambda x: (x.dias_transcurridos - x.dias_meta), reverse=True)
+        
+        # 2. Semáforo: Puestos con Más Vacantes (Top ranking)
+        puestos_conteo = {}
+        for p in lista_puestos:
+            nom = p.titulo.nombre if p.titulo else "Sin título"
+            if nom not in puestos_conteo:
+                puestos_conteo[nom] = {
+                    'nombre': nom,
+                    'total_vacantes': 0,
+                    'activas': 0,
+                    'cubiertas': 0,
+                    'plazas_solicitadas': 0,
+                    'plazas_cubiertas': 0
+                }
+            puestos_conteo[nom]['total_vacantes'] += 1
+            puestos_conteo[nom]['plazas_solicitadas'] += p.cantidad_vacantes
+            puestos_conteo[nom]['plazas_cubiertas'] += p.plazas_cubiertas
+            if p.esta_abierto:
+                puestos_conteo[nom]['activas'] += 1
+            else:
+                puestos_conteo[nom]['cubiertas'] += 1
+
+        puestos_mas_vacantes = sorted(
+            puestos_conteo.values(),
+            key=lambda x: (x['total_vacantes'], x['plazas_solicitadas']),
+            reverse=True
+        )[:8]
+
+        # 3. Semáforo: Vacantes con Mayor Antigüedad (Abiertas)
+        vacantes_mayor_antiguedad = sorted(
+            [p for p in lista_puestos if p.esta_abierto],
+            key=lambda x: x.dias_transcurridos,
+            reverse=True
+        )[:8]
         
         resultado = {
             'puestos': lista_puestos,
             'kpis': kpis,
             'chart_data': chart_data,
-            'catalogos': catálogos,
+            'catalogos': catalogos,
             'agencias_scorecard': agencias_scorecard,
             'asesoras_scorecard': asesoras_scorecard,
-            'solicitantes_scorecard': solicitantes_scorecard,
+            'vacantes_vencidas': vacantes_vencidas,
+            'puestos_mas_vacantes': puestos_mas_vacantes,
+            'vacantes_mayor_antiguedad': vacantes_mayor_antiguedad,
             'filtros_aplicados': filtros
         }
         
-        # Guardar en caché
         if use_cache:
             cache.set(cache_key, resultado, ReportesService.CACHE_TIMEOUT)
-        
+            
         return resultado
-    
+
     @staticmethod
     def invalidate_user_cache(usuario_id=None):
-        """Invalida la caché de reportes incrementando la versión sin borrar toda la memoria del sistema"""
+        """Invalida la caché de reportes"""
         try:
             cache.incr('reportes_cache_version')
         except (ValueError, Exception):
             v = (cache.get('reportes_cache_version') or 1) + 1
             cache.set('reportes_cache_version', v, None)
+
+    # =========================================================================
+    # EXPORTACIÓN 1: Resumen Ejecutivo por Periodo (.xlsx)
+    # =========================================================================
+    @staticmethod
+    def generar_excel_resumen_ejecutivo(filtros, usuario):
+        """
+        Genera el Reporte 1 — Resumen Ejecutivo por Periodo (.xlsx)
+        Hoja 1: Balance de requisiciones, ingresos, pendientes cuadradas matemáticamente y pipeline.
+        Hoja 2: Desglose consolidado por agencia y puesto.
+        """
+        from .models import Puesto, Proceso
+        
+        # Filtros de fecha
+        fecha_desde_str = filtros.get('fecha_desde', '').strip()
+        fecha_hasta_str = filtros.get('fecha_hasta', '').strip()
+        
+        qs_base = ReportesService.get_base_queryset(usuario)
+        
+        # Puestos acumulados (hasta fecha_hasta si se especifica)
+        qs_acum = qs_base
+        if fecha_hasta_str:
+            qs_acum = qs_acum.filter(fecha_solicitud__date__lte=fecha_hasta_str)
+            
+        # Puestos en el periodo
+        qs_periodo = qs_base
+        if fecha_desde_str:
+            qs_periodo = qs_periodo.filter(fecha_solicitud__date__gte=fecha_desde_str)
+        if fecha_hasta_str:
+            qs_periodo = qs_periodo.filter(fecha_solicitud__date__lte=fecha_hasta_str)
+            
+        puestos_periodo = list(qs_periodo.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos'))
+        puestos_acum = list(qs_acum.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos'))
+        
+        wb = openpyxl.Workbook()
+        
+        # ---------------------------------------------------------------------
+        # HOJA 1: RESUMEN EJECUTIVO
+        # ---------------------------------------------------------------------
+        ws1 = wb.active
+        ws1.title = "Resumen Ejecutivo"
+        ws1.views.sheetView[0].showGridLines = True
+        
+        # Banner de Título
+        ws1.append(["PREMIER AUTOMOTRIZ — GESTIÓN DE TALENTO HUMANO"])
+        ws1.append(["REPORTE 1: RESUMEN EJECUTIVO DE VACANTES Y COBERTURA POR PERIODO"])
+        rango_str = f"Periodo: {fecha_desde_str or 'Histórico'} al {fecha_hasta_str or timezone.now().strftime('%Y-%m-%d')} | Fecha emisión: {timezone.now().strftime('%d/%m/%Y %H:%M')}"
+        ws1.append([rango_str])
+        ws1.append([])
+        
+        ws1["A1"].font = FONT_TITLE
+        ws1["A2"].font = FONT_SECTION
+        ws1["A3"].font = FONT_SUBTITLE
+        
+        # Métricas de Vacantes Matemáticamente Cuadradas
+        req_p = len(puestos_periodo)
+        req_a = len(puestos_acum)
+        
+        plazas_sol_p = sum(p.cantidad_vacantes for p in puestos_periodo)
+        plazas_sol_a = sum(p.cantidad_vacantes for p in puestos_acum)
+        
+        ingresos_p = sum(p.plazas_cubiertas for p in puestos_periodo)
+        ingresos_a = sum(p.plazas_cubiertas for p in puestos_acum)
+        
+        canc_puestos_p = [p for p in puestos_periodo if p.estatus_autorizacion == 'RECHAZADO']
+        canc_puestos_a = [p for p in puestos_acum if p.estatus_autorizacion == 'RECHAZADO']
+        canc_plazas_p = sum(p.cantidad_vacantes for p in canc_puestos_p)
+        canc_plazas_a = sum(p.cantidad_vacantes for p in canc_puestos_a)
+        
+        # Cuadre matemático: Pendientes = Solicitadas - Cubiertas - Canceladas
+        pend_plazas_p = max(0, plazas_sol_p - ingresos_p - canc_plazas_p)
+        pend_plazas_a = max(0, plazas_sol_a - ingresos_a - canc_plazas_a)
+        
+        vencidas_p = sum(1 for p in puestos_periodo if p.esta_abierto and (p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA'))
+        vencidas_a = sum(1 for p in puestos_acum if p.esta_abierto and (p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA'))
+        
+        activas_p = sum(1 for p in puestos_periodo if p.esta_abierto)
+        activas_a = sum(1 for p in puestos_acum if p.esta_abierto)
+        
+        cumpl_p = round(((activas_p - vencidas_p) / activas_p * 100), 1) if activas_p > 0 else 100.0
+        cumpl_a = round(((activas_a - vencidas_a) / activas_a * 100), 1) if activas_a > 0 else 100.0
+        
+        ws1.append(["BALANCE GENERAL DE VACANTES Y PLAZAS", "EN EL PERIODO", "ACUMULADO HISTÓRICO", "REGLA DE CONTROL"])
+        row_header_idx = ws1.max_row
+        for col_i in range(1, 5):
+            c = ws1.cell(row=row_header_idx, column=col_i)
+            c.fill = FILL_HEADER
+            c.font = FONT_HEADER
+            c.alignment = ALIGN_CENTER if col_i in [2, 3] else ALIGN_LEFT
+            c.border = BORDER_THIN
+            
+        data_balance = [
+            ("1. Requisiciones Recibidas (Vacantes)", req_p, req_a, "Total de solicitudes capturadas por RH"),
+            ("2. Plazas Solicitadas Totales", plazas_sol_p, plazas_sol_a, "Total de plazas autorizadas requeridas"),
+            ("3. Ingresos / Plazas Cubiertas", ingresos_p, ingresos_a, "Candidatos contratados que cerraron plaza"),
+            ("4. Requisiciones / Plazas Canceladas", canc_plazas_p, canc_plazas_a, "Vacantes rechazadas o suspendidas"),
+            ("5. VACANTES PENDIENTES REALES", pend_plazas_p, pend_plazas_a, "CUADRE EXACTO: Solicitadas - Cubiertas - Canceladas"),
+            ("6. Vacantes Abiertas Vencidas (SLA)", vencidas_p, vencidas_a, "Vacantes activas con días transcurridos > meta"),
+            ("7. Porcentaje Cumplimiento SLA", f"{cumpl_p}%", f"{cumpl_a}%", "% de vacantes abiertas en tiempo"),
+        ]
+        
+        for titulo, vp, va, regla in data_balance:
+            ws1.append([titulo, vp, va, regla])
+            r = ws1.max_row
+            is_highlight = "VACANTES PENDIENTES" in titulo
+            for c_idx in range(1, 5):
+                cell = ws1.cell(row=r, column=c_idx)
+                cell.border = BORDER_THIN
+                if is_highlight:
+                    cell.fill = FILL_LIGHT
+                    cell.font = FONT_BOLD
+                else:
+                    cell.font = FONT_REGULAR
+                if c_idx in [2, 3]:
+                    cell.alignment = ALIGN_CENTER
+                    if is_highlight:
+                        cell.font = FONT_GREEN_BOLD
+                else:
+                    cell.alignment = ALIGN_LEFT
+                    
+        ws1.append([])
+        ws1.append([])
+        
+        # Tabla 2: Pipeline de Candidatos en Gestión
+        ws1.append(["PIPELINE DE TALENTO EN GESTIÓN DIRECTA RH", "CANDIDATOS ACTIVOS", "ETAPAS INVOLUCRADAS"])
+        row_pipe_header = ws1.max_row
+        for col_i in range(1, 4):
+            c = ws1.cell(row=row_pipe_header, column=col_i)
+            c.fill = FILL_SUBHEADER
+            c.font = FONT_HEADER
+            c.alignment = ALIGN_CENTER if col_i == 2 else ALIGN_LEFT
+            c.border = BORDER_THIN
+            
+        procs_activos = []
+        for p in puestos_acum:
+            if p.esta_abierto:
+                procs_activos.extend(p.procesos.all())
+                
+        listos_ingreso = sum(1 for pr in procs_activos if pr.estatus_proceso in ['MEDICO', 'DOCS', 'INGRESO_PROG', 'ALTA_ADMIN'])
+        en_evaluacion = sum(1 for pr in procs_activos if pr.estatus_proceso in ['NUEVO', 'CONTACTO', 'PRUEBAS', 'ENT_CH', 'REF', 'ENT_JF', 'CONF_JF'])
+        estancados_30 = sum(1 for pr in procs_activos if pr.dias_en_etapa_actual >= 30 and pr.estatus_proceso not in ['CONTRATADO', 'DESCARTADO_CH', 'NO_PRUEBAS', 'ABANDONO'])
+        total_pipeline = listos_ingreso + en_evaluacion
+        
+        pipeline_rows = [
+            ("Candidatos Listos para Ingreso", listos_ingreso, "Examen Médico, Documentación, Inducción UP, Alta Admin"),
+            ("Candidatos en Proceso Activo", en_evaluacion, "Filtro inicial, Pruebas Integridad/Pyxoom, Entrevistas CH y Jefe"),
+            ("TOTAL CANDIDATOS EN GESTIÓN", total_pipeline, "Suma de aspirantes en cartera operativa"),
+            ("Alerta: Detenidos +30 Días", estancados_30, "Candidatos sin movimiento de etapa en más de un mes"),
+        ]
+        
+        for nombre_p, cant, desc in pipeline_rows:
+            ws1.append([nombre_p, cant, desc])
+            r = ws1.max_row
+            is_danger = "Detenidos +30" in nombre_p
+            for c_idx in range(1, 4):
+                cell = ws1.cell(row=r, column=c_idx)
+                cell.border = BORDER_THIN
+                if is_danger:
+                    cell.fill = FILL_DANGER
+                    cell.font = FONT_RED_BOLD
+                elif "TOTAL" in nombre_p:
+                    cell.fill = FILL_LIGHT
+                    cell.font = FONT_BOLD
+                else:
+                    cell.font = FONT_REGULAR
+                if c_idx == 2:
+                    cell.alignment = ALIGN_CENTER
+                else:
+                    cell.alignment = ALIGN_LEFT
+                    
+        _autofit_columns(ws1)
+        
+        # ---------------------------------------------------------------------
+        # HOJA 2: DESGLOSE POR AGENCIA Y PUESTO
+        # ---------------------------------------------------------------------
+        ws2 = wb.create_sheet(title="Desglose Agencia y Puesto")
+        ws2.views.sheetView[0].showGridLines = True
+        
+        ws2.append(["DESGLOSE ANALÍTICO DE VACANTES POR AGENCIA Y PUESTO"])
+        ws2.append([rango_str])
+        ws2.append([])
+        ws2["A1"].font = FONT_TITLE
+        ws2["A2"].font = FONT_SUBTITLE
+        
+        headers_ws2 = [
+            "Marca", "Agencia", "Ciudad", "Puesto Solicitado",
+            "Req. Periodo", "Req. Acumuladas", "Plazas Solicitadas",
+            "Plazas Cubiertas", "Plazas Canceladas", "Plazas Pendientes",
+            "Vacantes Vencidas", "Listos Ingreso", "En Proceso", "% Cobertura"
+        ]
+        ws2.append(headers_ws2)
+        r_h2 = ws2.max_row
+        for c_i, h in enumerate(headers_ws2, 1):
+            cell = ws2.cell(row=r_h2, column=c_i)
+            cell.fill = FILL_HEADER
+            cell.font = FONT_HEADER
+            cell.alignment = ALIGN_CENTER if c_i >= 5 else ALIGN_LEFT
+            cell.border = BORDER_THIN
+            
+        # Agrupar puestos por (marca, agencia, ciudad, titulo)
+        desglose_dict = {}
+        for p in puestos_acum:
+            marca = p.marca.nombre if p.marca else "Sin Marca"
+            agencia = p.agencia or "Sin Agencia"
+            ciudad = p.get_ciudad_display() if p.ciudad else "N/A"
+            puesto_nom = p.titulo.nombre if p.titulo else "Sin Título"
+            key = (marca, agencia, ciudad, puesto_nom)
+            
+            if key not in desglose_dict:
+                desglose_dict[key] = {
+                    'marca': marca, 'agencia': agencia, 'ciudad': ciudad, 'puesto': puesto_nom,
+                    'req_periodo': 0, 'req_acum': 0,
+                    'solicitadas': 0, 'cubiertas': 0, 'canceladas': 0,
+                    'vencidas': 0, 'listos_ingreso': 0, 'en_proceso': 0
+                }
+            entry = desglose_dict[key]
+            entry['req_acum'] += 1
+            entry['solicitadas'] += p.cantidad_vacantes
+            entry['cubiertas'] += p.plazas_cubiertas
+            
+            if p in puestos_periodo:
+                entry['req_periodo'] += 1
+            if p.estatus_autorizacion == 'RECHAZADO':
+                entry['canceladas'] += p.cantidad_vacantes
+            if p.esta_abierto:
+                if p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA':
+                    entry['vencidas'] += 1
+                for pr in p.procesos.all():
+                    if pr.estatus_proceso in ['MEDICO', 'DOCS', 'INGRESO_PROG', 'ALTA_ADMIN']:
+                        entry['listos_ingreso'] += 1
+                    elif pr.estatus_proceso in ['NUEVO', 'CONTACTO', 'PRUEBAS', 'ENT_CH', 'REF', 'ENT_JF', 'CONF_JF']:
+                        entry['en_proceso'] += 1
+
+        for key, data in sorted(desglose_dict.items(), key=lambda x: (x[1]['agencia'], x[1]['puesto'])):
+            pendientes = max(0, data['solicitadas'] - data['cubiertas'] - data['canceladas'])
+            cob = round((data['cubiertas'] / data['solicitadas'] * 100), 1) if data['solicitadas'] > 0 else 0.0
+            
+            ws2.append([
+                data['marca'], data['agencia'], data['ciudad'], data['puesto'],
+                data['req_periodo'], data['req_acum'], data['solicitadas'],
+                data['cubiertas'], data['canceladas'], pendientes,
+                data['vencidas'], data['listos_ingreso'], data['en_proceso'], f"{cob}%"
+            ])
+            r = ws2.max_row
+            for c_i in range(1, 15):
+                cell = ws2.cell(row=r, column=c_i)
+                cell.border = BORDER_THIN
+                cell.font = FONT_REGULAR
+                if c_i >= 5:
+                    cell.alignment = ALIGN_CENTER
+                else:
+                    cell.alignment = ALIGN_LEFT
+                    
+        _autofit_columns(ws2)
+        
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return buf
+
+    # =========================================================================
+    # EXPORTACIÓN 2: Auditoría y Bono por Asesora (.xlsx)
+    # =========================================================================
+    @staticmethod
+    def generar_excel_auditoria_bono(filtros, usuario):
+        """
+        Genera el Reporte 2 — Auditoría y Bono por Asesora (.xlsx)
+        Hoja 1: Indicadores individuales de bono, SLA y desglose de embudo.
+        Hoja 2: Detalle de cada vacante y cumplimiento de criterio de bono.
+        """
+        queryset = ReportesService.get_base_queryset(usuario)
+        queryset = ReportesService.apply_filters(queryset, filtros)
+        puestos = list(queryset.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos'))
+        
+        scorecard_asesoras = ReportesService.compute_asesoras_scorecard(puestos)
+        
+        wb = openpyxl.Workbook()
+        
+        # ---------------------------------------------------------------------
+        # HOJA 1: RESUMEN Y BONO POR ASESORA
+        # ---------------------------------------------------------------------
+        ws1 = wb.active
+        ws1.title = "Auditoría y Bono Asesoras"
+        ws1.views.sheetView[0].showGridLines = True
+        
+        ws1.append(["PREMIER AUTOMOTRIZ — GESTIÓN DE TALENTO HUMANO"])
+        ws1.append(["REPORTE 2: AUDITORÍA DE PRODUCTIVIDAD Y CUMPLIMIENTO DE BONO POR ASESORA"])
+        ws1.append(["Regla de Bono: Cubrir plazas en tiempo SLA o Enviar >= 3 candidatos a entrevista con jefe dentro del plazo"])
+        ws1.append([])
+        ws1["A1"].font = FONT_TITLE
+        ws1["A2"].font = FONT_SECTION
+        ws1["A3"].font = FONT_SUBTITLE
+        
+        headers_ws1 = [
+            "Asesora de Capital Humano", "Correo Electrónico",
+            "Vacantes Asignadas", "Vacantes Cubiertas", "Vacantes Bono OK",
+            "Vacantes Vencidas", "Vacantes Reiniciadas", "Plazas Cubiertas",
+            "Integridad Aprobados", "Integridad No Aprobados",
+            "Pyxoom Aprobados", "Pyxoom No Aprobados",
+            "Descartados CH", "Enviados a Jefe", "Confirmados Jefe",
+            "Abandonos", "Contratados", "Total Candidatos",
+            "% Conversión", "% Cumplimiento Bono"
+        ]
+        ws1.append(headers_ws1)
+        r_h1 = ws1.max_row
+        for c_i, h in enumerate(headers_ws1, 1):
+            cell = ws1.cell(row=r_h1, column=c_i)
+            cell.fill = FILL_HEADER
+            cell.font = FONT_HEADER
+            cell.alignment = ALIGN_CENTER if c_i >= 3 else ALIGN_LEFT
+            cell.border = BORDER_THIN
+            
+        for a in scorecard_asesoras:
+            ws1.append([
+                a['nombre'], a['email'],
+                a['total_asignadas'], a['cubiertas'], a['bono_cumplido'],
+                a['vencidas'], a['reiniciadas'], a['plazas_cubiertas'],
+                a['integridad_aprobados'], a['integridad_reprobados'],
+                a['pyxoom_aprobados'], a['pyxoom_reprobados'],
+                a['descartados'], a['enviados_jefe'], a['confirmados_jefe'],
+                a['abandonos'], a['contratados'], a['total_candidatos'],
+                f"{a['tasa_conversion']}%", f"{a['bono_pct']}%"
+            ])
+            r = ws1.max_row
+            for c_i in range(1, 21):
+                cell = ws1.cell(row=r, column=c_i)
+                cell.border = BORDER_THIN
+                cell.font = FONT_REGULAR
+                if c_i >= 3:
+                    cell.alignment = ALIGN_CENTER
+                else:
+                    cell.alignment = ALIGN_LEFT
+                # Resaltar Bono OK
+                if c_i == 5:
+                    cell.font = FONT_GREEN_BOLD
+                if c_i == 6 and a['vencidas'] > 0:
+                    cell.font = FONT_RED_BOLD
+                    
+        _autofit_columns(ws1)
+        
+        # ---------------------------------------------------------------------
+        # HOJA 2: DETALLE DE VACANTES POR ASESORA
+        # ---------------------------------------------------------------------
+        ws2 = wb.create_sheet(title="Detalle Vacantes y Bono")
+        ws2.views.sheetView[0].showGridLines = True
+        
+        ws2.append(["DETALLE DE VACANTES Y VERIFICACIÓN DE BONO"])
+        ws2.append([f"Total de vacantes analizadas: {len(puestos)}"])
+        ws2.append([])
+        ws2["A1"].font = FONT_TITLE
+        ws2["A2"].font = FONT_SUBTITLE
+        
+        headers_ws2 = [
+            "ID Vacante", "Asesora Encargada", "Puesto", "Marca", "Agencia", "Ciudad",
+            "Fecha Solicitud", "Días Transcurridos", "Días Meta SLA", "Estatus SLA",
+            "Ciclo SLA / Reinicios", "Plazas Solicitadas", "Plazas Cubiertas",
+            "Cand. Enviados a Jefe", "Cumplimiento Bono", "Criterio Bono Aplicado"
+        ]
+        ws2.append(headers_ws2)
+        r_h2 = ws2.max_row
+        for c_i, h in enumerate(headers_ws2, 1):
+            cell = ws2.cell(row=r_h2, column=c_i)
+            cell.fill = FILL_SUBHEADER
+            cell.font = FONT_HEADER
+            cell.alignment = ALIGN_CENTER if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14, 15] else ALIGN_LEFT
+            cell.border = BORDER_THIN
+            
+        for p in puestos:
+            cand_jefe = sum(1 for pr in p.procesos.all() if pr.estatus_proceso in ['ENT_JF', 'CONF_JF', 'MEDICO', 'DOCS', 'INGRESO_PROG', 'ALTA_ADMIN', 'CONTRATADO'])
+            cumple_bono = p.cumplio_meta_bono
+            if p.esta_completamente_cubierta:
+                criterio = "Plazas cubiertas al 100%"
+            elif cand_jefe >= 3:
+                criterio = ">= 3 candidatos enviados a jefe en plazo"
+            else:
+                criterio = "Pendiente de cubrir o enviar candidatos"
+                
+            ws2.append([
+                p.id,
+                p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
+                p.titulo.nombre if p.titulo else "Sin Título",
+                p.marca.nombre if p.marca else "Sin Marca",
+                p.agencia,
+                p.get_ciudad_display(),
+                p.fecha_solicitud.strftime('%Y-%m-%d'),
+                p.dias_transcurridos,
+                p.dias_meta,
+                p.estatus_sla,
+                f"Ciclo #{p.numero_reinicios + 1}" if p.numero_reinicios > 0 else "Ciclo Inicial (0)",
+                p.cantidad_vacantes,
+                p.plazas_cubiertas,
+                cand_jefe,
+                "CUMPLE BONO" if cumple_bono else "PENDIENTE",
+                criterio
+            ])
+            r = ws2.max_row
+            for c_i in range(1, 17):
+                cell = ws2.cell(row=r, column=c_i)
+                cell.border = BORDER_THIN
+                cell.font = FONT_REGULAR
+                if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+                    cell.alignment = ALIGN_CENTER
+                else:
+                    cell.alignment = ALIGN_LEFT
+                if c_i == 15:
+                    if cumple_bono:
+                        cell.fill = FILL_SUCCESS
+                        cell.font = FONT_GREEN_BOLD
+                    else:
+                        cell.fill = FILL_LIGHT
+                        
+        _autofit_columns(ws2)
+        
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return buf
+
+    # =========================================================================
+    # EXPORTACIÓN 3: Sábana Histórica Filtrable (.xlsx)
+    # =========================================================================
+    @staticmethod
+    def generar_excel_sabana_historica(filtros, usuario):
+        """
+        Genera el Reporte 3 — Sábana Histórica Filtrable (.xlsx)
+        Todos los movimientos con usuario responsable, fecha/hora exacta, días en etapa y notas.
+        """
+        from .models import RegistroActividad, Proceso, Puesto
+        
+        qs_act = RegistroActividad.objects.all().select_related('usuario').order_by('-fecha_hora')
+        
+        fecha_desde_str = filtros.get('fecha_desde', '').strip()
+        fecha_hasta_str = filtros.get('fecha_hasta', '').strip()
+        if fecha_desde_str:
+            qs_act = qs_act.filter(fecha_hora__date__gte=fecha_desde_str)
+        if fecha_hasta_str:
+            qs_act = qs_act.filter(fecha_hora__date__lte=fecha_hasta_str)
+            
+        registros = list(qs_act[:3000])  # límite prudente de seguridad
+        
+        # Identificar IDs de procesos y puestos
+        proc_ids = [r.id_objeto for r in registros if r.tipo_objeto == 'Proceso' and r.id_objeto]
+        puesto_ids = [r.id_objeto for r in registros if r.tipo_objeto == 'Puesto' and r.id_objeto]
+        
+        procesos_dict = {
+            p.id: p for p in Proceso.objects.filter(id__in=proc_ids).select_related(
+                'candidato', 'puesto', 'puesto__titulo', 'puesto__marca', 'asesora_asignada', 'puesto__asesora_encargada'
+            )
+        }
+        puestos_dict = {
+            p.id: p for p in Puesto.objects.filter(id__in=puesto_ids).select_related('titulo', 'marca', 'asesora_encargada')
+        }
+        
+        # Filtros adicionales
+        agencia_f = filtros.get('agencia', '').strip().lower()
+        asesora_f = filtros.get('asesora', '').strip()
+        puesto_f = filtros.get('puesto', '').strip().lower()
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sábana Histórica Movimientos"
+        ws.views.sheetView[0].showGridLines = True
+        
+        ws.append(["PREMIER AUTOMOTRIZ — GESTIÓN DE TALENTO HUMANO"])
+        ws.append(["REPORTE 3: SÁBANA HISTÓRICA DE MOVIMIENTOS Y AUDITORÍA DE PROCESOS"])
+        rango_str = f"Filtros: Periodo {fecha_desde_str or 'Histórico'} al {fecha_hasta_str or 'Hoy'} | Asesora: {asesora_f or 'Todas'} | Agencia: {agencia_f or 'Todas'}"
+        ws.append([rango_str])
+        ws.append([])
+        ws["A1"].font = FONT_TITLE
+        ws["A2"].font = FONT_SECTION
+        ws["A3"].font = FONT_SUBTITLE
+        
+        headers = [
+            "ID Movimiento", "Fecha y Hora Exacta", "Usuario Responsable", "Acción Realizada",
+            "Tipo Registro", "Candidato", "Puesto / Vacante", "Marca", "Agencia", "Ciudad",
+            "Asesora Encargada", "Etapa / Estatus", "Días en Etapa", "Detalles y Observaciones"
+        ]
+        ws.append(headers)
+        r_h = ws.max_row
+        for c_i, h in enumerate(headers, 1):
+            cell = ws.cell(row=r_h, column=c_i)
+            cell.fill = FILL_HEADER
+            cell.font = FONT_HEADER
+            cell.alignment = ALIGN_CENTER if c_i in [1, 2, 5, 10, 13] else ALIGN_LEFT
+            cell.border = BORDER_THIN
+            
+        for r in registros:
+            candidato_nom = "N/A"
+            puesto_nom = "N/A"
+            marca_nom = "N/A"
+            agencia_nom = "N/A"
+            ciudad_nom = "N/A"
+            asesora_nom = "Sin Asignar"
+            etapa_nom = "N/A"
+            dias_etapa = 0
+            
+            puesto_ref = None
+            asesora_ref_id = None
+            
+            if r.tipo_objeto == 'Proceso' and r.id_objeto in procesos_dict:
+                pr = procesos_dict[r.id_objeto]
+                candidato_nom = pr.candidato.nombre_completo if pr.candidato else "N/A"
+                puesto_ref = pr.puesto
+                etapa_nom = pr.get_estatus_proceso_display()
+                dias_etapa = pr.dias_en_etapa_actual
+                if pr.asesora_asignada:
+                    asesora_nom = pr.asesora_asignada.get_full_name() or pr.asesora_asignada.username
+                    asesora_ref_id = pr.asesora_asignada_id
+                elif puesto_ref and puesto_ref.asesora_encargada:
+                    asesora_nom = puesto_ref.asesora_encargada.get_full_name() or puesto_ref.asesora_encargada.username
+                    asesora_ref_id = puesto_ref.asesora_encargada_id
+            elif r.tipo_objeto == 'Puesto' and r.id_objeto in puestos_dict:
+                puesto_ref = puestos_dict[r.id_objeto]
+                candidato_nom = "N/A (Vacante General)"
+                etapa_nom = puesto_ref.etapa_operativa
+                dias_etapa = puesto_ref.dias_transcurridos
+                if puesto_ref.asesora_encargada:
+                    asesora_nom = puesto_ref.asesora_encargada.get_full_name() or puesto_ref.asesora_encargada.username
+                    asesora_ref_id = puesto_ref.asesora_encargada_id
+                    
+            if puesto_ref:
+                puesto_nom = puesto_ref.titulo.nombre if puesto_ref.titulo else "Sin Título"
+                marca_nom = puesto_ref.marca.nombre if puesto_ref.marca else "Sin Marca"
+                agencia_nom = puesto_ref.agencia or "Sin Agencia"
+                ciudad_nom = puesto_ref.get_ciudad_display() if puesto_ref.ciudad else "N/A"
+                
+            # Aplicar filtros específicos de Agencia, Asesora y Puesto
+            if agencia_f and agencia_f not in agencia_nom.lower():
+                continue
+            if asesora_f and asesora_f.isdigit():
+                aid = int(asesora_f)
+                usuario_mismo = (r.usuario_id == aid)
+                asesora_misma = (asesora_ref_id == aid)
+                if not (usuario_mismo or asesora_misma):
+                    continue
+            if puesto_f and puesto_f not in puesto_nom.lower():
+                continue
+                
+            user_nom = r.usuario.get_full_name() or r.usuario.username if r.usuario else "Sistema"
+            
+            ws.append([
+                r.id,
+                r.fecha_hora.strftime('%Y-%m-%d %H:%M:%S'),
+                user_nom,
+                r.accion,
+                r.tipo_objeto or "General",
+                candidato_nom,
+                puesto_nom,
+                marca_nom,
+                agencia_nom,
+                ciudad_nom,
+                asesora_nom,
+                etapa_nom,
+                dias_etapa,
+                r.detalles or ""
+            ])
+            curr_r = ws.max_row
+            for c_i in range(1, 15):
+                cell = ws.cell(row=curr_r, column=c_i)
+                cell.border = BORDER_THIN
+                cell.font = FONT_REGULAR
+                if c_i in [1, 2, 5, 10, 13]:
+                    cell.alignment = ALIGN_CENTER
+                else:
+                    cell.alignment = ALIGN_LEFT
+                    
+        _autofit_columns(ws)
+        
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return buf

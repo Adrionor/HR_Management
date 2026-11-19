@@ -1,7 +1,7 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Reportes y Analítica BI | Premier Automotriz{% endblock %}
+{% block title %}Suite Analítica y Reportes de RH | Premier Automotriz{% endblock %}
 
 {% block breadcrumb %}
     <span class="sap-breadcrumb-separator">/</span>
@@ -17,1057 +17,725 @@
 
 {% block style %}
 <style>
-    /* Estilos SAP Fiori / Horizon Analytics Suite (Cero Emoticonos) */
-    .sap-analytics-container {
-        max-width: 1600px;
+    .rh-reports-container {
+        max-width: 1440px;
         margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
     }
 
-    /* Header Ejecutivo SAP Object Page */
-    .sap-analytics-header {
-        background: linear-gradient(135deg, #1d2d3e 0%, #26384c 100%);
-        color: #ffffff;
-        padding: 1.5rem 2rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1.2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .sap-analytics-header h1 {
-        font-size: 1.65rem;
-        font-weight: 700;
-        color: #ffffff;
-        margin: 0 0 0.3rem 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .sap-analytics-header p {
-        margin: 0;
-        color: #a6bbd3;
-        font-size: 0.9rem;
-    }
-    .sap-analytics-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    /* Menú Desplegable de Exportación */
-    .export-dropdown { position: relative; display: inline-block; }
-    .btn-export-main {
-        background-color: #107e3e;
-        color: #ffffff;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        border: 1px solid #107e3e;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.15s ease;
-    }
-    .btn-export-main:hover { background-color: #0b612e; border-color: #0b612e; }
-    .dropdown-content {
-        display: none;
-        position: absolute;
-        right: 0;
-        background-color: #ffffff;
-        min-width: 270px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        border-radius: 6px;
-        z-index: 1000;
-        border: 1px solid var(--sap-border);
-        overflow: hidden;
-        margin-top: 4px;
-    }
-    .dropdown-content a {
-        color: var(--sap-text);
-        padding: 11px 16px;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        border-bottom: 1px solid #f1f5f9;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-    .dropdown-content a:hover { background-color: #f8fafc; color: var(--sap-primary); }
-    .export-dropdown:hover .dropdown-content { display: block; }
-
-    /* Barra de Navegación por Pestañas SAP IconTabBar */
-    .sap-icontabbar {
-        display: flex;
-        gap: 6px;
-        border-bottom: 2px solid var(--sap-border);
-        margin-bottom: 1.5rem;
-        overflow-x: auto;
-        padding-bottom: 2px;
-    }
-    .sap-tab-btn {
-        background: none;
-        border: none;
-        padding: 12px 18px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--sap-muted);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border-radius: 6px 6px 0 0;
-        transition: all 0.15s ease;
-        white-space: nowrap;
-    }
-    .sap-tab-btn:hover {
-        color: var(--sap-text);
-        background-color: #f1f3f5;
-    }
-    .sap-tab-btn.active {
-        color: var(--sap-primary);
-        background-color: #ffffff;
-        border-bottom: 3px solid var(--sap-primary);
-    }
-    .sap-tab-btn .tab-count {
-        background-color: #e2e8f0;
-        color: #334155;
-        font-size: 0.75rem;
-        padding: 2px 7px;
-        border-radius: 10px;
-        font-weight: 700;
-    }
-    .sap-tab-btn.active .tab-count {
-        background-color: #e8f3ff;
-        color: var(--sap-primary);
-    }
-
-    /* Paneles de Contenido */
-    .sap-tab-pane { display: none; animation: fadeIn 0.2s ease-in-out; }
-    .sap-tab-pane.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Panel de Filtros Corporativos */
-    .filter-panel {
+    /* 1. Barra de Filtros Simples */
+    .rh-filter-card {
         background: #ffffff;
-        padding: 1.25rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        margin-bottom: 1.5rem;
         border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.15rem 1.25rem;
+        box-shadow: var(--sap-shadow-card);
     }
-    .filter-grid {
+
+    .rh-filter-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.85rem;
         align-items: flex-end;
     }
-    .filter-group label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--sap-muted);
-        margin-bottom: 4px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .filter-buttons { display: flex; gap: 8px; }
 
-    /* Tarjetas de KPIs Ejecutivos */
-    .kpi-grid {
+    /* 2. Grid de Botones de Descarga Excel */
+    .rh-excel-downloads-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1.2rem;
-        margin-bottom: 1.8rem;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1rem;
     }
-    .kpi-card {
-        background-color: #ffffff;
-        border-radius: 8px;
-        padding: 1.2rem 1.4rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        border: 1px solid var(--sap-border);
-        border-left: 4px solid var(--sap-primary);
+
+    .rh-excel-card {
+        background: #ffffff;
+        border: 1px solid #cce5d6;
+        border-radius: var(--sap-radius-md);
+        padding: 1.15rem 1.25rem;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-    }
-    .kpi-card.kpi-red { border-left-color: var(--sap-error-dot); }
-    .kpi-card.kpi-yellow { border-left-color: var(--sap-warning-dot); }
-    .kpi-card.kpi-green { border-left-color: var(--sap-success-dot); }
-    .kpi-card.kpi-purple { border-left-color: #6366f1; }
-    .kpi-card.kpi-slate { border-left-color: #475569; }
-    .kpi-card h4 {
-        margin: 0 0 0.4rem 0;
-        font-size: 0.78rem;
-        color: var(--sap-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 700;
-    }
-    .kpi-card .number {
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--sap-text);
-        line-height: 1.1;
-        font-variant-numeric: tabular-nums;
-    }
-    .kpi-card .subtext {
-        font-size: 0.78rem;
-        color: var(--sap-muted);
-        margin-top: 6px;
-    }
-    .progress-bar-container {
-        width: 100%;
-        background-color: #e5e8ec;
-        border-radius: 3px;
-        height: 5px;
-        margin-top: 8px;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: var(--sap-shadow-card);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        position: relative;
         overflow: hidden;
     }
-    .progress-bar-fill {
-        height: 100%;
-        border-radius: 3px;
-        transition: width 0.4s ease;
+
+    .rh-excel-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #107e3e;
     }
 
-    /* Gráficos */
-    .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+    .rh-excel-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px rgba(16, 126, 62, 0.12);
+        border-color: #107e3e;
     }
-    .chart-container {
-        background: #ffffff;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        border: 1px solid var(--sap-border);
+
+    .rh-excel-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0.5rem;
     }
-    .chart-container h3 {
-        margin-top: 0;
-        font-size: 1rem;
+
+    .rh-excel-icon {
+        width: 34px;
+        height: 34px;
+        background-color: #e7f6ec;
+        color: #107e3e;
+        border-radius: var(--sap-radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .rh-excel-title {
         font-weight: 700;
+        font-size: 0.95rem;
         color: var(--sap-text);
-        border-bottom: 1px solid var(--sap-border-subtle);
-        padding-bottom: 0.6rem;
+        margin: 0;
+        line-height: 1.25;
     }
 
-    /* Contenedor de Tablas */
-    .table-container {
-        background: #ffffff;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        border: 1px solid var(--sap-border);
-        margin-bottom: 2rem;
+    .rh-excel-desc {
+        font-size: 0.8rem;
+        color: var(--sap-muted);
+        line-height: 1.45;
+        margin-bottom: 1rem;
     }
-    .table-header-desc {
+
+    .rh-excel-btn {
+        background-color: #107e3e;
+        color: #ffffff;
+        border: none;
+        padding: 7px 12px;
+        border-radius: var(--sap-radius-sm);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        text-align: center;
+        transition: background-color 0.15s ease;
+    }
+
+    .rh-excel-card:hover .rh-excel-btn {
+        background-color: #0b612e;
+    }
+
+    /* 3. Grid de Semáforos Visuales */
+    .rh-semaforos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .rh-semaforo-card {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        box-shadow: var(--sap-shadow-card);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .rh-semaforo-card-header {
+        padding: 0.85rem 1.15rem;
+        border-bottom: 1px solid var(--sap-border-subtle);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.2rem;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    .table-header-desc h3 {
-        margin: 0;
-        color: var(--sap-text);
-        font-size: 1.15rem;
-        font-weight: 700;
-    }
-    .table-header-desc p {
-        margin: 0.3rem 0 0;
-        color: var(--sap-muted);
-        font-size: 0.85rem;
+        background-color: #ffffff;
     }
 
-    /* Alerta Ejecutiva */
-    .alert-panel {
-        background-color: #fff4e5;
-        border: 1px solid #feddb0;
-        border-left: 4px solid #b25900;
-        border-radius: 6px;
-        padding: 1.1rem 1.4rem;
-        margin-bottom: 1.8rem;
-    }
-    .alert-panel h4 {
-        margin: 0 0 0.4rem 0;
-        color: #b25900;
-        font-size: 0.95rem;
+    .rh-semaforo-card-title {
+        font-size: 0.875rem;
         font-weight: 700;
-    }
-    .alert-panel p {
+        color: var(--sap-text);
         margin: 0;
-        color: #7a3e00;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .rh-semaforo-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        overflow-y: auto;
+        max-height: 380px;
+    }
+
+    .rh-semaforo-item {
+        padding: 0.75rem 1.15rem;
+        border-bottom: 1px solid var(--sap-border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .rh-semaforo-item:last-child {
+        border-bottom: none;
+    }
+
+    .rh-semaforo-item:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Tabs y Tablas */
+    .sap-tabs-nav {
+        display: flex;
+        gap: 4px;
+        border-bottom: 2px solid var(--sap-border);
+        margin-bottom: 1rem;
+        overflow-x: auto;
+    }
+
+    .sap-tab-link {
+        padding: 8px 16px;
+        text-decoration: none;
+        font-weight: 600;
         font-size: 0.85rem;
-        line-height: 1.4;
+        color: var(--sap-muted);
+        border-bottom: 3px solid transparent;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .sap-tab-link:hover {
+        color: var(--sap-text);
+        background-color: #f1f3f5;
+    }
+
+    .sap-tab-link.active {
+        color: var(--sap-primary);
+        border-bottom-color: var(--sap-primary);
+        background-color: #ffffff;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="sap-analytics-container">
-    <!-- ENCABEZADO SAP ENTERPRISE -->
-    <div class="sap-analytics-header">
+<div class="rh-reports-container">
+
+    <!-- Encabezado de Página -->
+    <div class="sap-page-header">
         <div>
-            <h1>Suite Analítica Ejecutiva & BI | Dashboard Ejecutivo</h1>
-            <p>Monitoreo 360° en tiempo real del embudo de talento, Acuerdos de Nivel de Servicio (SLAs) y rendimiento por Centro de Trabajo y Usuario.</p>
-        </div>
-        <div class="sap-analytics-actions">
-            <!-- Menú Desplegable de Exportación Multicriterio (Sin Emojis) -->
-            <div class="export-dropdown">
-                <button type="button" class="btn-export-main">
-                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                    Exportar a Excel (CSV)
-                    <span style="font-size: 0.7em; margin-left: 4px;">&blacktriangledown;</span>
-                </button>
-                <div class="dropdown-content">
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_master">
-                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                        Sábana Maestra de Requisiciones
-                    </a>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias">
-                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
-                        Matriz Consolidada por Agencia
-                    </a>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras">
-                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 3s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                        Monitor de Rendimiento por Asesora
-                    </a>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes">
-                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                        Seguimiento a Jefes Solicitantes
-                    </a>
-                </div>
-            </div>
-            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-secondary">Volver al Portal</a>
+            <h1 class="sap-page-title">
+                <svg class="sap-icon" style="width: 20px; height: 20px; color: var(--sap-primary);" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <line x1="9" y1="3" x2="9" y2="21" stroke="currentColor" stroke-width="2"/>
+                    <line x1="15" y1="3" x2="15" y2="21" stroke="currentColor" stroke-width="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="2"/>
+                    <line x1="3" y1="15" x2="21" y2="15" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Suite de Reportes y Analítica de Reclutamiento
+            </h1>
+            <p class="sap-page-subtitle">
+                Información consolidada de vacantes, auditoría de bono por asesora y descargas oficiales en Excel (.xlsx).
+            </p>
         </div>
     </div>
 
-    <!-- PANEL DE FILTROS CORPORATIVOS -->
-    <div class="filter-panel">
-        <form method="get" id="filterForm">
-            <input type="hidden" name="tab" id="activeTabInput" value="{{ active_tab }}">
-            <div class="filter-grid">
-                <div class="filter-group">
-                    <label>Fecha Desde</label>
-                    <input type="date" name="fecha_desde" class="sap-input" value="{{ filtros_aplicados.fecha_desde }}">
+    <!-- 1. FILTROS SIMPLES DE RH (Arriba) -->
+    <div class="rh-filter-card">
+        <form method="get" action="{% url 'vista_reportes' %}">
+            <div class="rh-filter-grid">
+                <!-- Fecha Inicio -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="fecha_desde">Fecha Inicio:</label>
+                    <input type="date" name="fecha_desde" id="fecha_desde" class="sap-input" value="{{ filtros_aplicados.fecha_desde }}">
                 </div>
-                <div class="filter-group">
-                    <label>Fecha Hasta</label>
-                    <input type="date" name="fecha_hasta" class="sap-input" value="{{ filtros_aplicados.fecha_hasta }}">
+
+                <!-- Fecha Fin -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="fecha_hasta">Fecha Fin:</label>
+                    <input type="date" name="fecha_hasta" id="fecha_hasta" class="sap-input" value="{{ filtros_aplicados.fecha_hasta }}">
                 </div>
-                <div class="filter-group">
-                    <label>Marca</label>
-                    <select name="marca" id="filtroMarca" class="sap-select">
-                        <option value="">Todas las Marcas</option>
-                        {% for m in marcas_disponibles %}
-                        <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>
+
+                <!-- Asesora -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="asesora">Asesora RH:</label>
+                    <select name="asesora" id="asesora" class="sap-select">
+                        <option value="">-- Todas las asesoras --</option>
+                        {% for a in asesoras_disponibles %}
+                        <option value="{{ a.id }}" {% if filtros_aplicados.asesora == a.id|stringformat:"s" %}selected{% endif %}>
+                            {{ a.get_full_name|default:a.username }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label>Agencia</label>
-                    <select name="agencia" id="filtroAgencia" class="sap-select">
-                        <option value="">Todas las Agencias</option>
+
+                <!-- Puesto -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="puesto">Puesto:</label>
+                    <select name="puesto" id="puesto" class="sap-select">
+                        <option value="">-- Todos los puestos --</option>
+                        {% for cat in puestos_disponibles %}
+                        <option value="{{ cat.id }}" {% if filtros_aplicados.puesto == cat.id|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Agencia -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="agencia">Agencia:</label>
+                    <select name="agencia" id="agencia" class="sap-select">
+                        <option value="">-- Todas las agencias --</option>
                         {% for ag in agencias_disponibles %}
-                        <option value="{{ ag }}" {% if filtros_aplicados.agencia == ag %}selected{% endif %}>{{ ag }}</option>
+                        <option value="{{ ag }}" {% if filtros_aplicados.agencia == ag %}selected{% endif %}>
+                            {{ ag }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label>Ciudad</label>
-                    <select name="ciudad" class="sap-select">
-                        <option value="">Todas las Ciudades</option>
-                        {% for c in ciudades_disponibles %}
-                        <option value="{{ c.codigo }}" {% if filtros_aplicados.ciudad == c.codigo %}selected{% endif %}>{{ c.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Asesora Asignada</label>
-                    <select name="asesora" id="filtroAsesora" class="sap-select">
-                        <option value="">Todas las Asesoras</option>
-                        {% for as in asesoras_disponibles %}
-                        <option value="{{ as.id }}" {% if filtros_aplicados.asesora == as.id|stringformat:"s" %}selected{% endif %}>{{ as.get_full_name|default:as.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Estatus SLA</label>
-                    <select name="sla" class="sap-select">
-                        <option value="">Todos los Estados</option>
-                        <option value="EN_TIEMPO" {% if filtros_aplicados.sla == 'EN_TIEMPO' %}selected{% endif %}>En Tiempo</option>
-                        <option value="POR_VENCER" {% if filtros_aplicados.sla == 'POR_VENCER' %}selected{% endif %}>Por Vencer (&le; 3 días)</option>
-                        <option value="VENCIDA" {% if filtros_aplicados.sla == 'VENCIDA' %}selected{% endif %}>Vencida</option>
-                        <option value="CUBIERTA" {% if filtros_aplicados.sla == 'CUBIERTA' %}selected{% endif %}>Cubierta</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Etapa Operativa</label>
-                    <select name="etapa" class="sap-select">
-                        <option value="">Todas las Etapas</option>
-                        {% for et in etapas_disponibles %}
-                        <option value="{{ et }}" {% if filtros_aplicados.etapa == et %}selected{% endif %}>{{ et }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-buttons">
-                    <button type="submit" class="sap-btn sap-btn-primary">Filtrar</button>
-                    <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary">Limpiar</a>
+
+                <!-- Botones Filtrar / Limpiar -->
+                <div style="display: flex; gap: 6px;">
+                    <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="flex: 1;">
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <span>Filtrar</span>
+                    </button>
+                    <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Limpiar
+                    </a>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- NAVEGACIÓN POR PESTAÑAS (SAP FIORI ICON TAB BAR - CERO EMOJIS) -->
-    <div class="sap-icontabbar">
-        <button type="button" class="sap-tab-btn {% if active_tab == 'cockpit' %}active{% endif %}" onclick="cambiarPestana('cockpit')">
-            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-            Cockpit Ejecutivo 360°
-        </button>
-        <button type="button" class="sap-tab-btn {% if active_tab == 'agencias' %}active{% endif %}" onclick="cambiarPestana('agencias')">
-            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
-            Matriz por Agencia <span class="tab-count">{{ agencias_scorecard|length }}</span>
-        </button>
-        <button type="button" class="sap-tab-btn {% if active_tab == 'asesoras' %}active{% endif %}" onclick="cambiarPestana('asesoras')">
-            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 3s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            Monitor por Asesora <span class="tab-count">{{ asesoras_scorecard|length }}</span>
-        </button>
-        <button type="button" class="sap-tab-btn {% if active_tab == 'solicitantes' %}active{% endif %}" onclick="cambiarPestana('solicitantes')">
-            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            Solicitantes y Jefes <span class="tab-count">{{ solicitantes_scorecard|length }}</span>
-        </button>
-        <button type="button" class="sap-tab-btn {% if active_tab == 'sabana' %}active{% endif %}" onclick="cambiarPestana('sabana')">
-            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/></svg>
-            Sábana Maestra de Requisiciones <span class="tab-count">{{ total_vacantes }}</span>
-        </button>
-    </div>
+    <!-- 2. LOS 3 BOTONES PRINCIPALES DE DESCARGA EXCEL (.xlsx) -->
+    <div>
+        <div class="sap-section-label" style="margin-bottom: 0.6rem;">Exportaciones Oficiales en Excel (.xlsx)</div>
+        <div class="rh-excel-downloads-grid">
 
-    <!-- ========================================== -->
-    <!-- PESTAÑA 1: COCKPIT EJECUTIVO 360° -->
-    <!-- ========================================== -->
-    <div id="pane-cockpit" class="sap-tab-pane {% if active_tab == 'cockpit' %}active{% endif %}">
-        <!-- Tarjetas de KPIs Ejecutivos -->
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <h4>Vacantes Activas</h4>
-                <div class="number">{{ total_activas }}</div>
-                <div class="subtext">De un total de {{ total_vacantes }} requisiciones</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {% if total_vacantes > 0 %}{{ total_activas|floatformat:0 }}{% else %}0{% endif %}%; background-color: var(--sap-primary);"></div>
+            <!-- Reporte 1: Resumen Ejecutivo por Periodo -->
+            <a href="{% url 'vista_reportes' %}?export=resumen_ejecutivo&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="rh-excel-card" title="Descargar Reporte 1 en Excel">
+                <div>
+                    <div class="rh-excel-header">
+                        <div class="rh-excel-icon">
+                            <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="rh-excel-title">Reporte 1 — Resumen Ejecutivo por Periodo</h2>
+                            <span style="font-size: 0.725rem; color: #107e3e; font-weight: 600;">Formato .xlsx con 2 Hojas</span>
+                        </div>
+                    </div>
+                    <p class="rh-excel-desc">
+                        Hoja 1: Balance cuadrado matemáticamente (Requisiciones - Cubiertas - Canceladas), vacantes vencidas y pipeline listos para ingreso.<br>
+                        Hoja 2: Desglose consolidado por agencia y puesto.
+                    </p>
                 </div>
-            </div>
-
-            <div class="kpi-card kpi-green">
-                <h4>Cumplimiento Global SLA</h4>
-                <div class="number" style="color: var(--sap-success-dot);">{{ cumplimiento_sla }}%</div>
-                <div class="subtext">{{ en_tiempo_count }} vacantes dentro de meta</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {{ cumplimiento_sla }}%; background-color: var(--sap-success-dot);"></div>
+                <div class="rh-excel-btn">
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    <span>Descargar Reporte 1 (.xlsx)</span>
                 </div>
-            </div>
+            </a>
 
-            <div class="kpi-card kpi-red">
-                <h4>Vacantes Vencidas</h4>
-                <div class="number" style="color: var(--sap-error-dot);">{{ vencidas_count }}</div>
-                <div class="subtext">Criticidad: {{ indice_criticidad }}% de vacantes activas</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {{ indice_criticidad }}%; background-color: var(--sap-error-dot);"></div>
+            <!-- Reporte 2: Auditoría y Bono por Asesora -->
+            <a href="{% url 'vista_reportes' %}?export=auditoria_bono&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="rh-excel-card" title="Descargar Reporte 2 en Excel">
+                <div>
+                    <div class="rh-excel-header">
+                        <div class="rh-excel-icon">
+                            <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                        </div>
+                        <div>
+                            <h2 class="rh-excel-title">Reporte 2 — Auditoría y Bono por Asesora</h2>
+                            <span style="font-size: 0.725rem; color: #107e3e; font-weight: 600;">Formato .xlsx con 2 Hojas</span>
+                        </div>
+                    </div>
+                    <p class="rh-excel-desc">
+                        Vacantes asignadas, cubiertas, regla de bono (&ge; 3 candidatos a jefe en tiempo), vencidas, reiniciadas y embudo completo de evaluaciones (Integridad, Pyxoom, Descartados, Abandonos y % Conversión).
+                    </p>
                 </div>
-            </div>
-
-            <div class="kpi-card kpi-yellow">
-                <h4>Por Vencer (&le; 3 días)</h4>
-                <div class="number" style="color: var(--sap-warning-dot);">{{ por_vencer_count }}</div>
-                <div class="subtext">Riesgo inminente de incumplimiento SLA</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: 100%; background-color: var(--sap-warning-dot);"></div>
+                <div class="rh-excel-btn">
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    <span>Descargar Reporte 2 (.xlsx)</span>
                 </div>
-            </div>
+            </a>
 
-            <div class="kpi-card kpi-purple">
-                <h4>Plazas Cubiertas</h4>
-                <div class="number" style="color: #6366f1;">{{ total_plazas_cubiertas }} <span style="font-size: 0.5em; color: var(--sap-muted);">/ {{ total_plazas_solicitadas }}</span></div>
-                <div class="subtext">Efectividad de cobertura: {{ tasa_efectividad_plazas }}%</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: {{ tasa_efectividad_plazas }}%; background-color: #6366f1;"></div>
+            <!-- Reporte 3: Sábana Histórica Filtrable -->
+            <a href="{% url 'vista_reportes' %}?export=sabana_historica&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="rh-excel-card" title="Descargar Reporte 3 en Excel">
+                <div>
+                    <div class="rh-excel-header">
+                        <div class="rh-excel-icon">
+                            <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                        </div>
+                        <div>
+                            <h2 class="rh-excel-title">Reporte 3 — Sábana Histórica Filtrable</h2>
+                            <span style="font-size: 0.725rem; color: #107e3e; font-weight: 600;">Formato .xlsx Completo</span>
+                        </div>
+                    </div>
+                    <p class="rh-excel-desc">
+                        Bitácora total de movimientos filtrables por fechas, puesto, agencia y asesora, con usuario responsable, fecha/hora exacta, candidato, días en etapa y notas.
+                    </p>
                 </div>
-            </div>
+                <div class="rh-excel-btn">
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    <span>Descargar Reporte 3 (.xlsx)</span>
+                </div>
+            </a>
 
-            <div class="kpi-card kpi-slate">
-                <h4>Tiempo Medio de Cobertura</h4>
-                <div class="number" style="color: #334155;">{{ promedio_dias_cobertura }} <span style="font-size: 0.5em; color: var(--sap-muted);">días</span></div>
-                <div class="subtext">Promedio general de permanencia activa</div>
-            </div>
-
-            <div class="kpi-card {% if candidatos_esperando_jefe > 0 %}kpi-yellow{% else %}kpi-green{% endif %}">
-                <h4>En Espera de Jefe Operativo</h4>
-                <div class="number" style="color: {% if candidatos_esperando_jefe > 0 %}var(--sap-warning-dot){% else %}var(--sap-success-dot){% endif %};">{{ candidatos_esperando_jefe }}</div>
-                <div class="subtext">Candidatos en entrevista técnica</div>
-            </div>
-        </div>
-
-        {% if vencidas_count > 0 %}
-        <!-- Alerta Ejecutiva de Vacantes Vencidas -->
-        <div class="alert-panel">
-            <h4>Atención Requerida por la Dirección ({{ vencidas_count }} Requisiciones Fuera de Meta)</h4>
-            <p>Se detectaron vacantes con excedente sobre el SLA acordado. Consulta la pestaña <strong>"Matriz por Agencia"</strong> o <strong>"Monitor por Asesora"</strong> para identificar las cargas de trabajo comprometidas.</p>
-        </div>
-        {% endif %}
-
-        <!-- Gráficos Interactivos Chart.js -->
-        <div class="charts-grid">
-            <div class="chart-container">
-                <h3>Embudo Operativo de Vacantes por Etapa</h3>
-                <canvas id="chartEmbudo" height="230"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3>Cumplimiento SLA por Agencia</h3>
-                <canvas id="chartAgencias" height="230"></canvas>
-            </div>
-            <div class="chart-container" style="grid-column: 1 / -1;">
-                <h3>Carga y Capacidad Operativa por Asesora (Activas vs Concluidas)</h3>
-                <canvas id="chartAsesoras" height="120"></canvas>
-            </div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- PESTAÑA 2: MATRIZ Y SCORECARD POR AGENCIA -->
-    <!-- ========================================== -->
-    <div id="pane-agencias" class="sap-tab-pane {% if active_tab == 'agencias' %}active{% endif %}">
-        <div class="table-container">
-            <div class="table-header-desc">
-                <div>
-                    <h3>Matriz de Seguimiento y Cumplimiento por Agencia</h3>
-                    <p>Monitoreo consolidado de requisiciones, porcentaje de cumplimiento SLA y plazas por cada centro de trabajo.</p>
-                </div>
-                <div>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_agencias" class="sap-btn sap-btn-secondary sap-btn-sm">
-                        Exportar Matriz Agencias (CSV)
-                    </a>
-                </div>
-            </div>
+    <!-- 3. SEMÁFOROS VISUALES (Vacantes Vencidas, Puestos con Más Vacantes, Mayor Antigüedad) -->
+    <div>
+        <div class="sap-section-label" style="margin-bottom: 0.6rem;">Semáforos de Control Operativo</div>
+        <div class="rh-semaforos-grid">
 
-            <div style="overflow-x: auto;">
-                <table id="tablaAgencias" class="dataTable display" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th>Marca</th>
-                            <th>Agencia / Centro</th>
-                            <th>Ciudad</th>
-                            <th style="text-align: center;">Total Vacantes</th>
-                            <th style="text-align: center;">Activas</th>
-                            <th>Semáforo SLA</th>
-                            <th style="text-align: center;">Plazas (Cub / Sol)</th>
-                            <th>Cumplimiento SLA</th>
-                            <th style="text-align: center;">Días Promedio</th>
-                            <th style="text-align: center;">Tasa Cobertura</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ag in agencias_scorecard %}
-                        <tr>
-                            <td><strong>{{ ag.marca }}</strong></td>
-                            <td><span style="font-weight: 600; color: var(--sap-text);">{{ ag.agencia }}</span></td>
-                            <td>{{ ag.ciudad }}</td>
-                            <td style="text-align: center;"><strong>{{ ag.total_vacantes }}</strong></td>
-                            <td style="text-align: center;">
-                                {% if ag.activas > 0 %}
-                                    <span class="sap-badge sap-badge-info">{{ ag.activas }}</span>
-                                {% else %}
-                                    <span style="color: var(--sap-muted);">0</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <span class="sap-badge sap-badge-success" title="En Tiempo"><span class="sap-badge-dot"></span>{{ ag.en_tiempo }}</span>
-                                    <span class="sap-badge sap-badge-warning" title="Por Vencer"><span class="sap-badge-dot"></span>{{ ag.por_vencer }}</span>
-                                    <span class="sap-badge sap-badge-error" title="Vencidas"><span class="sap-badge-dot"></span>{{ ag.vencidas }}</span>
-                                </div>
-                            </td>
-                            <td style="text-align: center;"><strong>{{ ag.plazas_cubiertas }}</strong> / {{ ag.plazas_solicitadas }}</td>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <strong style="color: {% if ag.cumplimiento_sla >= 80 %}var(--sap-success-text){% elif ag.cumplimiento_sla >= 50 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">
-                                        {{ ag.cumplimiento_sla }}%
-                                    </strong>
-                                    <div class="progress-bar-container" style="width: 60px; margin: 0;">
-                                        <div class="progress-bar-fill" style="width: {{ ag.cumplimiento_sla }}%; background-color: {% if ag.cumplimiento_sla >= 80 %}var(--sap-success-dot){% elif ag.cumplimiento_sla >= 50 %}var(--sap-warning-dot){% else %}var(--sap-error-dot){% endif %};"></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="text-align: center;">{{ ag.promedio_dias }}d</td>
-                            <td style="text-align: center;">{{ ag.tasa_cobertura }}%</td>
-                            <td>
-                                <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="filtrarPorAgencia('{{ ag.agencia|escapejs }}')">
-                                    Ver Vacantes
-                                </button>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="11" style="text-align: center; padding: 2em; color: var(--sap-muted);">No hay agencias con registros para los filtros seleccionados.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- PESTAÑA 3: MONITOR DE DESEMPEÑO POR ASESORA -->
-    <!-- ========================================== -->
-    <div id="pane-asesoras" class="sap-tab-pane {% if active_tab == 'asesoras' %}active{% endif %}">
-        <div class="table-container">
-            <div class="table-header-desc">
-                <div>
-                    <h3>Monitor de Productividad y Balance de Carga por Asesora</h3>
-                    <p>Seguimiento individual a cada especialista de reclutamiento: capacidad de carga, efectividad y cumplimiento de acuerdos.</p>
+            <!-- Semáforo 1: Vacantes Vencidas -->
+            <div class="rh-semaforo-card" style="border-top: 3px solid #bb0000;">
+                <div class="rh-semaforo-card-header">
+                    <h2 class="rh-semaforo-card-title">
+                        <svg class="sap-icon" style="color: #bb0000; width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        Vacantes Vencidas (SLA)
+                    </h2>
+                    <span class="sap-badge sap-badge-error tabular-nums">{{ vacantes_vencidas|length }}</span>
                 </div>
-                <div>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_asesoras" class="sap-btn sap-btn-secondary sap-btn-sm">
-                        Exportar Monitor Asesoras (CSV)
-                    </a>
-                </div>
-            </div>
-
-            <div style="overflow-x: auto;">
-                <table id="tablaAsesoras" class="dataTable display" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th>Asesora / Reclutadora</th>
-                            <th>Capacidad Operativa</th>
-                            <th style="text-align: center;">Total Asignadas</th>
-                            <th style="text-align: center;">Activas</th>
-                            <th>Semáforo SLA</th>
-                            <th style="text-align: center;">Cubiertas</th>
-                            <th style="text-align: center;">Plazas (Cub / Sol)</th>
-                            <th>Cumplimiento SLA</th>
-                            <th>Tasa Efectividad</th>
-                            <th style="text-align: center;">Tiempo Medio</th>
-                            <th style="text-align: center;">Postulantes Activos</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for as_item in asesoras_scorecard %}
-                        <tr>
-                            <td>
-                                <strong>{{ as_item.nombre }}</strong>
-                                {% if as_item.email %}<small style="display: block; color: var(--sap-muted);">{{ as_item.email }}</small>{% endif %}
-                            </td>
-                            <td>
-                                {% if as_item.nivel_carga == 'BAJA' %}
-                                    <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Disponible (&le; 3)</span>
-                                {% elif as_item.nivel_carga == 'EQUILIBRADA' %}
-                                    <span class="sap-badge sap-badge-info"><span class="sap-badge-dot"></span>Equilibrada (4-7)</span>
-                                {% else %}
-                                    <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Sobrecarga (8+)</span>
-                                {% endif %}
-                            </td>
-                            <td style="text-align: center;"><strong>{{ as_item.total_asignadas }}</strong></td>
-                            <td style="text-align: center;">
-                                <span class="sap-badge sap-badge-info">{{ as_item.activas }}</span>
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <span class="sap-badge sap-badge-success" title="En Tiempo"><span class="sap-badge-dot"></span>{{ as_item.en_tiempo }}</span>
-                                    <span class="sap-badge sap-badge-warning" title="Por Vencer"><span class="sap-badge-dot"></span>{{ as_item.por_vencer }}</span>
-                                    <span class="sap-badge sap-badge-error" title="Vencidas"><span class="sap-badge-dot"></span>{{ as_item.vencidas }}</span>
-                                </div>
-                            </td>
-                            <td style="text-align: center; color: var(--sap-success-text); font-weight: 700;">{{ as_item.cubiertas }}</td>
-                            <td style="text-align: center;"><strong>{{ as_item.plazas_cubiertas }}</strong> / {{ as_item.plazas_solicitadas }}</td>
-                            <td>
-                                <strong style="color: {% if as_item.cumplimiento_sla >= 80 %}var(--sap-success-text){% elif as_item.cumplimiento_sla >= 50 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">
-                                    {{ as_item.cumplimiento_sla }}%
-                                </strong>
-                            </td>
-                            <td>
-                                <strong style="color: var(--sap-primary);">{{ as_item.efectividad }}%</strong>
-                            </td>
-                            <td style="text-align: center;">{{ as_item.promedio_dias }}d</td>
-                            <td style="text-align: center;">
-                                <span style="background-color: #f1f3f5; padding: 2px 7px; border-radius: 4px; font-weight: 600;">{{ as_item.candidatos_proceso_total }}</span>
-                            </td>
-                            <td>
-                                {% if as_item.asesora_id > 0 %}
-                                <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="filtrarPorAsesora('{{ as_item.asesora_id }}')">
-                                    Ver Cartera
-                                </button>
-                                {% else %}
-                                <span style="color: var(--sap-muted); font-style: italic;">Sin asignar</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="12" style="text-align: center; padding: 2em; color: var(--sap-muted);">No hay asesoras registradas con vacantes para los filtros actuales.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- PESTAÑA 4: SEGUIMIENTO A SOLICITANTES Y JEFES -->
-    <!-- ========================================== -->
-    <div id="pane-solicitantes" class="sap-tab-pane {% if active_tab == 'solicitantes' %}active{% endif %}">
-        <div class="table-container">
-            <div class="table-header-desc">
-                <div>
-                    <h3>Seguimiento a Solicitantes y Cuellos de Botella en Jefaturas</h3>
-                    <p>Mapeo de requisiciones por gerente operativo y monitoreo de tiempos de respuesta en entrevistas con jefe.</p>
-                </div>
-                <div>
-                    <a href="?{% for k, v in request.GET.items %}{% if k != 'export' %}{{ k }}={{ v }}&{% endif %}{% endfor %}export=csv_solicitantes" class="sap-btn sap-btn-secondary sap-btn-sm">
-                        Exportar Solicitantes (CSV)
-                    </a>
-                </div>
-            </div>
-
-            <div style="overflow-x: auto;">
-                <table id="tablaSolicitantes" class="dataTable display" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th>Jefe / Solicitante</th>
-                            <th>Puesto del Jefe</th>
-                            <th>Agencias Vinculadas</th>
-                            <th style="text-align: center;">Total Requisiciones</th>
-                            <th style="text-align: center;">Vacantes Activas</th>
-                            <th style="text-align: center;">Esperando Entrevista con Jefe (Cuello de Botella)</th>
-                            <th style="text-align: center;">Vacantes Cubiertas</th>
-                            <th style="text-align: center;">Antigüedad Media</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in solicitantes_scorecard %}
-                        <tr>
-                            <td><strong>{{ s.nombre }}</strong></td>
-                            <td>{{ s.puesto_jefe }}</td>
-                            <td><small style="color: var(--sap-muted);">{{ s.agencias_str }}</small></td>
-                            <td style="text-align: center;"><strong>{{ s.total_requisiciones }}</strong></td>
-                            <td style="text-align: center;">
-                                <span class="sap-badge sap-badge-info">{{ s.activas }}</span>
-                            </td>
-                            <td style="text-align: center;">
-                                {% if s.pendientes_entrevista_jefe > 0 %}
-                                    <span class="sap-badge sap-badge-warning">
-                                        <span class="sap-badge-dot"></span>{{ s.pendientes_entrevista_jefe }} pendiente(s)
-                                    </span>
-                                {% else %}
-                                    <span class="sap-badge sap-badge-success">
-                                        <span class="sap-badge-dot"></span>Al día (0)
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td style="text-align: center; color: var(--sap-success-text); font-weight: 700;">{{ s.cubiertas }}</td>
-                            <td style="text-align: center;">{{ s.promedio_dias }}d</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 2em; color: var(--sap-muted);">No hay solicitantes con requisiciones en el periodo seleccionado.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- PESTAÑA 5: SÁBANA MAESTRA DE REQUISICIONES -->
-    <!-- ========================================== -->
-    <div id="pane-sabana" class="sap-tab-pane {% if active_tab == 'sabana' %}active{% endif %}">
-        <div class="table-container">
-            <div class="table-header-desc">
-                <div>
-                    <h3>Sábana Maestra de Requisiciones y Candidatos</h3>
-                    <p>Trazabilidad individual con detalle de etapa operativa, semáforo SLA y postulación más avanzada.</p>
-                </div>
-                <div style="background: #f8fafc; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--sap-border);">
-                    <span style="color: var(--sap-muted); font-size: 0.82rem;">Mostrando</span>
-                    <strong style="color: var(--sap-text); font-size: 0.95rem; margin: 0 0.2rem;">{{ puestos.start_index }}-{{ puestos.end_index }}</strong>
-                    <span style="color: var(--sap-muted); font-size: 0.82rem;">de</span>
-                    <strong style="color: var(--sap-text); font-size: 0.95rem; margin: 0 0.2rem;">{{ paginator.count }}</strong>
-                    <span style="color: var(--sap-muted); font-size: 0.82rem;">vacantes</span>
-                </div>
-            </div>
-
-            <div style="overflow-x: auto;">
-                <table id="puestosReportTable" class="dataTable display" style="width:100%">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Puesto</th>
-                            <th>Marca / Agencia</th>
-                            <th>Asesora</th>
-                            <th>Etapa Operativa</th>
-                            <th style="text-align: center;">Plazas</th>
-                            <th>SLA (Transcurrido / Meta)</th>
-                            <th>Candidato Más Avanzado</th>
-                            <th>Última Observación</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for puesto in puestos %}
-                        <tr>
-                            <td><strong>#{{ puesto.id }}</strong></td>
-                            <td>
-                                <a href="{% url 'puesto_detalle' puesto.id %}" target="_blank" style="font-weight: 600; color: var(--sap-primary); text-decoration: none;">
-                                    {{ puesto.titulo.nombre|default:"N/A" }}
-                                </a>
-                                <small style="display: block; color: var(--sap-muted); margin-top: 2px;">Req: {{ puesto.fecha_solicitud|date:"d/m/Y" }}</small>
-                            </td>
-                            <td>
-                                <strong>{{ puesto.marca.nombre }}</strong>
-                                <small style="display: block; color: var(--sap-muted); margin-top: 2px;">{{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</small>
-                            </td>
-                            <td>
-                                {% if puesto.asesora_encargada %}
-                                    <span style="font-weight: 500;">{{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username }}</span>
-                                {% else %}
-                                    <span style="color: var(--sap-muted); font-style: italic;">Sin Asignar</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="sap-badge sap-badge-neutral">{{ puesto.etapa_operativa }}</span>
-                            </td>
-                            <td style="text-align: center;">
-                                <strong>{{ puesto.plazas_cubiertas }}</strong> / {{ puesto.cantidad_vacantes }}
-                            </td>
-                            <td>
-                                {% if puesto.esta_abierto %}
-                                    {% if puesto.estatus_sla == 'VENCIDA' %}
-                                        <span class="sap-badge sap-badge-error"><span class="sap-badge-dot"></span>Vencida ({{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d)</span>
-                                    {% elif puesto.estatus_sla == 'POR_VENCER' %}
-                                        <span class="sap-badge sap-badge-warning"><span class="sap-badge-dot"></span>Por Vencer ({{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d)</span>
-                                    {% else %}
-                                        <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>En Tiempo ({{ puesto.dias_transcurridos }}/{{ puesto.dias_meta }}d)</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="sap-badge sap-badge-neutral">Cerrada ({{ puesto.dias_transcurridos }}d)</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% with cand=puesto.candidato_mas_avanzado %}
-                                    {% if cand %}
-                                        <a href="{% url 'candidato_detalle' cand.id %}" target="_blank" style="font-weight: 600; color: var(--sap-primary); text-decoration: underline;">
-                                            {{ cand.nombre_completo }}
-                                        </a>
-                                    {% else %}
-                                        <span style="color: var(--sap-muted); font-style: italic;">Sin postulantes</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
-                            <td style="max-width: 220px; font-size: 0.82rem; color: #475569;" title="{{ puesto.ultima_observacion }}">
-                                {{ puesto.ultima_observacion|truncatechars:65 }}
-                            </td>
-                            <td>
-                                <a href="{% url 'historial_puesto' puesto.id %}" class="sap-btn sap-btn-secondary sap-btn-sm">
-                                    Historial
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Paginación -->
-            {% if paginator.num_pages > 1 %}
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--sap-border); flex-wrap: wrap; gap: 1rem;">
-                <div style="font-size: 0.85rem; color: var(--sap-muted);">
-                    Página <strong>{{ puestos.number }}</strong> de <strong>{{ paginator.num_pages }}</strong> ({{ paginator.count }} vacantes totales)
-                </div>
-                <div style="display: flex; gap: 4px;">
-                    {% if puestos.has_previous %}
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.previous_page_number }}" class="sap-btn sap-btn-secondary sap-btn-sm">&laquo; Anterior</a>
-                    {% endif %}
-
-                    {% for page_num in paginator.page_range %}
-                        {% if page_num == puestos.number %}
-                            <span class="sap-btn sap-btn-primary sap-btn-sm">{{ page_num }}</span>
-                        {% else %}
-                            <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_num }}" class="sap-btn sap-btn-secondary sap-btn-sm">{{ page_num }}</a>
-                        {% endif %}
+                <ul class="rh-semaforo-list">
+                    {% for vac in vacantes_vencidas %}
+                    <li class="rh-semaforo-item">
+                        <div>
+                            <a href="{% url 'puesto_detalle' vac.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
+                                {{ vac.titulo.nombre }}
+                            </a>
+                            <div style="font-size: 0.73rem; color: var(--sap-muted); margin-top: 1px;">
+                                {{ vac.agencia }} &bull; {{ vac.asesora_encargada.get_full_name|default:vac.asesora_encargada.username|default:"Sin Asignar" }}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="sap-badge sap-badge-error tabular-nums" style="font-weight: 700;">
+                                {{ vac.dias_transcurridos }} / {{ vac.dias_meta }}d
+                            </span>
+                            <div style="font-size: 0.7rem; color: #bb0000; margin-top: 2px;">
+                                (+{{ vac.dias_transcurridos|add:"-"|add:vac.dias_meta|stringformat:"s"|slice:"1:"|default:"0" }}d atraso)
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="rh-semaforo-item" style="color: var(--sap-muted); justify-content: center; padding: 2rem 1rem;">
+                        Excelente: No hay vacantes vencidas en el periodo seleccionado.
+                    </li>
                     {% endfor %}
-
-                    {% if puestos.has_next %}
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ puestos.next_page_number }}" class="sap-btn sap-btn-secondary sap-btn-sm">Siguiente &raquo;</a>
-                    {% endif %}
-                </div>
+                </ul>
             </div>
-            {% endif %}
+
+            <!-- Semáforo 2: Puestos con Más Vacantes -->
+            <div class="rh-semaforo-card" style="border-top: 3px solid var(--sap-primary);">
+                <div class="rh-semaforo-card-header">
+                    <h2 class="rh-semaforo-card-title">
+                        <svg class="sap-icon" style="color: var(--sap-primary); width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        Puestos con Más Vacantes
+                    </h2>
+                    <span class="sap-badge sap-badge-info tabular-nums">Top {{ puestos_mas_vacantes|length }}</span>
+                </div>
+                <ul class="rh-semaforo-list">
+                    {% for p_stat in puestos_mas_vacantes %}
+                    <li class="rh-semaforo-item">
+                        <div>
+                            <div style="font-weight: 600; color: var(--sap-text);">{{ p_stat.nombre }}</div>
+                            <div style="font-size: 0.73rem; color: var(--sap-muted); margin-top: 1px;">
+                                {{ p_stat.total_vacantes }} vacantes &bull; {{ p_stat.activas }} activas
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="tabular-nums" style="font-weight: 700; color: var(--sap-primary);">
+                                {{ p_stat.plazas_cubiertas }} / {{ p_stat.plazas_solicitadas }}
+                            </span>
+                            <div style="font-size: 0.7rem; color: var(--sap-muted);">plazas cubiertas</div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="rh-semaforo-item" style="color: var(--sap-muted); justify-content: center; padding: 2rem 1rem;">
+                        Sin datos registrados.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Semáforo 3: Vacantes con Mayor Antigüedad -->
+            <div class="rh-semaforo-card" style="border-top: 3px solid #b25900;">
+                <div class="rh-semaforo-card-header">
+                    <h2 class="rh-semaforo-card-title">
+                        <svg class="sap-icon" style="color: #b25900; width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                        Mayor Antigüedad Abiertas
+                    </h2>
+                    <span class="sap-badge sap-badge-warning tabular-nums">Top {{ vacantes_mayor_antiguedad|length }}</span>
+                </div>
+                <ul class="rh-semaforo-list">
+                    {% for vac in vacantes_mayor_antiguedad %}
+                    <li class="rh-semaforo-item">
+                        <div>
+                            <a href="{% url 'puesto_detalle' vac.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
+                                {{ vac.titulo.nombre }}
+                            </a>
+                            <div style="font-size: 0.73rem; color: var(--sap-muted); margin-top: 1px;">
+                                {{ vac.agencia }} &bull; {{ vac.fecha_solicitud|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="sap-badge sap-badge-warning tabular-nums" style="font-weight: 700;">
+                                {{ vac.dias_transcurridos }} días
+                            </span>
+                            <div style="font-size: 0.7rem; color: var(--sap-muted); margin-top: 1px;">
+                                Meta: {{ vac.dias_meta }}d
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="rh-semaforo-item" style="color: var(--sap-muted); justify-content: center; padding: 2rem 1rem;">
+                        No hay vacantes abiertas en este momento.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
         </div>
     </div>
+
+    <!-- 4. PESTAÑAS OPERATIVAS (Tablas en pantalla) -->
+    <div class="sap-card" style="margin-top: 0.5rem;">
+        <div class="sap-card-header" style="padding-bottom: 0;">
+            <div class="sap-tabs-nav">
+                <button type="button" class="sap-tab-link active" onclick="mostrarPestaña('tab-vacantes', this);">
+                    <span>Sábana de Vacantes</span>
+                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ puestos|length }}</span>
+                </button>
+                <button type="button" class="sap-tab-link" onclick="mostrarPestaña('tab-agencias', this);">
+                    <span>Matriz por Agencias</span>
+                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ agencias_scorecard|length }}</span>
+                </button>
+                <button type="button" class="sap-tab-link" onclick="mostrarPestaña('tab-asesoras', this);">
+                    <span>Auditoría de Asesoras</span>
+                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ asesoras_scorecard|length }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="sap-card-body" style="padding: 1.15rem;">
+
+            <!-- Pestaña 1: Sábana de Vacantes -->
+            <div id="tab-vacantes" class="tab-content-panel">
+                <div class="table-responsive">
+                    <table id="tablaVacantesReporte" class="display sap-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Puesto Solicitado</th>
+                                <th>Agencia / Ciudad</th>
+                                <th>Asesora</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Plazas Cubiertas</th>
+                                <th>Días vs SLA</th>
+                                <th>Meta Bono</th>
+                                <th style="text-align: right;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in puestos %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'puesto_detalle' p.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
+                                        {{ p.titulo.nombre }}
+                                    </a>
+                                    <div style="font-size: 0.725rem; color: var(--sap-muted);">{{ p.marca.nombre }}</div>
+                                </td>
+                                <td>
+                                    <div>{{ p.agencia }}</div>
+                                    <div style="font-size: 0.725rem; color: var(--sap-muted);">{{ p.get_ciudad_display }}</div>
+                                </td>
+                                <td>
+                                    {{ p.asesora_encargada.get_full_name|default:p.asesora_encargada.username|default:"Sin Asignar" }}
+                                </td>
+                                <td class="tabular-nums">{{ p.fecha_solicitud|date:"d/m/Y" }}</td>
+                                <td>
+                                    <span class="tabular-nums" style="font-weight: 600;">{{ p.plazas_cubiertas }} de {{ p.cantidad_vacantes }}</span>
+                                </td>
+                                <td>
+                                    <span class="tabular-nums" style="font-weight: 600;">{{ p.dias_transcurridos }} / {{ p.dias_meta }}d</span>
+                                    {% if p.dias_transcurridos > p.dias_meta %}
+                                        <span class="sap-badge sap-badge-error" style="font-size: 0.7rem; padding: 1px 5px; margin-left: 4px;">Vencida</span>
+                                    {% else %}
+                                        <span class="sap-badge sap-badge-success" style="font-size: 0.7rem; padding: 1px 5px; margin-left: 4px;">En tiempo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.cumplio_meta_bono %}
+                                        <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Meta Bono OK</span>
+                                    {% else %}
+                                        <span class="sap-badge sap-badge-neutral"><span class="sap-badge-dot"></span>Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="{% url 'puesto_detalle' p.id %}" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
+                                        Expediente &rarr;
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 2rem; color: var(--sap-muted);">
+                                    No hay vacantes que coincidan con los filtros aplicados.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Matriz por Agencias -->
+            <div id="tab-agencias" class="tab-content-panel" style="display: none;">
+                <div class="table-responsive">
+                    <table class="display sap-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Marca / Agencia</th>
+                                <th>Ciudad</th>
+                                <th>Total Vacantes</th>
+                                <th>Activas</th>
+                                <th>Vencidas</th>
+                                <th>Cubiertas</th>
+                                <th>Plazas Solicitadas</th>
+                                <th>Plazas Cubiertas</th>
+                                <th>Plazas Pendientes</th>
+                                <th>% Cumplimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ag in agencias_scorecard %}
+                            <tr>
+                                <td>
+                                    <strong>{{ ag.agencia }}</strong>
+                                    <div style="font-size: 0.725rem; color: var(--sap-muted);">{{ ag.marca }}</div>
+                                </td>
+                                <td>{{ ag.ciudad }}</td>
+                                <td class="tabular-nums">{{ ag.total_vacantes }}</td>
+                                <td class="tabular-nums" style="font-weight: 600;">{{ ag.activas }}</td>
+                                <td class="tabular-nums">
+                                    {% if ag.vencidas > 0 %}
+                                        <span class="sap-badge sap-badge-error">{{ ag.vencidas }}</span>
+                                    {% else %}
+                                        <span class="sap-badge sap-badge-success">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="tabular-nums">{{ ag.cubiertas }}</td>
+                                <td class="tabular-nums">{{ ag.plazas_solicitadas }}</td>
+                                <td class="tabular-nums" style="color: #107e3e; font-weight: 600;">{{ ag.plazas_cubiertas }}</td>
+                                <td class="tabular-nums" style="font-weight: 700;">{{ ag.plazas_pendientes }}</td>
+                                <td class="tabular-nums">
+                                    <strong>{{ ag.cumplimiento_sla }}%</strong>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 2rem; color: var(--sap-muted);">
+                                    Sin registros por agencia.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña 3: Auditoría de Asesoras -->
+            <div id="tab-asesoras" class="tab-content-panel" style="display: none;">
+                <div class="table-responsive">
+                    <table class="display sap-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Asesora</th>
+                                <th>Vacantes Asignadas</th>
+                                <th>Cubiertas</th>
+                                <th>Vencidas</th>
+                                <th>Meta Bono OK</th>
+                                <th>Plazas Cubiertas</th>
+                                <th>Enviados a Jefe</th>
+                                <th>Contratados</th>
+                                <th>% Conversión</th>
+                                <th>% Bono Cumplido</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in asesoras_scorecard %}
+                            <tr>
+                                <td>
+                                    <strong>{{ a.nombre }}</strong>
+                                    <div style="font-size: 0.725rem; color: var(--sap-muted);">{{ a.email|default:"Sin email" }}</div>
+                                </td>
+                                <td class="tabular-nums">{{ a.total_asignadas }}</td>
+                                <td class="tabular-nums">{{ a.cubiertas }}</td>
+                                <td class="tabular-nums">
+                                    {% if a.vencidas > 0 %}
+                                        <span class="sap-badge sap-badge-error">{{ a.vencidas }}</span>
+                                    {% else %}
+                                        <span class="sap-badge sap-badge-success">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="tabular-nums">
+                                    <span class="sap-badge sap-badge-success" style="font-weight: 700;">{{ a.bono_cumplido }}</span>
+                                </td>
+                                <td class="tabular-nums" style="color: #107e3e; font-weight: 600;">{{ a.plazas_cubiertas }}</td>
+                                <td class="tabular-nums">{{ a.enviados_jefe }}</td>
+                                <td class="tabular-nums" style="font-weight: 600;">{{ a.contratados }}</td>
+                                <td class="tabular-nums">{{ a.tasa_conversion }}%</td>
+                                <td class="tabular-nums">
+                                    <strong>{{ a.bono_pct }}%</strong>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 2rem; color: var(--sap-muted);">
+                                    Sin registros por asesora.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-// Cambio de Pestañas SAP Fiori IconTabBar
-function cambiarPestana(tabId) {
-    $('.sap-tab-btn').removeClass('active');
-    $('.sap-tab-pane').removeClass('active');
-
-    $(`button[onclick="cambiarPestana('${tabId}')"]`).addClass('active');
-    $(`#pane-${tabId}`).addClass('active');
-
-    $('#activeTabInput').val(tabId);
-    history.replaceState(null, null, `?tab=${tabId}`);
-}
-
-// Acciones de Drill-Down Inmediatas
-function filtrarPorAgencia(nombreAgencia) {
-    $('#filtroAgencia').val(nombreAgencia);
-    cambiarPestana('sabana');
-    $('#filterForm').submit();
-}
-
-function filtrarPorAsesora(asesoraId) {
-    $('#filtroAsesora').val(asesoraId);
-    cambiarPestana('sabana');
-    $('#filterForm').submit();
-}
-
-$(document).ready(function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
-    if (tabParam && ['cockpit', 'agencias', 'asesoras', 'solicitantes', 'sabana'].includes(tabParam)) {
-        cambiarPestana(tabParam);
+function mostrarPestaña(panelId, btnElement) {
+    document.querySelectorAll('.tab-content-panel').forEach(function(panel) {
+        panel.style.display = 'none';
+    });
+    document.querySelectorAll('.sap-tab-link').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    var target = document.getElementById(panelId);
+    if (target) {
+        target.style.display = 'block';
     }
-
-    const dtConfig = {
-        "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
-        "ordering": true,
-        "searching": true,
-        "paging": true,
-        "pageLength": 15,
-        "info": true
-    };
-
-    if ($('#tablaAgencias').length) { $('#tablaAgencias').DataTable(dtConfig); }
-    if ($('#tablaAsesoras').length) { $('#tablaAsesoras').DataTable(dtConfig); }
-    if ($('#tablaSolicitantes').length) { $('#tablaSolicitantes').DataTable(dtConfig); }
-    if ($('#puestosReportTable').length) {
-        $('#puestosReportTable').DataTable({
-            "language": { "url": "https://cdn.datatables.net/plug-ins/2.0.7/i18n/es-ES.json" },
-            "ordering": true,
-            "searching": true,
-            "paging": false,
-            "info": false
-        });
+    if (btnElement) {
+        btnElement.classList.add('active');
     }
-
-    // 1. Gráfico Embudo Operativo
-    const embudoLabels = JSON.parse('{{ chart_embudo_labels_json|safe }}');
-    const embudoData = JSON.parse('{{ chart_embudo_data_json|safe }}');
-    const ctxEmbudo = document.getElementById('chartEmbudo').getContext('2d');
-    new Chart(ctxEmbudo, {
-        type: 'bar',
-        data: {
-            labels: embudoLabels,
-            datasets: [{
-                label: 'Vacantes en Etapa',
-                data: embudoData,
-                backgroundColor: [
-                    '#59697a', '#0070f2', '#6366f1',
-                    '#b25900', '#0a6ed1', '#d97706',
-                    '#107e3e', '#1d2d3e'
-                ],
-                borderRadius: 3
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, ticks: { precision: 0 } }
-            }
-        }
-    });
-
-    // 2. Gráfico SLA por Agencia (Stacked - Sin Emojis)
-    const agenciasLabels = JSON.parse('{{ chart_agencias_labels_json|safe }}');
-    const agenciasEnTiempo = JSON.parse('{{ chart_agencias_en_tiempo_json|safe }}');
-    const agenciasVencidas = JSON.parse('{{ chart_agencias_vencidas_json|safe }}');
-    const ctxAgencias = document.getElementById('chartAgencias').getContext('2d');
-    new Chart(ctxAgencias, {
-        type: 'bar',
-        data: {
-            labels: agenciasLabels,
-            datasets: [
-                {
-                    label: 'En Tiempo',
-                    data: agenciasEnTiempo,
-                    backgroundColor: '#107e3e',
-                    borderRadius: 3
-                },
-                {
-                    label: 'Vencidas',
-                    data: agenciasVencidas,
-                    backgroundColor: '#bb0000',
-                    borderRadius: 3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
-            }
-        }
-    });
-
-    // 3. Gráfico Carga por Asesora
-    const asesorasLabels = JSON.parse('{{ chart_asesoras_labels_json|safe }}');
-    const asesorasActivas = JSON.parse('{{ chart_asesoras_activas_json|safe }}');
-    const asesorasCubiertas = JSON.parse('{{ chart_asesoras_cubiertas_json|safe }}');
-    const ctxAsesoras = document.getElementById('chartAsesoras').getContext('2d');
-    new Chart(ctxAsesoras, {
-        type: 'bar',
-        data: {
-            labels: asesorasLabels,
-            datasets: [
-                {
-                    label: 'Vacantes Activas en Cartera',
-                    data: asesorasActivas,
-                    backgroundColor: '#0070f2',
-                    borderRadius: 3
-                },
-                {
-                    label: 'Vacantes Cubiertas / Cerradas',
-                    data: asesorasCubiertas,
-                    backgroundColor: '#59697a',
-                    borderRadius: 3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true, ticks: { precision: 0 } }
-            }
-        }
-    });
-});
+}
 </script>
 {% endblock %}
