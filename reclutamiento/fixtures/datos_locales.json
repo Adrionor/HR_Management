@@ -1,0 +1,2296 @@
+[
+{
+  "model": "reclutamiento.marca",
+  "pk": 1,
+  "fields": {
+    "nombre": "asdfdg"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 2,
+  "fields": {
+    "nombre": "dasfag"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 3,
+  "fields": {
+    "nombre": "Toyota Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 4,
+  "fields": {
+    "nombre": "Honda Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 5,
+  "fields": {
+    "nombre": "Hyundai Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 6,
+  "fields": {
+    "nombre": "Kia Premier"
+  }
+},
+{
+  "model": "reclutamiento.marca",
+  "pk": 7,
+  "fields": {
+    "nombre": "Chevrolet Premier"
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 1,
+  "fields": {
+    "nombre": "qwer",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 2,
+  "fields": {
+    "nombre": "Auxiliar de F&I",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 3,
+  "fields": {
+    "nombre": "Encargado(a) de F&I",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 4,
+  "fields": {
+    "nombre": "Asesor(a) de ventas de flotillas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 5,
+  "fields": {
+    "nombre": "Encargado de Previas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 6,
+  "fields": {
+    "nombre": "Previador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 7,
+  "fields": {
+    "nombre": "Coordinador(a) de Leds",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 8,
+  "fields": {
+    "nombre": "Administradora de ventas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 9,
+  "fields": {
+    "nombre": "Asesor(a) de ventas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 10,
+  "fields": {
+    "nombre": "Asesor(a) leads",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 11,
+  "fields": {
+    "nombre": "asesor de sistemas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 12,
+  "fields": {
+    "nombre": "Encargado de patio",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 13,
+  "fields": {
+    "nombre": "Encargado de Exhibicion y Demos",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 14,
+  "fields": {
+    "nombre": "Facturista",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 15,
+  "fields": {
+    "nombre": "Gerente de ventas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 16,
+  "fields": {
+    "nombre": "Intercambios",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 17,
+  "fields": {
+    "nombre": "Subgerente de ventas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 18,
+  "fields": {
+    "nombre": "Guardia de seguridad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 19,
+  "fields": {
+    "nombre": "Comprador(a) de autos",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 20,
+  "fields": {
+    "nombre": "Encargado(a) de Inventarios",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 21,
+  "fields": {
+    "nombre": "Gerente de Seminuevos",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 22,
+  "fields": {
+    "nombre": "Asistente de dirección",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 23,
+  "fields": {
+    "nombre": "Auxiliar de Citas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 24,
+  "fields": {
+    "nombre": "Coordinador(a) de Citas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 25,
+  "fields": {
+    "nombre": "Administrador(a) de garantias",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 26,
+  "fields": {
+    "nombre": "Auxiliar de Garantias",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 27,
+  "fields": {
+    "nombre": "Jefe de lavado",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 28,
+  "fields": {
+    "nombre": "Lavador de autos",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 29,
+  "fields": {
+    "nombre": "Asesor de servicio",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 30,
+  "fields": {
+    "nombre": "Chofer",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 31,
+  "fields": {
+    "nombre": "Coodinador(a) de asesores de servicio",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 32,
+  "fields": {
+    "nombre": "Auxiliar administrativo",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 33,
+  "fields": {
+    "nombre": "Gerente de servicio",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 34,
+  "fields": {
+    "nombre": "Ayudante de Técnico",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 35,
+  "fields": {
+    "nombre": "Control de Calidad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 36,
+  "fields": {
+    "nombre": "Jefe de taller",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 37,
+  "fields": {
+    "nombre": "Técnico en Diagnóstico",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 38,
+  "fields": {
+    "nombre": "Técnico en Mantenimiento",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 39,
+  "fields": {
+    "nombre": "Técnico en Reparación",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 40,
+  "fields": {
+    "nombre": "Técnico Master",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 41,
+  "fields": {
+    "nombre": "Gerente de HYP",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 42,
+  "fields": {
+    "nombre": "Hojalatero",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 43,
+  "fields": {
+    "nombre": "Jefe de taller HyP",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 44,
+  "fields": {
+    "nombre": "Pintor",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 45,
+  "fields": {
+    "nombre": "Preparador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 46,
+  "fields": {
+    "nombre": "Pulidor",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 47,
+  "fields": {
+    "nombre": "Tecnico de HyP",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 48,
+  "fields": {
+    "nombre": "Asesor de HYP",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 49,
+  "fields": {
+    "nombre": "Auxiliar administrativo HYP",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 50,
+  "fields": {
+    "nombre": "Coordinador de HYP",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 51,
+  "fields": {
+    "nombre": "Valuador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 52,
+  "fields": {
+    "nombre": "Almacenista",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 53,
+  "fields": {
+    "nombre": "Encargado de compras",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 54,
+  "fields": {
+    "nombre": "Jefe de almacén",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 55,
+  "fields": {
+    "nombre": "Auditor Interno",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 56,
+  "fields": {
+    "nombre": "Jefe de Mayoreo de Colisión",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 57,
+  "fields": {
+    "nombre": "Jefe de Mayoreo Partes",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 58,
+  "fields": {
+    "nombre": "Vendedor Ecommerce",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 59,
+  "fields": {
+    "nombre": "Vendedor de Mayoreo Colision",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 60,
+  "fields": {
+    "nombre": "Vendedor de Mayoreo Foráneo",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 61,
+  "fields": {
+    "nombre": "Vendedor de Mayoreo Partes",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 62,
+  "fields": {
+    "nombre": "Asesor de ventas accesorios",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 63,
+  "fields": {
+    "nombre": "Jefe de ventas Mostrador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 64,
+  "fields": {
+    "nombre": "Vendedor de Mostrador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 65,
+  "fields": {
+    "nombre": "Gerente de refacciones",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 66,
+  "fields": {
+    "nombre": "Subgerente de refacciones",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 67,
+  "fields": {
+    "nombre": "Despachador de Body shop",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 68,
+  "fields": {
+    "nombre": "Despachador de Ventanilla",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 69,
+  "fields": {
+    "nombre": "Capacitador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 70,
+  "fields": {
+    "nombre": "Conmutador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 71,
+  "fields": {
+    "nombre": "Gerente Comercial",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 72,
+  "fields": {
+    "nombre": "Gerente General",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 73,
+  "fields": {
+    "nombre": "Subgerente de Sistemas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 74,
+  "fields": {
+    "nombre": "Auditor(a) de marca",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 75,
+  "fields": {
+    "nombre": "Encargado(a) de Caja general",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 76,
+  "fields": {
+    "nombre": "Asesor(a) de capital humano",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 77,
+  "fields": {
+    "nombre": "Auxiliar Crédito y Cobranza",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 78,
+  "fields": {
+    "nombre": "Cobrador",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 79,
+  "fields": {
+    "nombre": "Encargado(a) de Crédito y cobranza",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 80,
+  "fields": {
+    "nombre": "Auxiliar contable",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 81,
+  "fields": {
+    "nombre": "Contador(a) general",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 82,
+  "fields": {
+    "nombre": "Gerente Administrativo(a)",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 83,
+  "fields": {
+    "nombre": "Office boy",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 84,
+  "fields": {
+    "nombre": "Subcontador (a)",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 85,
+  "fields": {
+    "nombre": "Asesor(a) de Mejora Continua",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 86,
+  "fields": {
+    "nombre": "Encargado(a) de Mejora continua",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 87,
+  "fields": {
+    "nombre": "Encargado(a) de Mercadotecnia",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 88,
+  "fields": {
+    "nombre": "Practicante",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 89,
+  "fields": {
+    "nombre": "Encargado de Sistemas",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 90,
+  "fields": {
+    "nombre": "Atención a clientes",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 91,
+  "fields": {
+    "nombre": "Coordinador de Seguridad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 92,
+  "fields": {
+    "nombre": "Supervisor de seguridad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 93,
+  "fields": {
+    "nombre": "Anfitriona/Hostess",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 94,
+  "fields": {
+    "nombre": "Asesor(a) ventas ETA",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 95,
+  "fields": {
+    "nombre": "Asesor(a) de marca Sr",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 96,
+  "fields": {
+    "nombre": "Asesor(a) de marca Jr",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 97,
+  "fields": {
+    "nombre": "Asesor(a) de marca training",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 98,
+  "fields": {
+    "nombre": "Asesor(a) training",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 99,
+  "fields": {
+    "nombre": "Responding",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 100,
+  "fields": {
+    "nombre": "Coordinador (a) de Hospitalidad y Responding",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 101,
+  "fields": {
+    "nombre": "Coordinador (a) de Publicidad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 102,
+  "fields": {
+    "nombre": "Coordinador(a) ETA",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 103,
+  "fields": {
+    "nombre": "Coordinador(a) Digital",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 104,
+  "fields": {
+    "nombre": "Especialista en contenido",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 105,
+  "fields": {
+    "nombre": "Diseñador(a) Sr.",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 106,
+  "fields": {
+    "nombre": "Diseñador(a) training",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 107,
+  "fields": {
+    "nombre": "Ejecutivo(a) de Responding",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 108,
+  "fields": {
+    "nombre": "Ejecutiva de Imagen",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 109,
+  "fields": {
+    "nombre": "Especialista en Paid Media",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 110,
+  "fields": {
+    "nombre": "Especialista en Paid Media Training",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 111,
+  "fields": {
+    "nombre": "Gerente Corporativo de Mercadotecnia",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 112,
+  "fields": {
+    "nombre": "Gerente de ATL y Digital",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 113,
+  "fields": {
+    "nombre": "Gerente de BTL",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 114,
+  "fields": {
+    "nombre": "Gerente de Hospitalidad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 115,
+  "fields": {
+    "nombre": "Productor(a) Audiovisual",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 116,
+  "fields": {
+    "nombre": "User Experience Jr",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 117,
+  "fields": {
+    "nombre": "Coord. Desarrollo y Bienestar",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 118,
+  "fields": {
+    "nombre": "Coord. Vinculación con la Comunidad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 119,
+  "fields": {
+    "nombre": "Coord. Comunicación interna",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 120,
+  "fields": {
+    "nombre": "Ejecutivo(a) BTL",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 121,
+  "fields": {
+    "nombre": "Coord. De Clima y Mentoring",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 122,
+  "fields": {
+    "nombre": "Coord Gastos Médicos Mayores",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 123,
+  "fields": {
+    "nombre": "Médico general",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 124,
+  "fields": {
+    "nombre": "Técnico de motos",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 125,
+  "fields": {
+    "nombre": "Técnico de autos",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 126,
+  "fields": {
+    "nombre": "Subgerente de Capital Humano",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 127,
+  "fields": {
+    "nombre": "Vendedor de ventanilla",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 128,
+  "fields": {
+    "nombre": "Encargado de mantenimiento",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 129,
+  "fields": {
+    "nombre": "Asesor(a) de Normatividad",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 130,
+  "fields": {
+    "nombre": "Chofer/Almacenisa",
+    "dias_meta": null
+  }
+},
+{
+  "model": "reclutamiento.catalogopuesto",
+  "pk": 131,
+  "fields": {
+    "nombre": "Chofer/Almacenista",
+    "dias_meta": 12
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 41,
+  "fields": {
+    "nombres": "Mateo",
+    "apellidos": "Morales Castro",
+    "email": "mateo.morales@gmail.com",
+    "telefono": "6621458970",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 47,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 2,
+    "ultimo_puesto": "Vendedor Jr",
+    "ultima_empresa": "Autos de Culiacán",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "CUL",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.580Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 42,
+  "fields": {
+    "nombres": "Fernando",
+    "apellidos": "Ruiz Bernal",
+    "email": "fernando.ruiz@hotmail.com",
+    "telefono": "6622894512",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 47,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 3,
+    "ultimo_puesto": "Asesor Comercial",
+    "ultima_empresa": "Grupo Sur",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "CUL",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.597Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 43,
+  "fields": {
+    "nombres": "Juan Pablo",
+    "apellidos": "Rivas Beltrán",
+    "email": "jp.rivas@gmail.com",
+    "telefono": "6671895623",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 48,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 3,
+    "ultimo_puesto": "Asesor de Servicio",
+    "ultima_empresa": "Agencia Automotriz",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "MZT",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.618Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 44,
+  "fields": {
+    "nombres": "Mariana",
+    "apellidos": "Ochoa Lizárraga",
+    "email": "mariana.ochoa@outlook.com",
+    "telefono": "6699451230",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 48,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 3,
+    "ultimo_puesto": "Asesor de Servicio",
+    "ultima_empresa": "Agencia Automotriz",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "MZT",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.631Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 45,
+  "fields": {
+    "nombres": "Gustavo",
+    "apellidos": "López Salazar",
+    "email": "gustavo.lopez@gmail.com",
+    "telefono": "6691238945",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 48,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 3,
+    "ultimo_puesto": "Asesor de Servicio",
+    "ultima_empresa": "Agencia Automotriz",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "MZT",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.640Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 46,
+  "fields": {
+    "nombres": "Ernesto",
+    "apellidos": "Barajas Parra",
+    "email": "ernesto.barajas@hotmail.com",
+    "telefono": "6688123456",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 49,
+    "interes_custom": null,
+    "nivel_educativo": "TEC",
+    "años_de_experiencia": 5,
+    "ultimo_puesto": "Técnico Automotriz",
+    "ultima_empresa": "Taller Especializado Hyundai",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "LMM",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.662Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 47,
+  "fields": {
+    "nombres": "Lucía",
+    "apellidos": "Alvarado Méndez",
+    "email": "lucia.alvarado@gmail.com",
+    "telefono": "6641238974",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 50,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 2,
+    "ultimo_puesto": "Auxiliar Contable",
+    "ultima_empresa": "Despacho Fiscal Tijuana",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "TIJ",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.682Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 48,
+  "fields": {
+    "nombres": "David",
+    "apellidos": "Zazueta Rangel",
+    "email": "david.zazueta@gmail.com",
+    "telefono": "6672345678",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 51,
+    "interes_custom": null,
+    "nivel_educativo": "TEC",
+    "años_de_experiencia": 3,
+    "ultimo_puesto": "Ventas Mostrador",
+    "ultima_empresa": "Refaccionaria del Norte",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "CUL",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.702Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 49,
+  "fields": {
+    "nombres": "Carlos Mario",
+    "apellidos": "Gastélum Urías",
+    "email": "carlos.gastelum@gmail.com",
+    "telefono": "6677894512",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 52,
+    "interes_custom": null,
+    "nivel_educativo": "SEC",
+    "años_de_experiencia": 4,
+    "ultimo_puesto": "Chofer Repartidor",
+    "ultima_empresa": "Paquetería Express",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "CUL",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.724Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 50,
+  "fields": {
+    "nombres": "Ramón",
+    "apellidos": "Valdez Solís",
+    "email": "ramon.valdez@gmail.com",
+    "telefono": "6629988776",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 53,
+    "interes_custom": null,
+    "nivel_educativo": "TEC",
+    "años_de_experiencia": 1,
+    "ultimo_puesto": "Hojalatero",
+    "ultima_empresa": "Taller Independiente",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "HMO",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.743Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 51,
+  "fields": {
+    "nombres": "Sergio",
+    "apellidos": "Cárdenas Lugo",
+    "email": "sergio.cardenas@gmail.com",
+    "telefono": "6621122334",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": 53,
+    "interes_custom": null,
+    "nivel_educativo": "SEC",
+    "años_de_experiencia": 0,
+    "ultimo_puesto": "Ayudante General",
+    "ultima_empresa": "Ferretería del Noroeste",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "HMO",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.756Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 52,
+  "fields": {
+    "nombres": "Héctor",
+    "apellidos": "Camacho Félix",
+    "email": "hector.camacho@yahoo.com",
+    "telefono": "6691456789",
+    "rfc": "CAFH880415XYZ",
+    "fecha_nacimiento": null,
+    "puesto_de_interes": null,
+    "interes_custom": null,
+    "nivel_educativo": "TEC",
+    "años_de_experiencia": 5,
+    "ultimo_puesto": "Mecánico Automotriz",
+    "ultima_empresa": "Taller Multimarca",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "MZT",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.769Z",
+    "es_no_contratable": true,
+    "motivo_no_contratable": "Antecedente grave: Abandono intempestivo de puesto y demanda laboral previa en filial Mazatlán en 2024."
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 53,
+  "fields": {
+    "nombres": "Guillermo",
+    "apellidos": "Paredes Ruelas",
+    "email": "guillermo.paredes@gmail.com",
+    "telefono": "6671203040",
+    "rfc": "PARG901010ABC",
+    "fecha_nacimiento": null,
+    "puesto_de_interes": null,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 4,
+    "ultimo_puesto": "Vendedor de Flotillas",
+    "ultima_empresa": "Distribuidora Automotriz",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": null,
+    "expectativa_salarial": null,
+    "ciudad_residencia": "CUL",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.777Z",
+    "es_no_contratable": true,
+    "motivo_no_contratable": "Falsificación de documentos y comprobantes de comisiones en proceso de 2025."
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 54,
+  "fields": {
+    "nombres": "Valeria",
+    "apellidos": "Montoya Serna",
+    "email": "valeria.montoya@hotmail.com",
+    "telefono": "6678901234",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": null,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 2,
+    "ultimo_puesto": "Auxiliar Administrativo",
+    "ultima_empresa": "Agroindustrias",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": "SAP, Excel intermedio, Facturación 4.0",
+    "expectativa_salarial": "15000.00",
+    "ciudad_residencia": "CUL",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.784Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 55,
+  "fields": {
+    "nombres": "Andrea",
+    "apellidos": "Bojórquez Castro",
+    "email": "andrea.bojorquez@gmail.com",
+    "telefono": "6681234567",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": null,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 1,
+    "ultimo_puesto": "Recepcionista / Hostess",
+    "ultima_empresa": "Hotel Fiesta",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": "Atención a clientes, Conmutador, Excelente presencia",
+    "expectativa_salarial": "15000.00",
+    "ciudad_residencia": "LMM",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.792Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 56,
+  "fields": {
+    "nombres": "Ricardo",
+    "apellidos": "Zamudio Meza",
+    "email": "ricardo.zamudio@gmail.com",
+    "telefono": "6647890123",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": null,
+    "interes_custom": null,
+    "nivel_educativo": "SEC",
+    "años_de_experiencia": 4,
+    "ultimo_puesto": "Lavador y Detallador",
+    "ultima_empresa": "Auto Spa Culiacán",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": "Pulido, Encerado, Detallado de interiores, Manejo estándar",
+    "expectativa_salarial": "15000.00",
+    "ciudad_residencia": "TIJ",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.799Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "reclutamiento.candidato",
+  "pk": 57,
+  "fields": {
+    "nombres": "Daniela",
+    "apellidos": "Salazar Peñuelas",
+    "email": "daniela.salazar@outlook.com",
+    "telefono": "6623456789",
+    "rfc": null,
+    "fecha_nacimiento": null,
+    "puesto_de_interes": null,
+    "interes_custom": null,
+    "nivel_educativo": "LIC",
+    "años_de_experiencia": 4,
+    "ultimo_puesto": "Coordinadora de Mercadotecnia",
+    "ultima_empresa": "Agencia Digital",
+    "motivo_busqueda": "",
+    "es_colaborador_actual": false,
+    "habilidades": "Meta Ads, Google Ads, Diseño Canva, Estrategia Leads",
+    "expectativa_salarial": "15000.00",
+    "ciudad_residencia": "HMO",
+    "cv": "",
+    "fecha_registro": "2026-11-19T21:24:04.806Z",
+    "es_no_contratable": false,
+    "motivo_no_contratable": ""
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Gerentes de Capital Humano",
+    "permissions": []
+  }
+},
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Asesoras",
+    "permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$cqJ8jGOsnizKSCbVcivhOv$xDxQ5IL4W+SDsG5X/60JRlqYD8JT06C+8CQryVYvOEM=",
+    "last_login": "2026-11-19T19:10:07.534Z",
+    "is_superuser": true,
+    "username": "jorge.guzman",
+    "first_name": "Jorge",
+    "last_name": "Guzmán",
+    "email": "jorge@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-07-06T20:22:04.656Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$PcKVYO7UP5pFo9AaG2J14h$Qx/UkpBai9Fg1m88k/kr3l/jkb7k1jM4ApJhNGLln4I=",
+    "last_login": "2026-11-19T17:42:05.615Z",
+    "is_superuser": false,
+    "username": "gerente.ch",
+    "first_name": "Patricia",
+    "last_name": "Aréchiga",
+    "email": "ch.director@premier.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-09-23T18:45:57.855Z",
+    "groups": [
+      [
+        "Gerentes de Capital Humano"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$lGELth9wY24VFQ3XrjSu5Y$pqMoKl2NYS7wsdC8TOH1zh4pgruaiks06bdnvf1Cm8I=",
+    "last_login": "2026-11-19T17:28:36.361Z",
+    "is_superuser": false,
+    "username": "asesora.arely",
+    "first_name": "Arely",
+    "last_name": "Trujillo",
+    "email": "arely.trujillo@premier.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-09-23T18:45:59.552Z",
+    "groups": [
+      [
+        "Asesoras"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$VSwYVGfIl18mBs2qgdwr76$rGHuark19S6mjHGqHu0bQTNDn6p/6gjRRtReSu/zIS8=",
+    "last_login": "2026-11-19T17:42:05.362Z",
+    "is_superuser": false,
+    "username": "asesora.sofia",
+    "first_name": "Sofía",
+    "last_name": "Navarro",
+    "email": "sofia.navarro@premier.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-09-23T18:46:01.179Z",
+    "groups": [
+      [
+        "Asesoras"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$xHDK9XYdY9E70WYmyytUss$7LOqQml05tTxViYNBPVzqYEpD6k40G228NEtioeGkek=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "gerente.operativo",
+    "first_name": "Roberto",
+    "last_name": "Mendoza",
+    "email": "roberto.mendoza@premier.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-11-19T23:41:08.330Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$j5ptecRz0HI7cXs8Ues851$81a5zf+CLkWlViLIY2jGuZnD0LBLybC9diU5xD6us9Q=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "gerente.marca",
+    "first_name": "Carlos",
+    "last_name": "Villanueva",
+    "email": "carlos.villanueva@premier.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-11-19T23:41:25.965Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "reclutamiento.aviso",
+  "pk": 7,
+  "fields": {
+    "titulo": "Nuevo Modelo Operativo de Capital Humano",
+    "contenido": "El sistema ahora opera exclusivamente para el equipo de Capital Humano. Las vacantes nacen autorizadas y activas directamente sin requerir aprobaciones externas. Monitorea tus SLAs y metas de bono directamente desde el panel.",
+    "fecha_creacion": "2026-11-19T21:24:04.815Z",
+    "creado_por": [
+      "gerente.ch"
+    ],
+    "esta_activo": true
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 24,
+  "fields": {
+    "candidato": 41,
+    "puesto": 47,
+    "asesora_asignada": [
+      "asesora.arely"
+    ],
+    "estatus_proceso": "CONTACTO",
+    "fecha_inicio_etapa": "2026-11-17T21:24:04.571Z",
+    "retroalimentacion": "Contactado vía WhatsApp y llamada. Muy interesado en el puesto.",
+    "resultado_integridad": null,
+    "resultado_pyxoom": null,
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 25,
+  "fields": {
+    "candidato": 42,
+    "puesto": 47,
+    "asesora_asignada": [
+      "asesora.arely"
+    ],
+    "estatus_proceso": "PRUEBAS",
+    "fecha_inicio_etapa": "2026-11-18T21:24:04.571Z",
+    "retroalimentacion": "Pruebas psicométricas completas. Resultados muy favorables para perfil comercial.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "OPTIMO",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 26,
+  "fields": {
+    "candidato": 43,
+    "puesto": 48,
+    "asesora_asignada": [
+      "asesora.sofia"
+    ],
+    "estatus_proceso": "CONF_JF",
+    "fecha_inicio_etapa": "2026-11-13T21:24:04.571Z",
+    "retroalimentacion": "Candidato #1 evaluado favorablemente y turnado a Marcos Quintero para entrevista física.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "IDEAL",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 27,
+  "fields": {
+    "candidato": 44,
+    "puesto": 48,
+    "asesora_asignada": [
+      "asesora.sofia"
+    ],
+    "estatus_proceso": "ENT_JF",
+    "fecha_inicio_etapa": "2026-11-14T21:24:04.571Z",
+    "retroalimentacion": "Candidato #2 evaluado favorablemente y turnado a Marcos Quintero para entrevista física.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "IDEAL",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 28,
+  "fields": {
+    "candidato": 45,
+    "puesto": 48,
+    "asesora_asignada": [
+      "asesora.sofia"
+    ],
+    "estatus_proceso": "ENT_JF",
+    "fecha_inicio_etapa": "2026-11-15T21:24:04.571Z",
+    "retroalimentacion": "Candidato #3 evaluado favorablemente y turnado a Marcos Quintero para entrevista física.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "IDEAL",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 29,
+  "fields": {
+    "candidato": 46,
+    "puesto": 49,
+    "asesora_asignada": [
+      "asesora.arely"
+    ],
+    "estatus_proceso": "ENT_CH",
+    "fecha_inicio_etapa": "2026-11-17T21:24:04.571Z",
+    "retroalimentacion": "Excelente perfil técnico. Turnado a entrevista con RH.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "OPTIMO",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 30,
+  "fields": {
+    "candidato": 47,
+    "puesto": 50,
+    "asesora_asignada": [
+      "asesora.sofia"
+    ],
+    "estatus_proceso": "DOCS",
+    "fecha_inicio_etapa": "2026-10-16T21:24:04.571Z",
+    "retroalimentacion": "Pendiente constancia fiscal y carta de no antecedentes penales. Candidata no responde mensajes.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "BAJO",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 31,
+  "fields": {
+    "candidato": 48,
+    "puesto": 51,
+    "asesora_asignada": [
+      "asesora.arely"
+    ],
+    "estatus_proceso": "INGRESO_PROG",
+    "fecha_inicio_etapa": "2026-11-18T21:24:04.571Z",
+    "retroalimentacion": "Examen médico apto. Programado para inducción corporativa y cursos en Universidad Premier el lunes.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "OPTIMO",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 32,
+  "fields": {
+    "candidato": 49,
+    "puesto": 52,
+    "asesora_asignada": [
+      "asesora.arely"
+    ],
+    "estatus_proceso": "CONTRATADO",
+    "fecha_inicio_etapa": "2026-11-14T21:24:04.571Z",
+    "retroalimentacion": "Contratado e ingresado a nómina. Plaza cerrada exitosamente.",
+    "resultado_integridad": "APROBADO",
+    "resultado_pyxoom": "OPTIMO",
+    "motivo_descarte": ""
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 33,
+  "fields": {
+    "candidato": 50,
+    "puesto": 53,
+    "asesora_asignada": [
+      "asesora.sofia"
+    ],
+    "estatus_proceso": "NO_PRUEBAS",
+    "fecha_inicio_etapa": "2026-11-16T21:24:04.571Z",
+    "retroalimentacion": "Resultado no aprobatorio en plataforma de integridad. Proceso descartado.",
+    "resultado_integridad": "NO_APROBADO",
+    "resultado_pyxoom": "REPROBADO",
+    "motivo_descarte": "No aprobó evaluación de integridad corporativa."
+  }
+},
+{
+  "model": "reclutamiento.proceso",
+  "pk": 34,
+  "fields": {
+    "candidato": 51,
+    "puesto": 53,
+    "asesora_asignada": [
+      "asesora.sofia"
+    ],
+    "estatus_proceso": "DESCARTADO_CH",
+    "fecha_inicio_etapa": "2026-11-15T21:24:04.571Z",
+    "retroalimentacion": "Descartado en filtro curricular por falta de experiencia requerida.",
+    "resultado_integridad": null,
+    "resultado_pyxoom": null,
+    "motivo_descarte": "No cumple experiencia mínima de 2 años en enderezado de chasís."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 47,
+  "fields": {
+    "marca": 3,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 9,
+    "agencia": "Toyota Culiacán Aeropuerto",
+    "area": "VTAS",
+    "ciudad": "CUL",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": 2,
+    "carrera_sugerida": "Mercadotecnia, Administración o afín",
+    "reemplaza_a": "Edgar Beltrán",
+    "jefe_inmediato_nombre": "Roberto Mendoza",
+    "jefe_inmediato_puesto": "Gerente de Ventas Nuevos",
+    "nombre_jefe_inmediato": "Roberto Mendoza",
+    "puesto_jefe_inmediato": "Gerente de Ventas Nuevos",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "Lograr metas mensuales de venta y atención a clientes de piso y leads digitales.",
+    "funciones_puesto": "1. Prospección de clientes\n2. Realización de pruebas de manejo\n3. Elaboración de cotizaciones",
+    "indicador_puesto": "Venta mínima de 8 unidades mensuales",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "Lunes a Viernes 8:30 - 18:30, Sábados 9:00 - 14:00",
+    "sueldo_base": "10000.00",
+    "esquema_comisiones": "Comisiones por unidad facturada y bonos por financiamiento F&I.",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-13T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Vacante asignada para reclutamiento activo. Buenas referencias del perfil solicitado."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 48,
+  "fields": {
+    "marca": 4,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 29,
+    "agencia": "Honda Mazatlán Marina",
+    "area": "SERV",
+    "ciudad": "MZT",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Marcos Quintero",
+    "jefe_inmediato_puesto": "Gerente de Servicio",
+    "nombre_jefe_inmediato": "Marcos Quintero",
+    "puesto_jefe_inmediato": "Gerente de Servicio",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "Recepción de unidades, asesoría técnica de mantenimiento y entrega a clientes.",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "12000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-09T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.sofia"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Meta de bono alcanzada: 3 candidatos aptos enviados a entrevista con jefe dentro del plazo."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 49,
+  "fields": {
+    "marca": 5,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 37,
+    "agencia": "Hyundai Los Mochis Centro",
+    "area": "SERV",
+    "ciudad": "LMM",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Ignacio Valenzuela",
+    "jefe_inmediato_puesto": "Jefe de Taller",
+    "nombre_jefe_inmediato": "Ignacio Valenzuela",
+    "puesto_jefe_inmediato": "Jefe de Taller",
+    "motivo_requisicion": "INC",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "16000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-10-22T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": "2026-11-15T21:24:04.571Z",
+    "numero_reinicios": 1,
+    "comentarios": "Reinicio de SLA #1 autorizado por Dirección CH: Reajuste salarial en tabulador para atraer técnicos con certificación máster."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 50,
+  "fields": {
+    "marca": 6,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 80,
+    "agencia": "Kia Tijuana Río",
+    "area": "ADM",
+    "ciudad": "TIJ",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Claudia Lizárraga",
+    "jefe_inmediato_puesto": "Contadora General",
+    "nombre_jefe_inmediato": "Claudia Lizárraga",
+    "puesto_jefe_inmediato": "Contadora General",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "13500.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-10-14T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.sofia"
+    ],
+    "dias_meta": 20,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Alerta operativa: proceso detenido a la espera de confirmación de documentos."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 51,
+  "fields": {
+    "marca": 3,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 64,
+    "agencia": "Toyota Culiacán Tres Ríos",
+    "area": "REF",
+    "ciudad": "CUL",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Jaime Gastélum",
+    "jefe_inmediato_puesto": "Gerente de Refacciones",
+    "nombre_jefe_inmediato": "Jaime Gastélum",
+    "puesto_jefe_inmediato": "Gerente de Refacciones",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "11000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-11T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 12,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Candidato aprobado por jefe de refacciones. En trámite de alta e ingreso."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 52,
+  "fields": {
+    "marca": 3,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 131,
+    "agencia": "Toyota Culiacán Aeropuerto",
+    "area": "REF",
+    "ciudad": "CUL",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Jaime Gastélum",
+    "jefe_inmediato_puesto": "Gerente de Refacciones",
+    "nombre_jefe_inmediato": "Jaime Gastélum",
+    "puesto_jefe_inmediato": "Gerente de Refacciones",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "9500.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": false,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-04T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.arely"
+    ],
+    "dias_meta": 12,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": "Vacante cerrada con éxito en 10 días hábiles. Cumplió meta de bono."
+  }
+},
+{
+  "model": "reclutamiento.puesto",
+  "pk": 53,
+  "fields": {
+    "marca": 7,
+    "aprobado_por_gerente_marca": null,
+    "fecha_aprobacion_gerente_marca": null,
+    "aprobado_por_director": null,
+    "fecha_aprobacion_director": null,
+    "titulo": 42,
+    "agencia": "Chevrolet Hermosillo Kino",
+    "area": "SERV",
+    "ciudad": "HMO",
+    "cantidad_vacantes": 1,
+    "experiencia_minima": null,
+    "carrera_sugerida": "",
+    "reemplaza_a": "",
+    "jefe_inmediato_nombre": "Ernesto Barajas",
+    "jefe_inmediato_puesto": "Jefe de Taller HyP",
+    "nombre_jefe_inmediato": "Ernesto Barajas",
+    "puesto_jefe_inmediato": "Jefe de Taller HyP",
+    "motivo_requisicion": "ROT",
+    "objetivo_puesto": "",
+    "funciones_puesto": "",
+    "indicador_puesto": "",
+    "herramientas_puesto": "",
+    "conocimientos_tecnicos": "",
+    "horario": "",
+    "sueldo_base": "14000.00",
+    "esquema_comisiones": "",
+    "archivo_justificacion": "",
+    "es_confidencial": false,
+    "motivo_rechazo": null,
+    "estatus_autorizacion": "AUTORIZADO",
+    "esta_abierto": true,
+    "solicitado_por": null,
+    "fecha_solicitud": "2026-11-10T21:24:04.571Z",
+    "autorizado_por": null,
+    "fecha_autorizacion": null,
+    "segundo_autorizado_por": null,
+    "fecha_segunda_autorizacion": null,
+    "asesora_encargada": [
+      "asesora.sofia"
+    ],
+    "dias_meta": 12,
+    "fecha_inicio_sla_custom": null,
+    "numero_reinicios": 0,
+    "comentarios": ""
+  }
+},
+{
+  "model": "reclutamiento.perfilusuario",
+  "pk": 1,
+  "fields": {
+    "usuario": [
+      "jorge.guzman"
+    ],
+    "marcas": []
+  }
+},
+{
+  "model": "reclutamiento.perfilusuario",
+  "pk": 4,
+  "fields": {
+    "usuario": [
+      "gerente.ch"
+    ],
+    "marcas": []
+  }
+},
+{
+  "model": "reclutamiento.perfilusuario",
+  "pk": 5,
+  "fields": {
+    "usuario": [
+      "asesora.arely"
+    ],
+    "marcas": []
+  }
+},
+{
+  "model": "reclutamiento.perfilusuario",
+  "pk": 6,
+  "fields": {
+    "usuario": [
+      "asesora.sofia"
+    ],
+    "marcas": []
+  }
+},
+{
+  "model": "reclutamiento.perfilusuario",
+  "pk": 7,
+  "fields": {
+    "usuario": [
+      "gerente.operativo"
+    ],
+    "marcas": []
+  }
+},
+{
+  "model": "reclutamiento.perfilusuario",
+  "pk": 9,
+  "fields": {
+    "usuario": [
+      "gerente.marca"
+    ],
+    "marcas": []
+  }
+}
+]
