@@ -35,7 +35,7 @@
     }
     .sap-form-header h1 {
         margin: 0 0 0.35rem 0;
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--sap-text);
     }
@@ -126,7 +126,13 @@
 <div class="sap-page-container">
     <div class="sap-form-header">
         <h1>Captura de Requisición de Personal</h1>
-        <p>Captura directa para el departamento de Capital Humano. Al guardarse, la vacante se activa automáticamente y queda asignada a tu usuario.</p>
+        <p>
+            {% if es_directora_ch %}
+                Captura ejecutiva de requisición para Capital Humano. Puedes delegar y asignar directamente la asesora responsable de esta vacante.
+            {% else %}
+                Captura directa para el departamento de Capital Humano. Al guardarse, la vacante se activa automáticamente y queda asignada a tu mesa de trabajo.
+            {% endif %}
+        </p>
     </div>
 
     {% if form.errors %}
@@ -147,6 +153,25 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+
+        {% if form.asesora_encargada %}
+        <!-- Asignación de Responsable en Capital Humano (Exclusivo Gerencia / Dirección de CH) -->
+        <fieldset class="sap-fieldset">
+            <legend style="color: var(--sap-primary); display: flex; align-items: center; gap: 0.4rem;">
+                <svg class="sap-icon" style="width: 16px; height: 16px; color: var(--sap-primary);" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Asignación de Responsable Operativo (Privilegio Gerencial)
+            </legend>
+            <div class="sap-form-grid" style="grid-template-columns: 1fr;">
+                <div class="sap-form-group">
+                    <label for="{{ form.asesora_encargada.id_for_label }}">Asignar a Asesora / Responsable de RH</label>
+                    {{ form.asesora_encargada }}
+                    <div class="sap-file-hint">
+                        Como Gerente o Directora de CH, puedes asignar directamente esta requisición a una asesora específica de tu equipo o autoasignártela.
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+        {% endif %}
 
         <!-- 1. Datos Generales de la Vacante -->
         <fieldset class="sap-fieldset">

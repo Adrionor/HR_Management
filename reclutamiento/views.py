@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Count, Q
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import HttpResponse
 from functools import wraps
 import csv
@@ -494,15 +494,21 @@ def historial_puesto_view(request, puesto_id):
 def crear_vacante_view(request):
     """
     Captura directa de requisición por la Asesora o Directora/Gerente de Capital Humano.
-    Al guardarse, la vacante queda activa (AUTORIZADO, esta_abierto=True) y asignada
-    automáticamente a quien la captura (asesora_encargada = request.user).
+    Al guardarse, la vacante queda activa (AUTORIZADO, esta_abierto=True).
+    Si quien captura es Directora/Gerente de CH, puede asignar la requisición a cualquier asesora
+    o autoasignársela. Si es asesora, queda asignada automáticamente a sí misma.
     """
+    es_directora = es_gerente_ch(request.user) or request.user.is_superuser
     if request.method == 'POST':
-        form = SolicitudPuestoForm(request.POST, request.FILES)
+        form = SolicitudPuestoForm(request.POST, request.FILES, usuario=request.user)
         if form.is_valid():
             nueva_vacante = form.save(commit=False)
             nueva_vacante.solicitado_por = request.user
-            nueva_vacante.asesora_encargada = request.user
+            if es_directora and form.cleaned_data.get('asesora_encargada'):
+                nueva_vacante.asesora_encargada = form.cleaned_data['asesora_encargada']
+            elif not nueva_vacante.asesora_encargada:
+                nueva_vacante.asesora_encargada = request.user
+
             nueva_vacante.estatus_autorizacion = Puesto.EstatusAutorizacion.AUTORIZADO
             nueva_vacante.esta_abierto = True
 
@@ -511,24 +517,33 @@ def crear_vacante_view(request):
 
             nueva_vacante.save()
 
+            nombre_responsable = (
+                nueva_vacante.asesora_encargada.get_full_name() or nueva_vacante.asesora_encargada.username
+                if nueva_vacante.asesora_encargada else "Sin Asignar"
+            )
+
             RegistroActividad.objects.create(
                 usuario=request.user,
-                accion=f"Capturó directamente la requisición '{nueva_vacante.titulo}' (Agencia: {nueva_vacante.agencia})",
+                accion=f"Capturó la requisición '{nueva_vacante.titulo}' (Agencia: {nueva_vacante.agencia}) asignada a {nombre_responsable}",
                 tipo_objeto="Puesto",
                 id_objeto=nueva_vacante.id,
                 detalles=nueva_vacante.comentarios
             )
 
-            messages.success(request, f"¡Requisición para '{nueva_vacante.titulo}' registrada y activada exitosamente!")
+            messages.success(
+                request,
+                f"¡Requisición para '{nueva_vacante.titulo}' registrada y activada exitosamente! Asignada a: {nombre_responsable}."
+            )
             return redirect('mis_vacantes')
     else:
         form = SolicitudPuestoForm(initial={
             'fecha_solicitud': timezone.now().strftime('%Y-%m-%dT%H:%M'),
             'dias_meta': 20
-        })
+        }, usuario=request.user)
 
     contexto = {
         'form': form,
+        'es_directora_ch': es_directora,
     }
     return render(request, 'reclutamiento/crear_vacante.html', contexto)
 
@@ -799,9 +814,19 @@ def puesto_detalle_view(request, puesto_id):
     )
     if not puede_consultar_vacante(request.user, puesto):
         raise PermissionDenied("No tienes autorización para consultar vacantes asignadas a otra asesora.")
+
+    es_directora = es_gerente_ch(request.user) or request.user.is_superuser
+    asesoras_disponibles = []
+    if es_directora:
+        asesoras_disponibles = User.objects.filter(
+            Q(groups__name__in=['Asesoras', 'Gerentes de Capital Humano']) | Q(is_superuser=True),
+            is_active=True
+        ).distinct().order_by('first_name', 'last_name', 'username')
+
     contexto = {
         'puesto': puesto,
-        'es_directora_ch': es_gerente_ch(request.user) or request.user.is_superuser,
+        'es_directora_ch': es_directora,
+        'asesoras_disponibles': asesoras_disponibles,
     }
     return render(request, 'reclutamiento/puesto_detalle.html', contexto)
 
@@ -908,11 +933,16 @@ def mis_procesos_view(request):
 def mis_vacantes_view(request):
     usuario = request.user
     es_directora = es_gerente_ch(usuario) or usuario.is_superuser
+    asesoras_disponibles = []
 
     if es_directora:
         vacantes_activas = Puesto.objects.filter(
             esta_abierto=True
         ).select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos').order_by('-fecha_solicitud')
+        asesoras_disponibles = User.objects.filter(
+            Q(groups__name__in=['Asesoras', 'Gerentes de Capital Humano']) | Q(is_superuser=True),
+            is_active=True
+        ).distinct().order_by('first_name', 'last_name', 'username')
     else:
         vacantes_activas = Puesto.objects.filter(
             asesora_encargada=usuario,
@@ -922,8 +952,86 @@ def mis_vacantes_view(request):
     contexto = {
         'vacantes': vacantes_activas,
         'es_directora_ch': es_directora,
+        'asesoras_disponibles': asesoras_disponibles,
     }
     return render(request, 'reclutamiento/mis_vacantes.html', contexto)
+
+
+@login_required
+@require_POST
+def reasignar_vacante_view(request, puesto_id):
+    """
+    Permite a la Gerencia o Dirección de Capital Humano reasignar una vacante a otra asesora.
+    Transfiere la responsabilidad operativa de la vacante y todos los procesos de selección
+    activos vinculados. Registra auditoría detallada en RegistroActividad.
+    """
+    if not (es_gerente_ch(request.user) or request.user.is_superuser):
+        raise PermissionDenied("Solo la Gerencia o Dirección de Capital Humano tiene autorización para reasignar vacantes.")
+
+    puesto = get_object_or_404(
+        Puesto.objects.select_related('titulo', 'marca', 'asesora_encargada'),
+        id=puesto_id
+    )
+
+    nueva_asesora_id = request.POST.get('asesora_id')
+    if not nueva_asesora_id:
+        messages.error(request, "Debes seleccionar a una asesora responsable para la reasignación.")
+        return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+
+    nueva_asesora = get_object_or_404(User, id=nueva_asesora_id, is_active=True)
+
+    if not es_personal_rh(nueva_asesora):
+        messages.error(request, f"El usuario {nueva_asesora.username} no pertenece al personal autorizado de Capital Humano.")
+        return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+
+    asesora_anterior = puesto.asesora_encargada
+    if asesora_anterior and asesora_anterior.id == nueva_asesora.id:
+        messages.info(
+            request,
+            f"La vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' ya se encuentra asignada a {nueva_asesora.get_full_name() or nueva_asesora.username}."
+        )
+        return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+
+    puesto.asesora_encargada = nueva_asesora
+    puesto.save(update_fields=['asesora_encargada'])
+
+    terminales_proceso = [
+        Proceso.Estatus.DESCARTADO_CH,
+        Proceso.Estatus.NO_PRUEBAS,
+        Proceso.Estatus.ABANDONO,
+        Proceso.Estatus.CONTRATADO,
+        Proceso.Estatus.NO_APROBADO_PSICO,
+        Proceso.Estatus.EN_BOLSA,
+        Proceso.Estatus.CONTRATADO_CERRADO,
+    ]
+    procesos_activos = puesto.procesos.exclude(estatus_proceso__in=terminales_proceso)
+    cant_procesos_actualizados = procesos_activos.count()
+    if cant_procesos_actualizados > 0:
+        procesos_activos.update(asesora_asignada=nueva_asesora)
+
+    nombre_ant = asesora_anterior.get_full_name() or asesora_anterior.username if asesora_anterior else "Sin Asignar"
+    nombre_nuevo = nueva_asesora.get_full_name() or nueva_asesora.username
+    motivo = request.POST.get('motivo', '').strip()
+
+    detalles_actividad = f"Reasignada de '{nombre_ant}' a '{nombre_nuevo}'. Procesos activos transferidos: {cant_procesos_actualizados}."
+    if motivo:
+        detalles_actividad += f" Motivo: {motivo}"
+
+    RegistroActividad.objects.create(
+        usuario=request.user,
+        accion=f"Reasignó la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' a {nombre_nuevo}",
+        tipo_objeto="Puesto",
+        id_objeto=puesto.id,
+        detalles=detalles_actividad
+    )
+
+    messages.success(
+        request,
+        f"La vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' ha sido reasignada exitosamente a {nombre_nuevo}."
+        + (f" Se actualizaron {cant_procesos_actualizados} procesos activos." if cant_procesos_actualizados > 0 else "")
+    )
+
+    return redirect(request.META.get('HTTP_REFERER') or reverse('puesto_detalle', args=[puesto.id]))
 
 
 @login_required

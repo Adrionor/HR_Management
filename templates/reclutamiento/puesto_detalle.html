@@ -33,7 +33,7 @@
         gap: 1rem;
     }
     .sap-object-title {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--sap-text);
         margin: 0 0 0.5rem 0;
@@ -58,7 +58,7 @@
         margin-bottom: 1.5rem;
     }
     .sap-section-title {
-        font-size: 1.05rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--sap-text);
         border-bottom: 2px solid var(--sap-border);
@@ -97,18 +97,83 @@
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        background: #f0f7ff;
+        background: var(--sap-info-bg);
         color: var(--sap-primary);
-        border: 1px solid #cce3ff;
+        border: 1px solid var(--sap-info-border);
         padding: 0.4rem 0.8rem;
         border-radius: var(--sap-radius);
         font-weight: 600;
         text-decoration: none;
-        font-size: 0.85rem;
+        font-size: 0.875rem;
     }
     .sap-doc-link:hover {
-        background: #e0effe;
+        background: var(--sap-hover);
         color: var(--sap-primary-hover);
+    }
+
+    /* Modal de Reasignación SAP Fiori */
+    .sap-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    .sap-modal-dialog {
+        background: #ffffff;
+        border-radius: var(--sap-radius);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+        width: 92%;
+        max-width: 520px;
+        border: 1px solid var(--sap-border);
+        overflow: hidden;
+        animation: sapDialogPop 0.18s ease-out;
+    }
+    @keyframes sapDialogPop {
+        from { transform: scale(0.96); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .sap-modal-header {
+        background: #fbfcfd;
+        border-bottom: 1px solid var(--sap-border);
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .sap-modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--sap-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .sap-modal-body {
+        padding: 1.25rem;
+    }
+    .sap-modal-footer {
+        background: #f8fafc;
+        border-top: 1px solid var(--sap-border);
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .sap-modal-info-box {
+        margin-bottom: 1rem;
+        padding: 0.85rem 1rem;
+        background: var(--sap-neutral-bg);
+        border-radius: var(--sap-radius-sm);
+        border: 1px solid var(--sap-border);
     }
 </style>
 {% endblock %}
@@ -137,13 +202,19 @@
                 <span><strong>Plaza:</strong> {{ puesto.get_ciudad_display }}</span>
             </div>
         </div>
-        <div>
-            <a href="javascript:history.back();" class="sap-btn sap-btn-secondary">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            {% if es_directora_ch %}
+                <button type="button" class="sap-btn sap-btn-primary sap-btn-sm" onclick="abrirModalReasignar()" title="Reasignar esta vacante a otra asesora">
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+                    <span>Reasignar Vacante</span>
+                </button>
+            {% endif %}
+            <a href="javascript:history.back();" class="sap-btn sap-btn-secondary sap-btn-sm">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
-                Volver
+                <span>Volver</span>
             </a>
         </div>
     </div>
@@ -174,6 +245,21 @@
             <div class="sap-kv-item">
                 <span class="sap-kv-label">Área Funcional</span>
                 <span class="sap-kv-value">{{ puesto.get_area_display }}</span>
+            </div>
+            <div class="sap-kv-item">
+                <span class="sap-kv-label">Asesora RH Responsable</span>
+                <span class="sap-kv-value" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <span class="sap-badge sap-badge-neutral" style="font-weight: 600;">
+                        <svg class="sap-icon" style="width: 13px; height: 13px; vertical-align: -2px;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        {{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username|default:"Sin Asignar" }}
+                    </span>
+                    {% if es_directora_ch %}
+                        <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="abrirModalReasignar()" title="Reasignar esta vacante a otra asesora" style="padding: 2px 8px; font-size: 0.775rem;">
+                            <svg class="sap-icon" style="width: 13px; height: 13px;" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+                            <span>Reasignar</span>
+                        </button>
+                    {% endif %}
+                </span>
             </div>
             <div class="sap-kv-item">
                 <span class="sap-kv-label">Jefe Directo</span>
@@ -277,4 +363,92 @@
         </div>
     </div>
 </div>
+
+{% if es_directora_ch %}
+<!-- Modal de Reasignación de Vacante -->
+<div id="modalReasignar" class="sap-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalReasignarTitle">
+    <div class="sap-modal-dialog">
+        <div class="sap-modal-header">
+            <h3 id="modalReasignarTitle">
+                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+                Reasignar Vacante
+            </h3>
+            <button type="button" class="sap-btn sap-btn-ghost" onclick="cerrarModalReasignar()" aria-label="Cerrar modal" style="padding: 4px 8px; font-size: 1.25rem; line-height: 1;">&times;</button>
+        </div>
+        <form method="post" action="{% url 'reasignar_vacante' puesto.id %}">
+            {% csrf_token %}
+            <div class="sap-modal-body">
+                <div class="sap-modal-info-box">
+                    <div style="font-size: 0.775rem; color: var(--sap-muted); text-transform: uppercase; font-weight: 600;">Vacante a Reasignar</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: var(--sap-text); margin-top: 2px;">{{ puesto.titulo.nombre }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--sap-text-secondary); margin-top: 1px;">{{ puesto.marca.nombre }} &bull; {{ puesto.agencia }} ({{ puesto.get_ciudad_display }})</div>
+                    <div style="margin-top: 0.5rem; font-size: 0.8125rem; color: var(--sap-text-secondary);">
+                        Asesora actual: <strong>{{ puesto.asesora_encargada.get_full_name|default:puesto.asesora_encargada.username|default:"Sin Asignar" }}</strong>
+                    </div>
+                </div>
+
+                <div class="sap-form-group" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                    <label for="asesoraSelectModal" style="font-size: 0.8125rem; font-weight: 600; color: var(--sap-text);">
+                        Nueva Asesora Responsable *
+                    </label>
+                    <select id="asesoraSelectModal" name="asesora_id" class="sap-select" required style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); font-size: 0.875rem;">
+                        <option value="">-- Selecciona la nueva asesora --</option>
+                        {% for asesora in asesoras_disponibles %}
+                            <option value="{{ asesora.id }}" {% if puesto.asesora_encargada_id == asesora.id %}disabled{% endif %}>
+                                {{ asesora.get_full_name|default:asesora.username }} {% if puesto.asesora_encargada_id == asesora.id %}(Actual){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="sap-form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <label for="motivoReasignacion" style="font-size: 0.8125rem; font-weight: 600; color: var(--sap-text);">
+                        Motivo / Justificación de la Reasignación (Opcional)
+                    </label>
+                    <textarea id="motivoReasignacion" name="motivo" rows="2" class="sap-textarea" placeholder="Ej: Balanceo de carga operativa, cobertura por incapacidad, etc." style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); font-family: inherit; font-size: 0.875rem; box-sizing: border-box;"></textarea>
+                    <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 4px;">
+                        Nota: Los procesos de candidatos activos vinculados a esta vacante se transferirán a la nueva asesora.
+                    </div>
+                </div>
+            </div>
+            <div class="sap-modal-footer">
+                <button type="button" class="sap-btn sap-btn-secondary" onclick="cerrarModalReasignar()">Cancelar</button>
+                <button type="submit" class="sap-btn sap-btn-primary">
+                    <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                    <span>Confirmar Reasignación</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if es_directora_ch %}
+<script>
+    function abrirModalReasignar() {
+        $('#modalReasignar').css('display', 'flex');
+        $('#asesoraSelectModal').focus();
+    }
+
+    function cerrarModalReasignar() {
+        $('#modalReasignar').hide();
+    }
+
+    $(document).ready(function() {
+        $('#modalReasignar').on('click', function(e) {
+            if (e.target === this) {
+                cerrarModalReasignar();
+            }
+        });
+
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $('#modalReasignar').is(':visible')) {
+                cerrarModalReasignar();
+            }
+        });
+    });
+</script>
+{% endif %}
 {% endblock %}

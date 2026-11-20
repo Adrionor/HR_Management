@@ -23,6 +23,7 @@ urlpatterns = [
     path('mis-procesos/', views.mis_procesos_view, name='mis_procesos'),
     path('mis-vacantes/', views.mis_vacantes_view, name='mis_vacantes'),
     path('vacantes/crear/', views.crear_vacante_view, name='crear_vacante'),
+    path('puesto/<int:puesto_id>/reasignar/', views.reasignar_vacante_view, name='reasignar_vacante'),
     path('puesto/<int:puesto_id>/reiniciar-sla/', views.reiniciar_vacante_view, name='reiniciar_vacante'),
     path('proceso/<int:proceso_id>/detalle/', views.detalle_proceso_view, name='detalle_proceso'),
 

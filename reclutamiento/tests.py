@@ -275,6 +275,122 @@ class HRManagementTests(TestCase):
         self.assertEqual(puesto.dias_meta, 25)
         self.assertEqual(puesto.jefe_inmediato_nombre, 'Ing. Roberto Gómez')
 
+    def test_captura_vacante_por_gerente_con_asignacion_a_otra_asesora(self):
+        """Verifica que un perfil de Gerente/Director pueda asignar la requisición a otra persona al crearla."""
+        from django.contrib.auth.models import Group
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_ch)
+        self.client.login(username='testuser', password='password123')
+
+        asesora_operativa = User.objects.create_user(
+            username='asesora.operativa',
+            password='password123',
+            first_name='Laura',
+            last_name='Torres'
+        )
+        asesora_operativa.groups.add(grupo_asesoras)
+
+        response = self.client.post(reverse('crear_vacante'), {
+            'titulo': self.cat_puesto.id,
+            'agencia': 'Toyota Premier Culiacán',
+            'ciudad': 'CUL',
+            'cantidad_vacantes': 1,
+            'jefe_inmediato_nombre': 'Lic. Patricia Aréchiga',
+            'jefe_inmediato_puesto': 'Directora CH',
+            'motivo_requisicion': 'INC',
+            'sueldo_base': 22000.00,
+            'dias_meta': 20,
+            'comentarios': 'Asignación directa a asesora de ventas.',
+            'asesora_encargada': asesora_operativa.id
+        })
+        self.assertEqual(response.status_code, 302)
+        puesto = Puesto.objects.filter(agencia='Toyota Premier Culiacán', sueldo_base=22000.00).first()
+        self.assertIsNotNone(puesto)
+        self.assertEqual(puesto.solicitado_por, self.user)
+        self.assertEqual(puesto.asesora_encargada, asesora_operativa)
+        self.assertTrue(puesto.esta_abierto)
+
+    def test_reasignar_vacante_por_gerente_exitoso(self):
+        """Verifica que Gerencia CH pueda reasignar posteriormente una vacante y que se transfieran sus procesos activos."""
+        from django.contrib.auth.models import Group
+        from reclutamiento.models import RegistroActividad
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_ch)
+        self.client.login(username='testuser', password='password123')
+
+        asesora_1 = User.objects.create_user(username='asesora.uno', password='password123', first_name='Ana')
+        asesora_1.groups.add(grupo_asesoras)
+        asesora_2 = User.objects.create_user(username='asesora.dos', password='password123', first_name='Beatriz')
+        asesora_2.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Culiacán',
+            ciudad='CUL',
+            solicitado_por=self.user,
+            asesora_encargada=asesora_1,
+            sueldo_base=18000.00,
+            esta_abierto=True
+        )
+
+        candidato = Candidato.objects.create(
+            nombres='Carlos',
+            apellidos='López',
+            email='carlos.lopez@example.com',
+            telefono='6671234567'
+        )
+        proceso = Proceso.objects.create(
+            candidato=candidato,
+            puesto=puesto,
+            asesora_asignada=asesora_1,
+            estatus_proceso=Proceso.Estatus.NUEVO
+        )
+
+        resp = self.client.post(reverse('reasignar_vacante', args=[puesto.id]), {
+            'asesora_id': asesora_2.id,
+            'motivo': 'Rebalanceo de carga laboral'
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        puesto.refresh_from_db()
+        self.assertEqual(puesto.asesora_encargada, asesora_2)
+
+        proceso.refresh_from_db()
+        self.assertEqual(proceso.asesora_asignada, asesora_2)
+
+        actividad = RegistroActividad.objects.filter(tipo_objeto='Puesto', id_objeto=puesto.id).latest('id')
+        self.assertIn('Reasignó la vacante', actividad.accion)
+        self.assertIn('Rebalanceo de carga laboral', actividad.detalles)
+
+    def test_reasignar_vacante_denegado_para_asesora(self):
+        """Verifica que una asesora sin privilegios de gerencia tenga prohibido reasignar vacantes."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+        self.client.login(username='testuser', password='password123')
+
+        asesora_2 = User.objects.create_user(username='asesora.dos.denegada', password='password123')
+        asesora_2.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Mazatlán',
+            ciudad='MZT',
+            solicitado_por=self.user,
+            asesora_encargada=self.user,
+            sueldo_base=16000.00,
+            esta_abierto=True
+        )
+
+        resp = self.client.post(reverse('reasignar_vacante', args=[puesto.id]), {
+            'asesora_id': asesora_2.id
+        })
+        self.assertEqual(resp.status_code, 403)
+
     def test_modulos_externos_desactivados(self):
         """Verifica que los módulos y rutas ajenos a RH estén desactivados y redirijan al dashboard o mis vacantes."""
         from django.contrib.auth.models import Group

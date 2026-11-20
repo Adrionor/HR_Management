@@ -1,7 +1,10 @@
 # reclutamiento/forms.py
 import os
 from django import forms
+from django.db.models import Q
+from django.contrib.auth import get_user_model
 from .models import Puesto, Candidato, Publicacion, PerfilDePuesto, Marca
+from .permissions import es_gerente_ch
 from django.core.exceptions import ValidationError
 try:
     import filetype
@@ -38,8 +41,34 @@ class SolicitudPuestoForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'sap-select'})
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, usuario=None, **kwargs):
+        self.usuario = usuario
+        self.es_directora = bool(usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
         super().__init__(*args, **kwargs)
+
+        if self.es_directora:
+            User = get_user_model()
+            usuarios_rh = User.objects.filter(
+                Q(groups__name__in=['Asesoras', 'Gerentes de Capital Humano']) | Q(is_superuser=True),
+                is_active=True
+            ).distinct().order_by('first_name', 'last_name', 'username')
+
+            self.fields['asesora_encargada'] = forms.ModelChoiceField(
+                queryset=usuarios_rh,
+                required=False,
+                label="Asignar Responsable (Asesora de Capital Humano)",
+                empty_label="-- Autoasignar a mí mismo --" if usuario else "-- Selecciona Asesora --",
+                widget=forms.Select(attrs={'class': 'sap-select'})
+            )
+            self.fields['asesora_encargada'].label_from_instance = lambda obj: (
+                f"{obj.get_full_name()} ({'Gerencia/Dirección CH' if es_gerente_ch(obj) else 'Asesora'})"
+                if obj.get_full_name() else obj.username
+            )
+            if self.instance and self.instance.pk and self.instance.asesora_encargada_id:
+                self.initial['asesora_encargada'] = self.instance.asesora_encargada_id
+            elif usuario:
+                self.initial['asesora_encargada'] = usuario.id
+
         if self.instance and self.instance.pk:
             if self.instance.marca:
                 self.initial['agencia'] = self.instance.marca.id
@@ -66,6 +95,16 @@ class SolicitudPuestoForm(forms.ModelForm):
             marca_match = Marca.objects.filter(nombre__iexact=instance.agencia).first()
             if marca_match:
                 instance.marca = marca_match
+
+        if self.es_directora and 'asesora_encargada' in self.cleaned_data:
+            seleccionada = self.cleaned_data.get('asesora_encargada')
+            if seleccionada:
+                instance.asesora_encargada = seleccionada
+            elif self.usuario:
+                instance.asesora_encargada = self.usuario
+        elif not instance.asesora_encargada and self.usuario:
+            instance.asesora_encargada = self.usuario
+
         if commit:
             instance.save()
             self.save_m2m()
