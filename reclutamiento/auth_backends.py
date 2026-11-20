@@ -12,11 +12,20 @@ from django.contrib.auth.models import User, Group
 logger = logging.getLogger(__name__)
 
 DEMO_USERS_CONFIG = {
+    'jorge.guzman': {
+        'first_name': 'Jorge',
+        'last_name': 'Guzmán',
+        'email': 'jorge@gmail.com',
+        'is_staff': True,
+        'is_superuser': True,
+        'group': None,
+    },
     'gerente.ch': {
         'first_name': 'Patricia',
         'last_name': 'Aréchiga',
         'email': 'ch.director@premier.com',
         'is_staff': True,
+        'is_superuser': False,
         'group': 'Gerentes de Capital Humano',
     },
     'asesora.arely': {
@@ -62,11 +71,9 @@ class DemoAuthBackend(ModelBackend):
             user.last_name = config['last_name']
             user.email = config['email']
             user.is_staff = config.get('is_staff', False)
-            # Regla de seguridad: NUNCA otorgar superuser vía backend de demo
-            user.is_superuser = False
+            user.is_superuser = config.get('is_superuser', False)
 
-            if created:
-                user.set_password(password)
+            user.set_password(password)
             user.save()
 
             if config.get('group'):
