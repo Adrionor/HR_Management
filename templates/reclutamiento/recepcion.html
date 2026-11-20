@@ -1,255 +1,415 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Recepción y Accesos de Trabajo | Premier Automotriz{% endblock %}
+{% block title %}Recepción y Portal de Capital Humano | Premier Automotriz{% endblock %}
 
 {% block breadcrumb %}
     <span class="sap-breadcrumb-separator">/</span>
-    <span class="sap-breadcrumb-current">Recepción y Accesos</span>
+    <span class="sap-breadcrumb-current">Recepción y Portal</span>
 {% endblock %}
 
 {% block back_button %}
-    <!-- Vista principal de recepción: no requiere botón regresar -->
+    <!-- Vista principal de bienvenida: sin botón de retroceso -->
 {% endblock %}
 
 {% block style %}
 <style>
-    .rh-reception-container {
+    .rh-portal-container {
         max-width: 1440px;
         margin: 0 auto;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 2rem;
     }
 
-    /* Hero Banner de Bienvenida */
-    .rh-welcome-hero {
+    /* 1. Hero Institucional de Bienvenida */
+    .rh-portal-hero {
         background: #ffffff;
         border: 1px solid var(--sap-border);
         border-radius: var(--sap-radius-md);
-        padding: 1.5rem 1.75rem;
+        padding: 2rem 2.25rem;
         box-shadow: var(--sap-shadow-card);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 1.25rem;
+        gap: 1.5rem;
     }
 
-    .rh-welcome-title {
-        margin: 0 0 0.35rem 0;
+    .rh-portal-hero-main {
+        max-width: 800px;
+    }
+
+    .rh-portal-title {
+        margin: 0 0 0.5rem 0;
         font-size: 1.5rem;
         font-weight: 700;
         color: var(--sap-text);
         letter-spacing: -0.01em;
+        line-height: 1.25;
     }
 
-    .rh-welcome-subtitle {
+    .rh-portal-subtitle {
         margin: 0;
         font-size: 0.875rem;
-        color: var(--sap-muted);
-        line-height: 1.4;
+        color: var(--sap-text-secondary);
+        line-height: 1.55;
     }
 
-    /* Resumen de Pulso Operativo (KPIs rápidos) */
-    .rh-pulse-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1rem;
+    .rh-portal-hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
-    .rh-pulse-card {
+    /* 2. Sección Principal: Avisos y Comunicados (PRIMERO) */
+    .rh-notices-section {
         background: #ffffff;
         border: 1px solid var(--sap-border);
         border-radius: var(--sap-radius-md);
-        padding: 1rem 1.25rem;
         box-shadow: var(--sap-shadow-card);
+        padding: 1.75rem 2rem;
+    }
+
+    .rh-notices-header {
         display: flex;
-        align-items: center;
-        gap: 1rem;
-        text-decoration: none;
-        color: inherit;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .rh-pulse-card:hover {
-        border-color: var(--sap-primary);
-        box-shadow: 0 3px 10px rgba(0, 112, 242, 0.08);
-    }
-
-    .rh-pulse-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: var(--sap-radius-sm);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .rh-pulse-number {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: var(--sap-text);
-        line-height: 1.1;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .rh-pulse-label {
-        font-size: 0.75rem;
-        color: var(--sap-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-top: 2px;
-    }
-
-    /* Grid Principal: Accesos a la Izquierda, Avisos a la Derecha */
-    .rh-reception-layout {
-        display: grid;
-        grid-template-columns: 1.15fr 0.85fr;
-        gap: 1.5rem;
-        align-items: start;
-    }
-
-    @media (max-width: 1040px) {
-        .rh-reception-layout {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Tarjetas de Accesos Rápidos de Trabajo */
-    .rh-shortcuts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1rem;
-    }
-
-    .rh-shortcut-card {
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius-md);
-        padding: 1.25rem;
-        box-shadow: var(--sap-shadow-card);
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        flex-direction: column;
         justify-content: space-between;
-        min-height: 140px;
-        transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .rh-shortcut-card:hover {
-        transform: translateY(-2px);
-        border-color: var(--sap-primary);
-        box-shadow: 0 4px 14px rgba(0, 112, 242, 0.1);
-    }
-
-    .rh-shortcut-top {
-        display: flex;
         align-items: flex-start;
-        gap: 0.85rem;
-        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--sap-border-subtle);
     }
 
-    .rh-shortcut-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: var(--sap-radius-sm);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .rh-shortcut-title {
-        font-size: 0.95rem;
+    .rh-notices-heading {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--sap-text);
-        margin: 0 0 2px 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
     }
 
-    .rh-shortcut-desc {
+    .rh-notices-caption {
+        margin: 0;
         font-size: 0.8125rem;
         color: var(--sap-muted);
-        line-height: 1.4;
-        margin: 0;
     }
 
-    .rh-shortcut-action {
-        font-size: 0.785rem;
-        font-weight: 600;
-        color: var(--sap-primary);
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        margin-top: auto;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--sap-border-subtle);
-    }
-
-    /* Módulo de Avisos de Capital Humano */
-    .rh-notice-feed {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
+    .rh-notices-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 1.25rem;
     }
 
     .rh-notice-card {
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
+        background: var(--sap-bg-canvas);
+        border: 1px solid var(--sap-border-subtle);
         border-radius: var(--sap-radius-md);
-        padding: 1.15rem 1.25rem;
-        box-shadow: var(--sap-shadow-card);
-        transition: border-color 0.15s ease;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .rh-notice-card:hover {
-        border-color: var(--sap-border-hover, #b9bec5);
+        border-color: var(--sap-border-hover);
+        box-shadow: 0 2px 8px rgba(29, 45, 62, 0.05);
     }
 
     .rh-notice-meta {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.65rem;
         font-size: 0.75rem;
         color: var(--sap-muted);
     }
 
-    .rh-notice-title {
-        margin: 0 0 0.4rem 0;
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: var(--sap-text);
-    }
-
-    .rh-notice-content {
-        margin: 0;
-        font-size: 0.825rem;
-        color: var(--sap-text);
-        line-height: 1.5;
-    }
-
-    .rh-notice-author {
+    .rh-notice-author-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
         font-weight: 600;
         color: var(--sap-text);
     }
 
+    .rh-notice-title {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        line-height: 1.35;
+    }
+
+    .rh-notice-body {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--sap-text);
+        line-height: 1.55;
+    }
+
     .rh-notice-empty {
-        background: #ffffff;
-        border: 1px solid var(--sap-border);
-        border-radius: var(--sap-radius-md);
-        padding: 2.5rem 1.5rem;
         text-align: center;
+        padding: 3rem 1.5rem;
         color: var(--sap-muted);
     }
 
-    /* Accesibilidad: Respeto a reducción de movimiento (WCAG AA 2.3.3) */
+    .rh-notice-empty-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--sap-text);
+        margin: 0.5rem 0 0.25rem 0;
+    }
+
+    .rh-notice-empty-text {
+        font-size: 0.8125rem;
+        color: var(--sap-muted);
+        max-width: 460px;
+        margin: 0 auto;
+    }
+
+    /* Formulario para publicar avisos (Directora CH) */
+    .rh-notice-composer {
+        background: var(--sap-info-bg);
+        border: 1px solid var(--sap-info-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .rh-composer-title {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--sap-info-text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* 3. Arquitectura del Sistema (Resumen Ejecutivo tipo Landing Page) */
+    .rh-system-overview {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .rh-overview-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .rh-overview-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        letter-spacing: -0.01em;
+    }
+
+    .rh-overview-subtitle {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--sap-muted);
+        line-height: 1.5;
+    }
+
+    /* Grilla de los 4 Pilares Estratégicos */
+    .rh-pillars-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .rh-pillar-card {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.5rem;
+        box-shadow: var(--sap-shadow-card);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    .rh-pillar-card:hover {
+        border-color: var(--sap-primary);
+        box-shadow: 0 4px 14px rgba(0, 112, 242, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .rh-pillar-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.9rem;
+    }
+
+    .rh-pillar-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--sap-radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .rh-pillar-title {
+        margin: 0 0 0.3rem 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        line-height: 1.3;
+    }
+
+    .rh-pillar-tag {
+        font-size: 0.725rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--sap-muted);
+    }
+
+    .rh-pillar-desc {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--sap-text-secondary);
+        line-height: 1.55;
+    }
+
+    .rh-pillar-features {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        border-top: 1px solid var(--sap-border-subtle);
+        padding-top: 0.75rem;
+    }
+
+    .rh-pillar-feature-item {
+        font-size: 0.8125rem;
+        color: var(--sap-text-dark);
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        line-height: 1.4;
+    }
+
+    .rh-pillar-check {
+        color: var(--sap-primary);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .rh-pillar-action {
+        margin-top: auto;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--sap-border-subtle);
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* 4. Protocolos y Reglas de Integridad de RH */
+    .rh-standards-section {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        box-shadow: var(--sap-shadow-card);
+        padding: 1.75rem 2rem;
+    }
+
+    .rh-standards-header {
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--sap-border-subtle);
+    }
+
+    .rh-standards-title {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .rh-standards-desc {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--sap-muted);
+    }
+
+    .rh-standards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .rh-standard-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .rh-standard-name {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .rh-standard-text {
+        font-size: 0.8125rem;
+        color: var(--sap-text-secondary);
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* 5. Banner de Inicio de Jornada Operativa */
+    .rh-cta-banner {
+        background: var(--sap-shell-bg, #1d2d3e);
+        color: #ffffff;
+        border-radius: var(--sap-radius-md);
+        padding: 2rem 2.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .rh-cta-title {
+        margin: 0 0 0.35rem 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .rh-cta-text {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--sap-border);
+        line-height: 1.5;
+        max-width: 700px;
+    }
+
+    /* Accesibilidad: Reducción de movimiento */
     @media (prefers-reduced-motion: reduce) {
-        .rh-shortcut-card,
-        .rh-pulse-card {
+        .rh-pillar-card,
+        .rh-notice-card {
             transition: border-color 0.05s ease, box-shadow 0.05s ease !important;
             transform: none !important;
         }
@@ -258,20 +418,21 @@
 {% endblock %}
 
 {% block content %}
-<div class="rh-reception-container">
+<div class="rh-portal-container">
 
-    <!-- 1. Hero de Bienvenida Personalizado -->
-    <header class="rh-welcome-hero">
-        <div>
-            <h1 class="rh-welcome-title">
-                Portal de Recepción &bull; {{ user.get_full_name|default:user.username }}
+    <!-- 1. Hero Institucional de Bienvenida -->
+    <header class="rh-portal-hero">
+        <div class="rh-portal-hero-main">
+            <h1 class="rh-portal-title">
+                Portal de Recepción &bull; Capital Humano
             </h1>
-            <p class="rh-welcome-subtitle">
-                Sistema Corporativo de Capital Humano &bull; Premier Automotriz &bull; {% now "l, j \d\e F \d\e Y" %}
+            <p class="rh-portal-subtitle">
+                Sistema Central de Atracción, Selección y Business Intelligence &bull; Grupo Premier Automotriz &bull; {% now "l, j \d\e F \d\e Y" %}
             </p>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="sap-badge sap-badge-info" style="font-size: 0.8rem; padding: 5px 12px;">
+        <div class="rh-portal-hero-actions">
+            <span class="sap-badge sap-badge-info" style="font-size: 0.825rem; padding: 5px 12px;">
+                <span class="sap-badge-dot" aria-hidden="true"></span>
                 {% if user.is_superuser %}
                     Superusuario RH
                 {% elif es_directora_ch %}
@@ -280,235 +441,72 @@
                     Asesora de Reclutamiento
                 {% endif %}
             </span>
-            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-primary sap-btn-sm" title="Ir a la bandeja de trabajo con tablas operativas">
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-primary sap-btn-sm" title="Ir a la bandeja de trabajo con seguimiento operativo en vivo">
                 <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 <span>Bandeja Operativa &rarr;</span>
             </a>
         </div>
     </header>
 
-    <!-- 2. Pulso de Indicadores Rápidos -->
-    <section class="rh-pulse-grid" aria-label="Indicadores rápidos de operación">
-        <a href="{% url 'mis_vacantes' %}" class="rh-pulse-card" title="Ver mis vacantes activas">
-            <div class="rh-pulse-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
-            </div>
+    <!-- 2. SECCIÓN PRIORITARIA: AVISOS Y COMUNICADOS OFICIALES (PRIMER PLANO) -->
+    <section class="rh-notices-section" aria-labelledby="secAvisosTitle">
+        <div class="rh-notices-header">
             <div>
-                <div class="rh-pulse-number">{{ mis_vacantes_count|default:"0" }}</div>
-                <div class="rh-pulse-label">Vacantes Abiertas</div>
+                <h2 id="secAvisosTitle" class="rh-notices-heading">
+                    <svg class="sap-icon" style="color: var(--sap-primary); width: 22px; height: 22px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+                    Avisos & Comunicados de Capital Humano
+                </h2>
+                <p class="rh-notices-caption">
+                    Disposiciones oficiales, lineamientos de selección y anuncios prioritarios emitidos por la Dirección.
+                </p>
             </div>
-        </a>
-
-        <a href="{% url 'mis_procesos' %}" class="rh-pulse-card" title="Ver mis candidatos en seguimiento">
-            <div class="rh-pulse-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-            </div>
-            <div>
-                <div class="rh-pulse-number">{{ mis_procesos_count|default:"0" }}</div>
-                <div class="rh-pulse-label">Candidatos en Proceso</div>
-            </div>
-        </a>
-
-        <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-pulse-card" title="Explorar bolsa de trabajo general">
-            <div class="rh-pulse-icon" style="background: var(--sap-neutral-bg); color: var(--sap-neutral-text);">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-            </div>
-            <div>
-                <div class="rh-pulse-number">{{ candidatos_bolsa_count|default:"0" }}</div>
-                <div class="rh-pulse-label">Banco de Talento</div>
-            </div>
-        </a>
-
-        <a href="{% url 'mis_procesos' %}" class="rh-pulse-card" title="Procesos detenidos más de 7 días">
-            <div class="rh-pulse-icon" style="background: {% if alertas_count > 0 %}var(--sap-error-bg){% else %}var(--sap-success-bg){% endif %}; color: {% if alertas_count > 0 %}var(--sap-error-text){% else %}var(--sap-success-text){% endif %};">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-            </div>
-            <div>
-                <div class="rh-pulse-number">{{ alertas_count|default:"0" }}</div>
-                <div class="rh-pulse-label">Demoras (+7 días)</div>
-            </div>
-        </a>
-    </section>
-
-    <!-- 3. Layout Principal: Accesos Directos (Izq) vs Avisos Generales (Der) -->
-    <main class="rh-reception-layout">
-
-        <!-- Columna Izquierda: Accesos Directos al Trabajo -->
-        <section aria-labelledby="secShortcutsTitle">
-            <div class="sap-page-header" style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sap-border-subtle);">
-                <div>
-                    <h2 id="secShortcutsTitle" class="sap-page-title" style="font-size: 1.15rem;">
-                        <svg class="sap-icon" style="color: var(--sap-primary);" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>
-                        Accesos Directos de Trabajo
-                    </h2>
-                    <p class="sap-page-subtitle">Rutas inmediatas a tus herramientas diarias de selección y cobertura.</p>
-                </div>
-            </div>
-
-            <div class="rh-shortcuts-grid">
-                <!-- Acceso 1: Bandeja de Trabajo (Dashboard) -->
-                <a href="{% url 'dashboard' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Bandeja Operativa</h3>
-                            <p class="rh-shortcut-desc">Monitorea tus tablas de candidatos en seguimiento, vacantes y actividad del equipo.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action">
-                        Abrir mesa de trabajo &rarr;
-                    </span>
-                </a>
-
-                <!-- Acceso 2: Registrar Vacante -->
-                <a href="{% url 'crear_vacante' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Registrar Vacante</h3>
-                            <p class="rh-shortcut-desc">Captura una nueva requisición de personal autorizada con su formato escaneado.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action">
-                        Nueva requisición &rarr;
-                    </span>
-                </a>
-
-                <!-- Acceso 3: Mis Vacantes -->
-                <a href="{% url 'mis_vacantes' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Mis Vacantes Asignadas</h3>
-                            <p class="rh-shortcut-desc">Revisa el cumplimiento de SLA, plazas cubiertas y estatus de vacantes.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action">
-                        Ver vacantes abiertas &rarr;
-                    </span>
-                </a>
-
-                <!-- Acceso 4: Mis Candidatos en Proceso -->
-                <a href="{% url 'mis_procesos' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Mis Candidatos</h3>
-                            <p class="rh-shortcut-desc">Avanza postulantes por las etapas de entrevistas, pruebas psicométricas y médico.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action">
-                        Ver candidatos activos &rarr;
-                    </span>
-                </a>
-
-                <!-- Acceso 5: Bolsa de Trabajo -->
-                <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-neutral-bg); color: var(--sap-neutral-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Bolsa de Trabajo</h3>
-                            <p class="rh-shortcut-desc">Consulta el repositorio general de talento para vincular candidatos a vacantes.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action">
-                        Explorar repositorio &rarr;
-                    </span>
-                </a>
-
-                <!-- Acceso 6: Reportes & BI Excel -->
-                <a href="{% url 'vista_reportes' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Reportes & BI Excel</h3>
-                            <p class="rh-shortcut-desc">Métricas analíticas, desempeño de asesoras, sábanas generales y exportación Excel.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action">
-                        Consultar analítica &rarr;
-                    </span>
-                </a>
-
-                <!-- Acceso 7 (Exclusivo Gerencia de CH / Superusuario): Auditoría RH -->
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span class="sap-badge sap-badge-neutral tabular-nums">
+                    {{ avisos|length }} comunicado{{ avisos|length|pluralize:"s" }} vigente{{ avisos|length|pluralize:"s" }}
+                </span>
                 {% if es_directora_ch %}
-                <a href="{% url 'vista_historial_general' %}" class="rh-shortcut-card">
-                    <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: var(--sap-warning-bg); color: var(--sap-warning-text);">
-                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="rh-shortcut-title">Auditoría & Bitácora RH</h3>
-                            <p class="rh-shortcut-desc">Registro histórico de excepciones, reinicios de ciclo y vetos de candidatos.</p>
-                        </div>
-                    </div>
-                    <span class="rh-shortcut-action" style="color: var(--sap-warning-text);">
-                        Consultar bitácora directiva &rarr;
-                    </span>
-                </a>
+                <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="toggleComposer()" aria-expanded="false" aria-controls="boxNoticeComposer" id="btnToggleComposer">
+                    <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    <span>Emitir Comunicado</span>
+                </button>
                 {% endif %}
             </div>
-        </section>
+        </div>
 
-        <!-- Columna Derecha: Avisos de Capital Humano -->
-        <section aria-labelledby="secNoticesTitle">
-            <div class="sap-page-header" style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sap-border-subtle);">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <div>
-                        <h2 id="secNoticesTitle" class="sap-page-title" style="font-size: 1.15rem;">
-                            <svg class="sap-icon" style="color: var(--sap-info-text);" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
-                            Avisos de Capital Humano
-                        </h2>
-                        <p class="sap-page-subtitle">Comunicados oficiales, lineamientos y fechas clave del equipo.</p>
-                    </div>
-                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ avisos|length }} vigentes</span>
+        <!-- Compositor de Avisos para Directora / Gerencia CH -->
+        {% if es_directora_ch %}
+        <div id="boxNoticeComposer" class="rh-notice-composer" style="display: none;">
+            <h3 class="rh-composer-title">
+                <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                Publicar Nuevo Comunicado Oficial de Capital Humano
+            </h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="crear_aviso">
+                <div class="sap-form-group">
+                    <label class="sap-label" for="id_aviso_titulo">Título del Comunicado:</label>
+                    <input type="text" id="id_aviso_titulo" name="titulo" class="sap-input" placeholder="Ej. Actualización de criterios en entrevistas técnicas y psicometría" required>
                 </div>
-            </div>
-
-            <!-- Publicador rápido para Directora / Gerencia CH -->
-            {% if es_directora_ch %}
-            <details class="sap-details" style="margin-top: 0; margin-bottom: 1rem;">
-                <summary class="sap-details-summary">
-                    <span>+ Publicar Nuevo Comunicado de CH</span>
-                </summary>
-                <div class="sap-details-content">
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="crear_aviso">
-                        <div class="sap-form-group">
-                            <label class="sap-label" for="id_aviso_titulo">Título del Comunicado:</label>
-                            <input type="text" id="id_aviso_titulo" name="titulo" class="sap-input" placeholder="Ej. Actualización de políticas de evaluación psicométrica" required>
-                        </div>
-                        <div class="sap-form-group">
-                            <label class="sap-label" for="id_aviso_contenido">Mensaje o Contenido:</label>
-                            <textarea id="id_aviso_contenido" name="contenido" class="sap-textarea" rows="3" placeholder="Redacta el aviso oficial para las asesoras de reclutamiento..." required></textarea>
-                        </div>
-                        <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="width: 100%;">
-                            Publicar Comunicado en Recepción
-                        </button>
-                    </form>
+                <div class="sap-form-group">
+                    <label class="sap-label" for="id_aviso_contenido">Mensaje del Comunicado:</label>
+                    <textarea id="id_aviso_contenido" name="contenido" class="sap-textarea" rows="3" placeholder="Redacta las indicaciones oficiales para el equipo de asesoras de selección..." required></textarea>
                 </div>
-            </details>
-            {% endif %}
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                    <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" onclick="toggleComposer()">Cancelar</button>
+                    <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm">Publicar Inmediatamente</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
 
-            <!-- Feed de Avisos Oficiales -->
-            <div class="rh-notice-feed">
-                {% for aviso in avisos %}
-                <article class="rh-notice-card">
+        <!-- Listado de Avisos en Primer Plano -->
+        <div class="rh-notices-grid">
+            {% for aviso in avisos %}
+            <article class="rh-notice-card">
+                <div>
                     <div class="rh-notice-meta">
-                        <span class="rh-notice-author">
+                        <span class="rh-notice-author-badge">
+                            <svg class="sap-icon" style="color: var(--sap-primary); width: 14px; height: 14px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                             {{ aviso.creado_por.get_full_name|default:aviso.creado_por.username }}
                         </span>
                         <span class="tabular-nums">
@@ -516,23 +514,273 @@
                         </span>
                     </div>
                     <h3 class="rh-notice-title">{{ aviso.titulo }}</h3>
-                    <p class="rh-notice-content">{{ aviso.contenido|linebreaksbr }}</p>
-                </article>
-                {% empty %}
-                <div class="rh-notice-empty">
-                    <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: var(--sap-info-text); margin-bottom: 8px;">
-                        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
-                    </svg>
-                    <div style="font-weight: 600; color: var(--sap-text);">Sin avisos recientes</div>
-                    <div style="font-size: 0.785rem; color: var(--sap-muted); margin-top: 4px;">
-                        No hay comunicados generales vigentes emitidos por la Dirección de Capital Humano.
-                    </div>
+                    <p class="rh-notice-body">{{ aviso.contenido|linebreaksbr }}</p>
                 </div>
-                {% endfor %}
+            </article>
+            {% empty %}
+            <div class="rh-notice-empty" style="grid-column: 1 / -1;">
+                <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" style="width: 36px; height: 36px; color: var(--sap-info-text); margin-bottom: 0.5rem;">
+                    <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
+                </svg>
+                <div class="rh-notice-empty-title">Sin comunicados oficiales pendientes</div>
+                <p class="rh-notice-empty-text">
+                    La Dirección de Capital Humano no tiene avisos activos en este momento. Las políticas y acuerdos de servicio se mantienen vigentes.
+                </p>
             </div>
-        </section>
+            {% endfor %}
+        </div>
+    </section>
 
-    </main>
+    <!-- 3. RESUMEN DEL SISTEMA A MODO DE LANDING PAGE CORPORATIVA -->
+    <section class="rh-system-overview" aria-labelledby="secOverviewTitle">
+        <div class="rh-overview-header">
+            <h2 id="secOverviewTitle" class="rh-overview-title">
+                Ecosistema de Selección & Gestión de Talento
+            </h2>
+            <p class="rh-overview-subtitle">
+                Arquitectura integral para la atracción, evaluación psicométrica y cobertura de requisiciones de personal en las agencias multimarca de Premier Automotriz.
+            </p>
+        </div>
+
+        <!-- 4 Pilares del Sistema -->
+        <div class="rh-pillars-grid">
+
+            <!-- Pilar 1: Atracción y Requisiciones -->
+            <article class="rh-pillar-card">
+                <div>
+                    <div class="rh-pillar-head">
+                        <div class="rh-pillar-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
+                            <svg class="sap-icon" style="width: 22px; height: 22px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                        </div>
+                        <div>
+                            <span class="rh-pillar-tag">Pilar 1</span>
+                            <h3 class="rh-pillar-title">Atracción & Requisiciones</h3>
+                        </div>
+                    </div>
+                    <p class="rh-pillar-desc">
+                        Captura directa y control del ciclo de vida de vacantes autorizadas con SLA estandarizado por familia de puesto y plazas cuadradas matemáticamente.
+                    </p>
+                    <ul class="rh-pillar-features">
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Días meta reglamentarios (10, 15, 20 o 25 días) por puesto</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Asignación automática a la asesora responsable</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Adjunto de formato oficial firmado de requisición</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="rh-pillar-action">
+                    <a href="{% url 'mis_vacantes' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Ver Mis Vacantes &rarr;
+                    </a>
+                </div>
+            </article>
+
+            <!-- Pilar 2: Banco de Talento y Cartera Centralizada -->
+            <article class="rh-pillar-card">
+                <div>
+                    <div class="rh-pillar-head">
+                        <div class="rh-pillar-icon" style="background: var(--sap-neutral-bg); color: var(--sap-neutral-text);">
+                            <svg class="sap-icon" style="width: 22px; height: 22px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        </div>
+                        <div>
+                            <span class="rh-pillar-tag">Pilar 2</span>
+                            <h3 class="rh-pillar-title">Cartera & Bolsa Central</h3>
+                        </div>
+                    </div>
+                    <p class="rh-pillar-desc">
+                        Repositorio unificado de talento para todas las agencias del grupo, blindado con validación estricta de antecedentes y recontrataciones.
+                    </p>
+                    <ul class="rh-pillar-features">
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Detección de candidatos 'No Contratables' (Boletinados)</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Búsqueda por ciudad, puesto de interés y habilidades</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Asignación atómica directa a requisiciones abiertas</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="rh-pillar-action">
+                    <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Explorar Bolsa &rarr;
+                    </a>
+                </div>
+            </article>
+
+            <!-- Pilar 3: Embudo de Selección y Evaluaciones -->
+            <article class="rh-pillar-card">
+                <div>
+                    <div class="rh-pillar-head">
+                        <div class="rh-pillar-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
+                            <svg class="sap-icon" style="width: 22px; height: 22px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                        </div>
+                        <div>
+                            <span class="rh-pillar-tag">Pilar 3</span>
+                            <h3 class="rh-pillar-title">Embudo de Selección</h3>
+                        </div>
+                    </div>
+                    <p class="rh-pillar-desc">
+                        Seguimiento riguroso de cada postulante por las etapas de evaluación técnica, psicométrica, entrevistas, filtros médicos y alta administrativa.
+                    </p>
+                    <ul class="rh-pillar-features">
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Evaluaciones de Integridad y Psicometría Pyxoom</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Validación de referencias y entrevista con Jefatura</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Contabilizador de permanencia por etapa del proceso</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="rh-pillar-action">
+                    <a href="{% url 'mis_procesos' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Ver Mis Candidatos &rarr;
+                    </a>
+                </div>
+            </article>
+
+            <!-- Pilar 4: Business Intelligence & Auditoría -->
+            <article class="rh-pillar-card">
+                <div>
+                    <div class="rh-pillar-head">
+                        <div class="rh-pillar-icon" style="background: var(--sap-warning-bg); color: var(--sap-warning-text);">
+                            <svg class="sap-icon" style="width: 22px; height: 22px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        </div>
+                        <div>
+                            <span class="rh-pillar-tag">Pilar 4</span>
+                            <h3 class="rh-pillar-title">Analítica & Auditoría (BI)</h3>
+                        </div>
+                    </div>
+                    <p class="rh-pillar-desc">
+                        Suite ejecutiva con semáforos en tiempo real, detección de vacantes atoradas y exportación de 3 reportes maestros a Excel (.xlsx).
+                    </p>
+                    <ul class="rh-pillar-features">
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Reporte 1: Balance de Vacantes y Plazas por Periodo</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Reporte 2: Monitor de Rendimiento y Desempeño</span>
+                        </li>
+                        <li class="rh-pillar-feature-item">
+                            <svg class="sap-icon rh-pillar-check" style="width: 15px; height: 15px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            <span>Reporte 3: Sábana Histórica y Auditoría de Movimientos</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="rh-pillar-action">
+                    <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                        Consultar Reportes &rarr;
+                    </a>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- 4. PROTOCOLOS Y REGLAS DE INTEGRIDAD DE CAPITAL HUMANO -->
+    <section class="rh-standards-section" aria-labelledby="secStandardsTitle">
+        <div class="rh-standards-header">
+            <h2 id="secStandardsTitle" class="rh-standards-title">
+                <svg class="sap-icon" style="color: var(--sap-primary); width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                Protocolos y Políticas Operativas de Capital Humano
+            </h2>
+            <p class="rh-standards-desc">
+                Criterios rectores que garantizan la consistencia, confidencialidad y rigor analítico en la gestión del talento.
+            </p>
+        </div>
+        <div class="rh-standards-grid">
+            <div class="rh-standard-item">
+                <div class="rh-standard-name">
+                    <svg class="sap-icon" style="color: var(--sap-info-text); width: 16px; height: 16px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                    SLA Reglamentario Inalterable
+                </div>
+                <p class="rh-standard-text">
+                    El conteo de días transcurre de forma ininterrumpida. El reinicio de SLA está reservado exclusivamente a la Gerencia de CH mediante causa justificada y documentada.
+                </p>
+            </div>
+
+            <div class="rh-standard-item">
+                <div class="rh-standard-name">
+                    <svg class="sap-icon" style="color: var(--sap-warning-text); width: 16px; height: 16px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                    Aislamiento Individual (RBAC)
+                </div>
+                <p class="rh-standard-text">
+                    Cada asesora visualiza, gestiona y reporta estrictamente sus vacantes y procesos asignados, protegiendo la confidencialidad de la información operativa.
+                </p>
+            </div>
+
+            <div class="rh-standard-item">
+                <div class="rh-standard-name">
+                    <svg class="sap-icon" style="color: var(--sap-error-text); width: 16px; height: 16px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    Motivo Obligatorio de Descarte
+                </div>
+                <p class="rh-standard-text">
+                    Todo candidato descartado o en estatus de abandono requiere la captura obligatoria del motivo, sustentando la calibración y auditoría de los perfiles.
+                </p>
+            </div>
+
+            <div class="rh-standard-item">
+                <div class="rh-standard-name">
+                    <svg class="sap-icon" style="color: var(--sap-success-text); width: 16px; height: 16px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    Cuadre Matemático de Plazas
+                </div>
+                <p class="rh-standard-text">
+                    La regla contable es exacta: Plazas Solicitadas = Plazas Cubiertas + Plazas Pendientes + Plazas Canceladas. No existen duplicidades ni discrepancias.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. BANNER DE INICIO DE JORNADA OPERATIVA -->
+    <section class="rh-cta-banner">
+        <div>
+            <h2 class="rh-cta-title">¿Listo para comenzar tu jornada operativa?</h2>
+            <p class="rh-cta-text">
+                Ingresa directamente a tu mesa de trabajo con el desglose en tiempo real de tus candidatos activos, vacantes abiertas y alertas de seguimiento.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-primary" style="padding: 10px 22px; font-size: 0.95rem;">
+                <span>Abrir Bandeja Operativa &rarr;</span>
+            </a>
+        </div>
+    </section>
 
 </div>
+
+<script>
+    function toggleComposer() {
+        var box = document.getElementById('boxNoticeComposer');
+        var btn = document.getElementById('btnToggleComposer');
+        if (!box) return;
+        var isHidden = (box.style.display === 'none' || box.style.display === '');
+        box.style.display = isHidden ? 'block' : 'none';
+        if (btn) {
+            btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            if (isHidden) {
+                var inputTitulo = document.getElementById('id_aviso_titulo');
+                if (inputTitulo) inputTitulo.focus();
+            }
+        }
+    }
+</script>
 {% endblock %}
