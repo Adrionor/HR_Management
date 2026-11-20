@@ -99,7 +99,7 @@
             </svg>
             Mis Vacantes Asignadas
         </h1>
-        <p class="sap-page-subtitle">Seguimiento de requisiciones activas, cobertura de plazas, cumplimiento de SLA y meta para bono.</p>
+        <p class="sap-page-subtitle">Seguimiento de requisiciones activas, cobertura de plazas y cumplimiento de SLA.</p>
     </div>
     <div>
         <a href="{% url 'crear_vacante' %}" class="sap-btn sap-btn-primary sap-btn-sm">
@@ -136,7 +136,6 @@
                         <th>Puesto / Ubicación</th>
                         <th>Plazas Cubiertas</th>
                         <th>Días vs Meta SLA</th>
-                        <th>Meta Bono RH</th>
                         <th>Requisición Escaneada</th>
                         <th style="text-align: right;">Acciones</th>
                     </tr>
@@ -179,13 +178,6 @@
                                     </span>
                                 {% endif %}
                             </div>
-                        </td>
-                        <td>
-                            {% if vacante.cumplio_meta_bono %}
-                                <span class="sap-badge sap-badge-success" title="Cumple criterio de bono (>= 3 candidatos enviados a jefe o vacante cubierta en tiempo)"><span class="sap-badge-dot"></span>Cumple Meta Bono</span>
-                            {% else %}
-                                <span class="sap-badge sap-badge-neutral" title="Requiere cubrir las plazas o enviar al menos 3 candidatos a entrevista con jefe"><span class="sap-badge-dot"></span>Pendiente</span>
-                            {% endif %}
                         </td>
                         <td>
                             {% if vacante.archivo_justificacion %}

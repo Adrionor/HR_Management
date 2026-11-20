@@ -394,7 +394,6 @@
                                     <th>Puesto</th>
                                     <th>Cobertura</th>
                                     <th>Días SLA</th>
-                                    <th>Cumplimiento Bono</th>
                                     <th style="text-align: right;">Acción</th>
                                 </tr>
                             </thead>
@@ -420,13 +419,6 @@
                                             <span class="sap-badge sap-badge-success" style="margin-left: 4px; font-size: 0.7rem; padding: 1px 5px;">En tiempo</span>
                                         {% endif %}
                                     </td>
-                                    <td>
-                                        {% if vac.cumplio_meta_bono %}
-                                            <span class="sap-badge sap-badge-success"><span class="sap-badge-dot"></span>Meta Bono OK</span>
-                                        {% else %}
-                                            <span class="sap-badge sap-badge-neutral"><span class="sap-badge-dot"></span>Pendiente</span>
-                                        {% endif %}
-                                    </td>
                                     <td style="text-align: right;">
                                         <a href="{% url 'asignar_candidato' vac.id %}" class="sap-btn sap-btn-positive sap-btn-sm" style="padding: 2px 8px;">
                                             Buscar candidatos &rarr;
@@ -435,7 +427,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 2rem 1rem; color: var(--sap-muted);">
+                                    <td colspan="4" style="text-align: center; padding: 2rem 1rem; color: var(--sap-muted);">
                                         No hay vacantes abiertas asignadas actualmente.
                                     </td>
                                 </tr>

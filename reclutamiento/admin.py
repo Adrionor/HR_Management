@@ -66,7 +66,6 @@ class PuestoAdmin(admin.ModelAdmin):
         'dias_meta',
         'dias_transcurridos_badge',
         'estatus_sla_badge',
-        'meta_bono_badge',
         'esta_abierto',
     )
     list_filter = (
@@ -84,7 +83,6 @@ class PuestoAdmin(admin.ModelAdmin):
         'dias_transcurridos',
         'fecha_limite_sla',
         'estatus_sla',
-        'cumplio_meta_bono',
         'etapa_operativa',
     )
     fieldsets = (
@@ -140,7 +138,6 @@ class PuestoAdmin(admin.ModelAdmin):
                 'dias_transcurridos',
                 'fecha_limite_sla',
                 'estatus_sla',
-                'cumplio_meta_bono',
                 'etapa_operativa',
             )
         }),
@@ -165,10 +162,6 @@ class PuestoAdmin(admin.ModelAdmin):
             '<span style="background-color: {}; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">{}</span>',
             color, st
         )
-
-    @admin.display(description="Meta Bono", boolean=True)
-    def meta_bono_badge(self, obj):
-        return obj.cumplio_meta_bono
 
 
 # --------------------------------------------------------------------------

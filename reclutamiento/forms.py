@@ -94,7 +94,7 @@ class SolicitudPuestoForm(forms.ModelForm):
             'jefe_inmediato_puesto': forms.TextInput(attrs={'placeholder': 'Puesto del jefe inmediato'}),
             'sueldo_base': forms.NumberInput(attrs={'step': '0.01'}),
             'dias_meta': forms.NumberInput(attrs={'min': '1'}),
-            'esquema_comisiones': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe los bonos, comisiones, etc. Si no aplica, déjalo en blanco.'}),
+            'esquema_comisiones': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe las comisiones, incentivos o variables del puesto. Si no aplica, déjalo en blanco.'}),
             'comentarios': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Comentarios u observaciones adicionales sobre la requisición'}),
         }
 

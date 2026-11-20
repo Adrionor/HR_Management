@@ -314,11 +314,11 @@ def reportes_view(request):
             response['Content-Disposition'] = f'attachment; filename="reporte_resumen_ejecutivo_{timestamp_str}.xlsx"'
             return response
             
-        # Reporte 2 — Auditoría y Bono por Asesora (.xlsx)
-        elif export_type in ['auditoria_bono', 'excel_2']:
+        # Reporte 2 — Auditoría de Desempeño y Productividad por Asesora (.xlsx)
+        elif export_type in ['auditoria_bono', 'auditoria_asesoras', 'excel_2']:
             buffer = ReportesService.generar_excel_auditoria_bono(filtros, request.user)
             response = HttpResponse(buffer.getvalue(), content_type=xlsx_content_type)
-            response['Content-Disposition'] = f'attachment; filename="reporte_auditoria_bono_{timestamp_str}.xlsx"'
+            response['Content-Disposition'] = f'attachment; filename="reporte_auditoria_asesoras_{timestamp_str}.xlsx"'
             return response
             
         # Reporte 3 — Sábana Histórica Filtrable (.xlsx)
@@ -337,7 +337,7 @@ def reportes_view(request):
             writer.writerow([
                 'ID Vacante', 'Puesto', 'Marca', 'Agencia', 'Ciudad',
                 'Asesora Encargada', 'Fecha Requisición', 'Días Transcurridos', 'Días Meta', 'Estatus SLA',
-                'Plazas Solicitadas', 'Plazas Cubiertas', 'Meta Bono OK'
+                'Plazas Solicitadas', 'Plazas Cubiertas'
             ])
             for p in datos_reporte['puestos']:
                 writer.writerow([
@@ -352,8 +352,7 @@ def reportes_view(request):
                     p.dias_meta,
                     p.estatus_sla,
                     p.cantidad_vacantes,
-                    p.plazas_cubiertas,
-                    "SI" if p.cumplio_meta_bono else "NO"
+                    p.plazas_cubiertas
                 ])
             return response
 
@@ -381,12 +380,12 @@ def reportes_view(request):
             writer = csv.writer(response)
             writer.writerow([
                 'Asesora', 'Email', 'Vacantes Asignadas', 'Activas', 'Vencidas', 'Cubiertas',
-                'Meta Bono OK', 'Plazas Cubiertas', '% Conversión'
+                'Plazas Cubiertas', '% Conversión'
             ])
             for as_data in datos_reporte['asesoras_scorecard']:
                 writer.writerow([
                     as_data['nombre'], as_data['email'], as_data['total_asignadas'], as_data['activas'],
-                    as_data['vencidas'], as_data['cubiertas'], as_data['bono_cumplido'],
+                    as_data['vencidas'], as_data['cubiertas'],
                     as_data['plazas_cubiertas'], f"{as_data['tasa_conversion']}%"
                 ])
             return response

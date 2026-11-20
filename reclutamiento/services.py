@@ -406,7 +406,7 @@ class ReportesService:
     @staticmethod
     def compute_asesoras_scorecard(puestos):
         """
-        Monitor de desempeño, auditoría de bono y desglose de embudo por Asesora de RH.
+        Monitor de desempeño, productividad de cobertura y desglose de embudo por Asesora de RH.
         """
         from .models import Proceso
         asesoras_dict = {}
@@ -429,7 +429,6 @@ class ReportesService:
                     'total_asignadas': 0,
                     'activas': 0,
                     'cubiertas': 0,
-                    'bono_cumplido': 0,
                     'vencidas': 0,
                     'reiniciadas': 0,
                     'plazas_solicitadas': 0,
@@ -451,8 +450,6 @@ class ReportesService:
             entry['plazas_solicitadas'] += p.cantidad_vacantes
             entry['plazas_cubiertas'] += p.plazas_cubiertas
             
-            if p.cumplio_meta_bono:
-                entry['bono_cumplido'] += 1
             if p.numero_reinicios > 0:
                 entry['reiniciadas'] += 1
                 
@@ -490,27 +487,28 @@ class ReportesService:
         for a_id, data in asesoras_dict.items():
             tot = data['total_candidatos']
             conversion = round((data['contratados'] / tot * 100), 1) if tot > 0 else 0.0
-            bono_pct = round((data['bono_cumplido'] / data['total_asignadas'] * 100), 1) if data['total_asignadas'] > 0 else 0.0
             
             venc = data['vencidas']
             act = data['activas']
-            asig = data['total_asignadas']
+            cub = data['cubiertas']
 
-            if venc >= 2 or (asig >= 2 and bono_pct < 50):
+            if venc >= 2:
                 semaforo = 'rojo'
                 nivel_alerta = 'Crítico'
-                diagnostico = f"Atención urgente: {venc} vacante(s) vencida(s) y meta de bono en {bono_pct}%."
-            elif venc == 1 or act >= 8 or (asig >= 2 and bono_pct < 80):
+                diagnostico = f"Atención urgente: {venc} vacante(s) con retraso de SLA."
+            elif venc == 1 or act >= 8:
                 semaforo = 'amarillo'
                 nivel_alerta = 'Atención'
                 detalles = []
                 if venc == 1:
-                    detalles.append("1 vacante vencida")
+                    detalles.append("1 vacante con retraso")
                 if act >= 8:
                     detalles.append(f"sobrecarga ({act} activas)")
-                if asig >= 2 and bono_pct < 80:
-                    detalles.append(f"bono al {bono_pct}%")
                 diagnostico = f"Monitoreo sugerido: {', '.join(detalles)}."
+            elif cub >= 3:
+                semaforo = 'verde'
+                nivel_alerta = 'Óptimo'
+                diagnostico = f"Rendimiento destacado: {cub} vacante(s) cubiertas exitosamente."
             else:
                 semaforo = 'verde'
                 nivel_alerta = 'Óptimo'
@@ -523,8 +521,8 @@ class ReportesService:
                 'total_asignadas': data['total_asignadas'],
                 'activas': data['activas'],
                 'cubiertas': data['cubiertas'],
-                'bono_cumplido': data['bono_cumplido'],
-                'bono_pct': bono_pct,
+                'bono_cumplido': 0,
+                'bono_pct': 0.0,
                 'vencidas': data['vencidas'],
                 'reiniciadas': data['reiniciadas'],
                 'plazas_solicitadas': data['plazas_solicitadas'],
@@ -545,7 +543,7 @@ class ReportesService:
                 'diagnostico': diagnostico,
             })
             
-        return sorted(scorecard, key=lambda x: (x['bono_cumplido'], x['cubiertas']), reverse=True)
+        return sorted(scorecard, key=lambda x: (x['cubiertas'], x['contratados'], -x['vencidas']), reverse=True)
 
     @staticmethod
     def compute_desglose_agencia_puesto(puestos):
@@ -610,21 +608,20 @@ class ReportesService:
 
     @staticmethod
     def compute_detalle_vacantes_bono(puestos):
-        """Genera el detalle de auditoría de cada vacante evaluada para bono (Hoja 2 de Reporte 2)."""
+        """Genera el detalle de auditoría de cada vacante para seguimiento de SLA (Hoja 2 de Reporte 2)."""
         from .models import Proceso
         resultado = []
         for p in puestos:
-            cumple_bono = p.cumplio_meta_bono
             criterio = ""
             if p.esta_completamente_cubierta:
                 if p.dias_transcurridos <= p.dias_meta:
                     criterio = "100% Plazas Cubiertas en Tiempo SLA"
                 else:
-                    criterio = "Cubierta Fuera de Tiempo (Descalificada)"
-            elif cumple_bono:
-                criterio = "Terna Válida Aprobada enviada a Jefe en Tiempo"
+                    criterio = "Cubierta con Retraso de SLA"
+            elif p.dias_transcurridos <= p.dias_meta:
+                criterio = "En Proceso Activo (En Tiempo SLA)"
             else:
-                criterio = "En Proceso / Criterios no alcanzados"
+                criterio = f"Proceso Retrasado (+{p.dias_transcurridos - p.dias_meta}d sobre SLA)"
                 
             cand_jefe = 0
             for pr in p.procesos.all():
@@ -650,11 +647,11 @@ class ReportesService:
                 'plazas_solicitadas': p.cantidad_vacantes,
                 'plazas_cubiertas': p.plazas_cubiertas,
                 'candidatos_jefe': cand_jefe,
-                'cumple_bono': cumple_bono,
+                'cumple_bono': p.esta_completamente_cubierta,
                 'criterio': criterio,
                 'esta_abierto': p.esta_abierto,
             })
-        return sorted(resultado, key=lambda x: (not x['cumple_bono'], x['dias_transcurridos']), reverse=True)
+        return sorted(resultado, key=lambda x: (x['estatus_sla'] == 'VENCIDA', -x['dias_transcurridos']), reverse=True)
 
     @staticmethod
     def compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard):
@@ -714,7 +711,7 @@ class ReportesService:
                     'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
                 })
             # 3. Riesgo de SLA (>= 75% del tiempo meta consumido y menos de 2 candidatos a jefe)
-            elif p.dias_transcurridos >= (p.dias_meta * 0.75) and len(candidatos_en_jefe) < 2 and not p.cumplio_meta_bono:
+            elif p.dias_transcurridos >= (p.dias_meta * 0.75) and len(candidatos_en_jefe) < 2 and not p.esta_completamente_cubierta:
                 pct_consumido = round((p.dias_transcurridos / p.dias_meta * 100)) if p.dias_meta > 0 else 0
                 vacantes_atoradas.append({
                     'puesto': p,
@@ -787,7 +784,7 @@ class ReportesService:
                 'tipo': 'exito',
                 'badge': "100% en tiempo",
                 'texto': "Todas las requisiciones activas se encuentran dentro de su ventana de días meta reglamentarios.",
-                'accion': "Mantener el ritmo de preselección para asegurar el bono de cobertura del periodo.",
+                'accion': "Mantener el ritmo de preselección para asegurar la cobertura en tiempo SLA del periodo.",
             })
 
         if cuellos_de_botella and etapa_cuello_dias > 0:
@@ -1219,14 +1216,14 @@ class ReportesService:
         return buf
 
     # =========================================================================
-    # EXPORTACIÓN 2: Auditoría y Bono por Asesora (.xlsx)
+    # EXPORTACIÓN 2: Auditoría y Productividad por Asesora (.xlsx)
     # =========================================================================
     @staticmethod
     def generar_excel_auditoria_bono(filtros, usuario):
         """
-        Genera el Reporte 2 — Auditoría y Bono por Asesora (.xlsx)
-        Hoja 1: Indicadores individuales de bono, SLA y desglose de embudo.
-        Hoja 2: Detalle de cada vacante y cumplimiento de criterio de bono.
+        Genera el Reporte 2 — Auditoría de Productividad y Desempeño por Asesora (.xlsx)
+        Hoja 1: Indicadores individuales de desempeño, cobertura, SLA y desglose de embudo.
+        Hoja 2: Detalle de cada vacante y cumplimiento de tiempos de SLA.
         """
         queryset = ReportesService.get_base_queryset(usuario)
         queryset = ReportesService.apply_filters(queryset, filtros)
@@ -1237,29 +1234,27 @@ class ReportesService:
         wb = openpyxl.Workbook()
         
         # ---------------------------------------------------------------------
-        # HOJA 1: RESUMEN Y BONO POR ASESORA
+        # HOJA 1: RESUMEN Y PRODUCTIVIDAD POR ASESORA
         # ---------------------------------------------------------------------
         ws1 = wb.active
-        ws1.title = "Auditoría y Bono Asesoras"
+        ws1.title = "Auditoría Asesoras"
         ws1.views.sheetView[0].showGridLines = True
         
         ws1.append(["PREMIER AUTOMOTRIZ — GESTIÓN DE TALENTO HUMANO"])
-        ws1.append(["REPORTE 2: AUDITORÍA DE PRODUCTIVIDAD Y CUMPLIMIENTO DE BONO POR ASESORA"])
-        ws1.append(["Regla de Bono: Cubrir plazas en tiempo SLA o Enviar >= 3 candidatos a entrevista con jefe dentro del plazo"])
+        ws1.append(["REPORTE 2: AUDITORÍA DE PRODUCTIVIDAD Y DESEMPEÑO POR ASESORA"])
         ws1.append([])
         ws1["A1"].font = FONT_TITLE
         ws1["A2"].font = FONT_SECTION
-        ws1["A3"].font = FONT_SUBTITLE
         
         headers_ws1 = [
             "Asesora de Capital Humano", "Correo Electrónico",
-            "Vacantes Asignadas", "Vacantes Cubiertas", "Vacantes Bono OK",
+            "Vacantes Asignadas", "Vacantes Cubiertas",
             "Vacantes Vencidas", "Vacantes Reiniciadas", "Plazas Cubiertas",
             "Integridad Aprobados", "Integridad No Aprobados",
             "Pyxoom Aprobados", "Pyxoom No Aprobados",
             "Descartados CH", "Enviados a Jefe", "Confirmados Jefe",
             "Abandonos", "Contratados", "Total Candidatos",
-            "% Conversión", "% Cumplimiento Bono"
+            "% Conversión"
         ]
         ws1.append(headers_ws1)
         r_h1 = ws1.max_row
@@ -1273,16 +1268,16 @@ class ReportesService:
         for a in scorecard_asesoras:
             ws1.append([
                 a['nombre'], a['email'],
-                a['total_asignadas'], a['cubiertas'], a['bono_cumplido'],
+                a['total_asignadas'], a['cubiertas'],
                 a['vencidas'], a['reiniciadas'], a['plazas_cubiertas'],
                 a['integridad_aprobados'], a['integridad_reprobados'],
                 a['pyxoom_aprobados'], a['pyxoom_reprobados'],
                 a['descartados'], a['enviados_jefe'], a['confirmados_jefe'],
                 a['abandonos'], a['contratados'], a['total_candidatos'],
-                f"{a['tasa_conversion']}%", f"{a['bono_pct']}%"
+                f"{a['tasa_conversion']}%"
             ])
             r = ws1.max_row
-            for c_i in range(1, 21):
+            for c_i in range(1, 19):
                 cell = ws1.cell(row=r, column=c_i)
                 cell.border = BORDER_THIN
                 cell.font = FONT_REGULAR
@@ -1290,21 +1285,20 @@ class ReportesService:
                     cell.alignment = ALIGN_CENTER
                 else:
                     cell.alignment = ALIGN_LEFT
-                # Resaltar Bono OK
-                if c_i == 5:
+                if c_i == 4:
                     cell.font = FONT_GREEN_BOLD
-                if c_i == 6 and a['vencidas'] > 0:
+                if c_i == 5 and a['vencidas'] > 0:
                     cell.font = FONT_RED_BOLD
                     
         _autofit_columns(ws1)
         
         # ---------------------------------------------------------------------
-        # HOJA 2: DETALLE DE VACANTES POR ASESORA
+        # HOJA 2: DETALLE DE VACANTES Y CUMPLIMIENTO SLA
         # ---------------------------------------------------------------------
-        ws2 = wb.create_sheet(title="Detalle Vacantes y Bono")
+        ws2 = wb.create_sheet(title="Detalle Vacantes y SLA")
         ws2.views.sheetView[0].showGridLines = True
         
-        ws2.append(["DETALLE DE VACANTES Y VERIFICACIÓN DE BONO"])
+        ws2.append(["DETALLE DE VACANTES Y CUMPLIMIENTO DE SLA"])
         ws2.append([f"Total de vacantes analizadas: {len(puestos)}"])
         ws2.append([])
         ws2["A1"].font = FONT_TITLE
@@ -1314,7 +1308,7 @@ class ReportesService:
             "ID Vacante", "Asesora Encargada", "Puesto", "Marca", "Agencia", "Ciudad",
             "Fecha Solicitud", "Días Transcurridos", "Días Meta SLA", "Estatus SLA",
             "Ciclo SLA / Reinicios", "Plazas Solicitadas", "Plazas Cubiertas",
-            "Cand. Enviados a Jefe", "Cumplimiento Bono", "Criterio Bono Aplicado"
+            "Cand. Enviados a Jefe", "Detalle de Seguimiento"
         ]
         ws2.append(headers_ws2)
         r_h2 = ws2.max_row
@@ -1322,18 +1316,20 @@ class ReportesService:
             cell = ws2.cell(row=r_h2, column=c_i)
             cell.fill = FILL_SUBHEADER
             cell.font = FONT_HEADER
-            cell.alignment = ALIGN_CENTER if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14, 15] else ALIGN_LEFT
+            cell.alignment = ALIGN_CENTER if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14] else ALIGN_LEFT
             cell.border = BORDER_THIN
             
         for p in puestos:
             cand_jefe = sum(1 for pr in p.procesos.all() if pr.estatus_proceso in ['ENT_JF', 'CONF_JF', 'MEDICO', 'DOCS', 'INGRESO_PROG', 'ALTA_ADMIN', 'CONTRATADO'])
-            cumple_bono = p.cumplio_meta_bono
             if p.esta_completamente_cubierta:
-                criterio = "Plazas cubiertas al 100%"
-            elif cand_jefe >= 3:
-                criterio = ">= 3 candidatos enviados a jefe en plazo"
+                if p.dias_transcurridos <= p.dias_meta:
+                    criterio = "100% Plazas Cubiertas en Tiempo SLA"
+                else:
+                    criterio = "Cubierta con Retraso de SLA"
+            elif p.dias_transcurridos <= p.dias_meta:
+                criterio = "En Proceso Activo (En Tiempo SLA)"
             else:
-                criterio = "Pendiente de cubrir o enviar candidatos"
+                criterio = f"Proceso Retrasado (+{p.dias_transcurridos - p.dias_meta}d sobre SLA)"
                 
             ws2.append([
                 p.id,
@@ -1350,24 +1346,24 @@ class ReportesService:
                 p.cantidad_vacantes,
                 p.plazas_cubiertas,
                 cand_jefe,
-                "CUMPLE BONO" if cumple_bono else "PENDIENTE",
                 criterio
             ])
             r = ws2.max_row
-            for c_i in range(1, 17):
+            for c_i in range(1, 16):
                 cell = ws2.cell(row=r, column=c_i)
                 cell.border = BORDER_THIN
                 cell.font = FONT_REGULAR
-                if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+                if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14]:
                     cell.alignment = ALIGN_CENTER
                 else:
                     cell.alignment = ALIGN_LEFT
-                if c_i == 15:
-                    if cumple_bono:
+                if c_i == 10:
+                    if p.estatus_sla == 'EN_TIEMPO' or p.esta_completamente_cubierta:
                         cell.fill = FILL_SUCCESS
                         cell.font = FONT_GREEN_BOLD
-                    else:
-                        cell.fill = FILL_LIGHT
+                    elif p.estatus_sla == 'VENCIDA':
+                        cell.fill = FILL_DANGER
+                        cell.font = FONT_RED_BOLD
                         
         _autofit_columns(ws2)
         

@@ -230,13 +230,13 @@ class HRManagementTests(TestCase):
         self.assertIn("Resumen Ejecutivo", wb1.sheetnames)
         self.assertIn("Desglose Agencia y Puesto", wb1.sheetnames)
 
-        # 2. Reporte 2: Auditoría y Bono por Asesora
+        # 2. Reporte 2: Auditoría y Productividad por Asesora
         resp2 = self.client.get(reverse('vista_reportes') + '?export=auditoria_bono')
         self.assertEqual(resp2.status_code, 200)
         self.assertEqual(resp2['Content-Type'], xlsx_type)
         wb2 = openpyxl.load_workbook(io.BytesIO(resp2.content))
-        self.assertIn("Auditoría y Bono Asesoras", wb2.sheetnames)
-        self.assertIn("Detalle Vacantes y Bono", wb2.sheetnames)
+        self.assertIn("Auditoría Asesoras", wb2.sheetnames)
+        self.assertIn("Detalle Vacantes y SLA", wb2.sheetnames)
 
         # 3. Reporte 3: Sábana Histórica Filtrable
         resp3 = self.client.get(reverse('vista_reportes') + '?export=sabana_historica')
