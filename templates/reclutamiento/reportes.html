@@ -1,11 +1,11 @@
 {% extends "reclutamiento/base_interno.html" %}
 {% load static %}
 
-{% block title %}Suite BI & Analítica de Talento | Premier Automotriz{% endblock %}
+{% block title %}Reportes & Analítica de Talento | Premier Automotriz{% endblock %}
 
 {% block breadcrumb %}
     <span class="sap-breadcrumb-separator">/</span>
-    <span class="sap-breadcrumb-current">BI Excel & Analítica de Reclutamiento</span>
+    <span class="sap-breadcrumb-current">Reportes & Analítica</span>
 {% endblock %}
 
 {% block back_button %}
@@ -36,15 +36,41 @@
 
     .rh-filter-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 0.85rem;
         align-items: flex-end;
+    }
+
+    .rh-filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        min-width: 200px;
+    }
+
+    .rh-filter-actions .sap-btn {
+        height: 36px;
+        box-sizing: border-box;
+        white-space: nowrap;
+    }
+
+    .rh-filter-actions .sap-btn-primary {
+        flex: 1;
+    }
+
+    @media (max-width: 640px) {
+        .rh-filter-grid {
+            grid-template-columns: 1fr;
+        }
+        .rh-filter-actions {
+            min-width: 100%;
+        }
     }
 
     .rh-date-presets {
         display: flex;
         gap: 6px;
-        margin-top: 0.65rem;
+        margin-top: 0.75rem;
         flex-wrap: wrap;
         align-items: center;
     }
@@ -53,12 +79,14 @@
         background: #f1f5f9;
         border: 1px solid var(--sap-border);
         border-radius: var(--sap-radius-sm);
-        padding: 3px 8px;
+        padding: 4px 10px;
         font-size: 0.75rem;
         color: var(--sap-muted);
         cursor: pointer;
         font-weight: 500;
         transition: all 0.15s ease;
+        white-space: nowrap;
+        line-height: 1.3;
     }
 
     .rh-preset-btn:hover {
@@ -137,8 +165,7 @@
         font-size: 0.75rem;
         font-weight: 600;
         color: var(--sap-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.02em;
         margin-top: 3px;
     }
 
@@ -241,10 +268,11 @@
         padding: 6px;
         box-shadow: var(--sap-shadow-card);
         overflow-x: auto;
+        scrollbar-width: thin;
     }
 
     .rh-bi-tab-btn {
-        flex: 1;
+        flex: 1 0 auto;
         min-width: 175px;
         padding: 9px 14px;
         background: transparent;
@@ -261,6 +289,7 @@
         transition: all 0.15s ease;
         white-space: nowrap;
         outline: none;
+        flex-shrink: 0;
     }
 
     .rh-bi-tab-btn:hover, .rh-bi-tab-btn:focus-visible {
@@ -320,20 +349,32 @@
         margin-top: 3px;
     }
 
+    .rh-report-action-header .sap-btn {
+        height: 36px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+    }
+
     .rh-btn-excel-export {
         background: #107e3e;
         color: #ffffff;
-        border: none;
-        padding: 9px 18px;
+        border: 1px solid #0b612e;
+        padding: 0 16px;
+        height: 36px;
+        box-sizing: border-box;
         border-radius: var(--sap-radius-sm);
         font-size: 0.835rem;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
         text-decoration: none;
         box-shadow: 0 2px 6px rgba(16, 126, 62, 0.2);
         transition: all 0.15s ease;
+        white-space: nowrap;
     }
 
     .rh-btn-excel-export:hover {
@@ -341,6 +382,34 @@
         color: #ffffff;
         transform: translateY(-1px);
         box-shadow: 0 4px 10px rgba(16, 126, 62, 0.28);
+    }
+
+    /* DataTables Controls Fixes (Evita botones o controles encimados) */
+    .dataTables_wrapper {
+        margin-top: 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 0.75rem;
+        font-size: 0.8125rem;
+    }
+    .dataTables_wrapper .dataTables_paginate {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding-top: 0.75rem !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 4px 10px !important;
+        margin: 0 !important;
+        border-radius: var(--sap-radius-sm) !important;
+        font-size: 0.8125rem !important;
+        cursor: pointer;
+    }
+    .dataTables_wrapper .dataTables_info {
+        padding-top: 0.85rem !important;
+        font-size: 0.8125rem;
     }
 
     /* Balance Cuadrado de Requisiciones */
@@ -474,7 +543,7 @@
                     <line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="2"/>
                     <line x1="3" y1="15" x2="21" y2="15" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                Suite de Business Intelligence & Analítica de Talento
+                Suite de Reportes & Analítica de Talento
             </h1>
             <p class="sap-page-subtitle">
                 Monitoreo estratégico de ciclo de vida de vacantes, productividad operativa, detección de cuellos de botella y visualización de reportes ejecutivos.
@@ -568,12 +637,12 @@
                 </div>
 
                 <!-- Botones Filtrar / Limpiar -->
-                <div style="display: flex; gap: 6px;">
-                    <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="flex: 1;">
+                <div class="rh-filter-actions">
+                    <button type="submit" class="sap-btn sap-btn-primary">
                         <svg class="sap-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                         <span>Filtrar</span>
                     </button>
-                    <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary sap-btn-sm">
+                    <a href="{% url 'vista_reportes' %}" class="sap-btn sap-btn-secondary">
                         Limpiar
                     </a>
                 </div>
@@ -723,7 +792,7 @@
 
         <!-- Balance Cuadrado Matemáticamente -->
         <div class="rh-balance-box">
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--sap-text); text-transform: uppercase; letter-spacing: 0.04em;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--sap-text); letter-spacing: 0.02em;">
                 Balance Cuadrado de Requisiciones y Plazas
             </div>
             <div class="rh-balance-formula">
@@ -1018,12 +1087,12 @@
                     Consulta total de requisiciones y registro de auditoría de movimientos con usuario responsable y fecha/hora exacta.
                 </div>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <a href="{% url 'vista_reportes' %}?export=sabana_historica&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="rh-btn-excel-export">
                     <svg class="sap-icon" style="width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                     <span>Exportar Reporte 3 (.xlsx)</span>
                 </a>
-                <a href="{% url 'vista_reportes' %}?export=csv_master&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm" style="height: 38px;">
+                <a href="{% url 'vista_reportes' %}?export=csv_master&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm">
                     CSV Maestro
                 </a>
             </div>
@@ -1366,8 +1435,9 @@
                     Consolidado territorial de plazas cubiertas, pendientes y cumplimiento de SLA por sucursal automotriz.
                 </div>
             </div>
-            <a href="{% url 'vista_reportes' %}?export=csv_agencias&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm" style="height: 38px;">
-                Descargar CSV Agencias
+            <a href="{% url 'vista_reportes' %}?export=csv_agencias&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="rh-btn-excel-export">
+                <svg class="sap-icon" style="width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                <span>Exportar Matriz Agencias (.csv)</span>
             </a>
         </div>
 

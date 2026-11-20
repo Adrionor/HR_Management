@@ -141,18 +141,11 @@
         white-space: nowrap;
     }
 
-    /* Layout Principal (2 Columnas) */
+    /* Layout Principal (Columna Completa) */
     .rh-main-layout {
-        display: grid;
-        grid-template-columns: 1fr 340px;
+        display: flex;
+        flex-direction: column;
         gap: 1.25rem;
-        align-items: start;
-    }
-
-    @media (max-width: 1080px) {
-        .rh-main-layout {
-            grid-template-columns: 1fr;
-        }
     }
 
     .rh-table {
@@ -274,16 +267,16 @@
             </div>
         </a>
 
-        <!-- 5. Reportes Excel -->
+        <!-- 5. Reportes -->
         <a href="{% url 'vista_reportes' %}" class="rh-menu-item" title="Generación y exportación de reportes analíticos">
             <div class="rh-menu-icon">
                 <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
             </div>
             <div class="rh-menu-info">
-                <span class="rh-menu-label">Reportes BI</span>
+                <span class="rh-menu-label">Reportes</span>
                 <div class="rh-menu-data">
-                    <span class="rh-menu-value" style="font-size: 0.95rem;">BI / Excel</span>
-                    <span class="rh-menu-desc">descargas</span>
+                    <span class="rh-menu-value" style="font-size: 0.95rem;">Reportes</span>
+                    <span class="rh-menu-desc">analítica</span>
                 </div>
             </div>
         </a>
@@ -305,10 +298,8 @@
         {% endif %}
     </nav>
 
-    <!-- Layout Principal: Tablas de Trabajo Operativo (Izq) y Panel de Soporte/Avisos (Der) -->
+    <!-- Layout Principal: Tablas de Trabajo Operativo -->
     <main class="rh-main-layout">
-
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
 
             <!-- TABLA 1: CANDIDATOS EN SEGUIMIENTO ACTIVO -->
             <div class="sap-card">
@@ -503,42 +494,6 @@
                 </div>
             </div>
             {% endif %}
-
-        </div>
-
-        <!-- Columna Lateral: Soporte y Accesos Operativos -->
-        <aside style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <!-- Acceso a Recepción y Comunicados Oficiales -->
-            <div class="sap-card" style="background: #ffffff; border-top: 2px solid var(--sap-primary);">
-                <div class="sap-card-body" style="padding: 1.15rem 1.25rem;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.35rem;">
-                        <svg class="sap-icon" style="color: var(--sap-primary); width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
-                        <h2 class="sap-card-title" style="font-size: 0.95rem;">Avisos & Recepción</h2>
-                    </div>
-                    <p style="font-size: 0.8125rem; color: var(--sap-muted); line-height: 1.45; margin: 0 0 0.85rem 0;">
-                        Los comunicados oficiales de Capital Humano y los accesos rápidos generales están disponibles en la página de recepción.
-                    </p>
-                    <a href="{% url 'recepcion' %}" class="sap-btn sap-btn-secondary sap-btn-sm" style="width: 100%;">
-                        Ver Recepción & Avisos &rarr;
-                    </a>
-                </div>
-            </div>
-
-            <!-- Caja de Ayuda Operativa Directa -->
-            <div class="sap-card" style="background: #f8fafc; border-top: 2px solid var(--sap-primary);">
-                <div class="sap-card-body" style="padding: 1.15rem 1.25rem;">
-                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--sap-text); margin-bottom: 6px;">
-                        Flujo Rápido de Reclutamiento
-                    </div>
-                    <ul style="padding-left: 1.15rem; margin: 0; font-size: 0.8rem; color: var(--sap-muted); line-height: 1.55;">
-                        <li><strong>1. Captura:</strong> Carga la requisición firmada en "Registrar Vacante".</li>
-                        <li><strong>2. Asignación:</strong> Selecciona candidatos de la Bolsa de Trabajo.</li>
-                        <li><strong>3. Avance:</strong> Registra entrevistas y confirmación del jefe directo.</li>
-                        <li><strong>4. Cierre:</strong> Al contratar, la plaza se cubre automáticamente.</li>
-                    </ul>
-                </div>
-            </div>
-        </aside>
 
     </main>
 
