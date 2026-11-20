@@ -492,6 +492,30 @@ class ReportesService:
             conversion = round((data['contratados'] / tot * 100), 1) if tot > 0 else 0.0
             bono_pct = round((data['bono_cumplido'] / data['total_asignadas'] * 100), 1) if data['total_asignadas'] > 0 else 0.0
             
+            venc = data['vencidas']
+            act = data['activas']
+            asig = data['total_asignadas']
+
+            if venc >= 2 or (asig >= 2 and bono_pct < 50):
+                semaforo = 'rojo'
+                nivel_alerta = 'Crítico'
+                diagnostico = f"Atención urgente: {venc} vacante(s) vencida(s) y meta de bono en {bono_pct}%."
+            elif venc == 1 or act >= 8 or (asig >= 2 and bono_pct < 80):
+                semaforo = 'amarillo'
+                nivel_alerta = 'Atención'
+                detalles = []
+                if venc == 1:
+                    detalles.append("1 vacante vencida")
+                if act >= 8:
+                    detalles.append(f"sobrecarga ({act} activas)")
+                if asig >= 2 and bono_pct < 80:
+                    detalles.append(f"bono al {bono_pct}%")
+                diagnostico = f"Monitoreo sugerido: {', '.join(detalles)}."
+            else:
+                semaforo = 'verde'
+                nivel_alerta = 'Óptimo'
+                diagnostico = "Rendimiento óptimo: sin rezagos de SLA y flujo en tiempo."
+
             scorecard.append({
                 'asesora_id': data['asesora_id'],
                 'nombre': data['nombre'],
@@ -516,9 +540,315 @@ class ReportesService:
                 'contratados': data['contratados'],
                 'total_candidatos': data['total_candidatos'],
                 'tasa_conversion': conversion,
+                'semaforo': semaforo,
+                'nivel_alerta': nivel_alerta,
+                'diagnostico': diagnostico,
             })
             
         return sorted(scorecard, key=lambda x: (x['bono_cumplido'], x['cubiertas']), reverse=True)
+
+    @staticmethod
+    def compute_desglose_agencia_puesto(puestos):
+        """Genera el desglose analítico de vacantes por agencia y puesto (Hoja 2 de Reporte 1)."""
+        from .models import Proceso
+        desglose_dict = {}
+        for p in puestos:
+            marca = p.marca.nombre if p.marca else "Sin Marca"
+            agencia = p.agencia or "Sin Agencia"
+            ciudad = p.get_ciudad_display() if p.ciudad else "N/A"
+            puesto_nom = p.titulo.nombre if p.titulo else "Sin Título"
+            key = (marca, agencia, ciudad, puesto_nom)
+            
+            if key not in desglose_dict:
+                desglose_dict[key] = {
+                    'marca': marca, 'agencia': agencia, 'ciudad': ciudad, 'puesto': puesto_nom,
+                    'total_vacantes': 0, 'activas': 0, 'cubiertas': 0, 'canceladas': 0,
+                    'solicitadas': 0, 'cubiertas_plazas': 0, 'vencidas': 0,
+                    'listos_ingreso': 0, 'en_proceso': 0
+                }
+            entry = desglose_dict[key]
+            entry['total_vacantes'] += 1
+            entry['solicitadas'] += p.cantidad_vacantes
+            entry['cubiertas_plazas'] += p.plazas_cubiertas
+            
+            if p.esta_abierto:
+                entry['activas'] += 1
+                if p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA':
+                    entry['vencidas'] += 1
+                for pr in p.procesos.all():
+                    if pr.estatus_proceso in [Proceso.Estatus.MEDICO, Proceso.Estatus.DOCS, Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN]:
+                        entry['listos_ingreso'] += 1
+                    elif pr.estatus_proceso in [Proceso.Estatus.NUEVO, Proceso.Estatus.CONTACTO, Proceso.Estatus.PRUEBAS, Proceso.Estatus.ENT_CH, Proceso.Estatus.REF, Proceso.Estatus.ENT_JF, Proceso.Estatus.CONF_JF]:
+                        entry['en_proceso'] += 1
+            else:
+                if p.estatus_autorizacion == 'RECHAZADO':
+                    entry['canceladas'] += 1
+                else:
+                    entry['cubiertas'] += 1
+                    
+        resultado = []
+        for key, d in sorted(desglose_dict.items(), key=lambda x: (x[1]['agencia'], x[1]['puesto'])):
+            pendientes = max(0, d['solicitadas'] - d['cubiertas_plazas'])
+            cobertura_pct = round((d['cubiertas_plazas'] / d['solicitadas'] * 100), 1) if d['solicitadas'] > 0 else 0.0
+            resultado.append({
+                'marca': d['marca'],
+                'agencia': d['agencia'],
+                'ciudad': d['ciudad'],
+                'puesto': d['puesto'],
+                'total_vacantes': d['total_vacantes'],
+                'activas': d['activas'],
+                'cubiertas': d['cubiertas'],
+                'solicitadas': d['solicitadas'],
+                'cubiertas_plazas': d['cubiertas_plazas'],
+                'pendientes': pendientes,
+                'vencidas': d['vencidas'],
+                'listos_ingreso': d['listos_ingreso'],
+                'en_proceso': d['en_proceso'],
+                'cobertura_pct': cobertura_pct,
+            })
+        return resultado
+
+    @staticmethod
+    def compute_detalle_vacantes_bono(puestos):
+        """Genera el detalle de auditoría de cada vacante evaluada para bono (Hoja 2 de Reporte 2)."""
+        from .models import Proceso
+        resultado = []
+        for p in puestos:
+            cumple_bono = p.cumplio_meta_bono
+            criterio = ""
+            if p.esta_completamente_cubierta:
+                if p.dias_transcurridos <= p.dias_meta:
+                    criterio = "100% Plazas Cubiertas en Tiempo SLA"
+                else:
+                    criterio = "Cubierta Fuera de Tiempo (Descalificada)"
+            elif cumple_bono:
+                criterio = "Terna Válida Aprobada enviada a Jefe en Tiempo"
+            else:
+                criterio = "En Proceso / Criterios no alcanzados"
+                
+            cand_jefe = 0
+            for pr in p.procesos.all():
+                if pr.estatus_proceso in [
+                    Proceso.Estatus.ENT_JF, Proceso.Estatus.CONF_JF, Proceso.Estatus.MEDICO,
+                    Proceso.Estatus.DOCS, Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN,
+                    Proceso.Estatus.CONTRATADO
+                ]:
+                    cand_jefe += 1
+                    
+            resultado.append({
+                'id': p.id,
+                'puesto': p.titulo.nombre if p.titulo else "Sin Título",
+                'marca': p.marca.nombre if p.marca else "Sin Marca",
+                'agencia': p.agencia,
+                'ciudad': p.get_ciudad_display(),
+                'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
+                'fecha_solicitud': p.fecha_solicitud,
+                'dias_transcurridos': p.dias_transcurridos,
+                'dias_meta': p.dias_meta,
+                'estatus_sla': p.estatus_sla,
+                'reinicios': p.numero_reinicios,
+                'plazas_solicitadas': p.cantidad_vacantes,
+                'plazas_cubiertas': p.plazas_cubiertas,
+                'candidatos_jefe': cand_jefe,
+                'cumple_bono': cumple_bono,
+                'criterio': criterio,
+                'esta_abierto': p.esta_abierto,
+            })
+        return sorted(resultado, key=lambda x: (not x['cumple_bono'], x['dias_transcurridos']), reverse=True)
+
+    @staticmethod
+    def compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard):
+        """Calcula el radar de semáforos accionables, vacantes atoradas y diagnósticos de consultoría."""
+        from .models import Proceso
+        
+        terminales = [
+            Proceso.Estatus.CONTRATADO,
+            Proceso.Estatus.DESCARTADO_CH,
+            Proceso.Estatus.NO_PRUEBAS,
+            Proceso.Estatus.ABANDONO,
+        ]
+        
+        vacantes_atoradas = []
+        candidatos_estancados = []
+        tiempos_por_etapa = {}
+        
+        for p in lista_puestos:
+            if not p.esta_abierto:
+                continue
+                
+            procesos = list(p.procesos.all())
+            activos = [pr for pr in procesos if pr.estatus_proceso not in terminales]
+            candidatos_en_jefe = [pr for pr in procesos if pr.estatus_proceso in [
+                Proceso.Estatus.ENT_JF, Proceso.Estatus.CONF_JF, Proceso.Estatus.MEDICO,
+                Proceso.Estatus.DOCS, Proceso.Estatus.INGRESO_PROG, Proceso.Estatus.ALTA_ADMIN,
+                Proceso.Estatus.CONTRATADO
+            ]]
+            
+            # 1. Vacantes Vencidas
+            if p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA':
+                atraso = max(0, p.dias_transcurridos - p.dias_meta)
+                vacantes_atoradas.append({
+                    'puesto': p,
+                    'tipo': 'VENCIDA',
+                    'severidad': 'alta',
+                    'badge_class': 'sap-badge-error',
+                    'motivo': f"Vencida (+{atraso}d atraso)",
+                    'dias_transcurridos': p.dias_transcurridos,
+                    'dias_meta': p.dias_meta,
+                    'candidatos_activos': len(activos),
+                    'enviados_jefe': len(candidatos_en_jefe),
+                    'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
+                })
+            # 2. Sin candidatos en proceso
+            elif len(activos) == 0:
+                vacantes_atoradas.append({
+                    'puesto': p,
+                    'tipo': 'SIN_CANDIDATOS',
+                    'severidad': 'media',
+                    'badge_class': 'sap-badge-warning',
+                    'motivo': "Pipeline Vacío (0 candidatos en proceso)",
+                    'dias_transcurridos': p.dias_transcurridos,
+                    'dias_meta': p.dias_meta,
+                    'candidatos_activos': 0,
+                    'enviados_jefe': len(candidatos_en_jefe),
+                    'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
+                })
+            # 3. Riesgo de SLA (>= 75% del tiempo meta consumido y menos de 2 candidatos a jefe)
+            elif p.dias_transcurridos >= (p.dias_meta * 0.75) and len(candidatos_en_jefe) < 2 and not p.cumplio_meta_bono:
+                pct_consumido = round((p.dias_transcurridos / p.dias_meta * 100)) if p.dias_meta > 0 else 0
+                vacantes_atoradas.append({
+                    'puesto': p,
+                    'tipo': 'RIESGO_SLA',
+                    'severidad': 'media',
+                    'badge_class': 'sap-badge-warning',
+                    'motivo': f"Riesgo de Vencimiento ({pct_consumido}% consumido)",
+                    'dias_transcurridos': p.dias_transcurridos,
+                    'dias_meta': p.dias_meta,
+                    'candidatos_activos': len(activos),
+                    'enviados_jefe': len(candidatos_en_jefe),
+                    'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
+                })
+                
+            # Candidatos estancados (>= 7 días en etapa activa)
+            for pr in activos:
+                dias_etapa = pr.dias_en_etapa_actual
+                if dias_etapa >= 7:
+                    candidatos_estancados.append({
+                        'proceso_id': pr.id,
+                        'candidato_nombre': pr.candidato.nombre_completo,
+                        'puesto_nombre': p.titulo.nombre if p.titulo else "Sin título",
+                        'puesto_id': p.id,
+                        'agencia': p.agencia,
+                        'ciudad': p.get_ciudad_display(),
+                        'etapa': pr.get_estatus_proceso_display(),
+                        'dias_en_etapa': dias_etapa,
+                        'asesora': pr.asesora_asignada.get_full_name() or pr.asesora_asignada.username if pr.asesora_asignada else (p.asesora_encargada.get_full_name() if p.asesora_encargada else "Sin Asignar"),
+                    })
+                
+                et_nombre = pr.get_estatus_proceso_display()
+                if et_nombre not in tiempos_por_etapa:
+                    tiempos_por_etapa[et_nombre] = []
+                tiempos_por_etapa[et_nombre].append(dias_etapa)
+
+        # Análisis de cuellos de botella
+        cuellos_de_botella = []
+        for etapa_nom, tiempos in tiempos_por_etapa.items():
+            if tiempos:
+                prom = round(sum(tiempos) / len(tiempos), 1)
+                cuellos_de_botella.append({
+                    'etapa': etapa_nom,
+                    'promedio_dias': prom,
+                    'total_candidatos': len(tiempos),
+                })
+        cuellos_de_botella.sort(key=lambda x: x['promedio_dias'], reverse=True)
+        
+        etapa_cuello_max = cuellos_de_botella[0]['etapa'] if cuellos_de_botella else "N/A"
+        etapa_cuello_dias = cuellos_de_botella[0]['promedio_dias'] if cuellos_de_botella else 0
+
+        # Insights Consultoría Senior
+        asesoras_riesgo = [a for a in asesoras_scorecard if a.get('semaforo') == 'rojo']
+        insights = []
+        
+        total_atoradas = len(vacantes_atoradas)
+        vencidas_n = sum(1 for v in vacantes_atoradas if v['tipo'] == 'VENCIDA')
+        sin_cand_n = sum(1 for v in vacantes_atoradas if v['tipo'] == 'SIN_CANDIDATOS')
+        
+        if total_atoradas > 0:
+            insights.append({
+                'titulo': 'Atención a Vacantes Críticas',
+                'tipo': 'alerta' if vencidas_n > 0 else 'aviso',
+                'badge': f"{total_atoradas} vacantes en observación",
+                'texto': f"Se detectaron {vencidas_n} vacante(s) con SLA vencido y {sin_cand_n} con pipeline desierto (sin candidatos en proceso).",
+                'accion': "Priorizar asignación y revisión de cartera en las agencias con mayor atraso.",
+            })
+        else:
+            insights.append({
+                'titulo': 'Flujo de Vacantes Saludable',
+                'tipo': 'exito',
+                'badge': "100% en tiempo",
+                'texto': "Todas las requisiciones activas se encuentran dentro de su ventana de días meta reglamentarios.",
+                'accion': "Mantener el ritmo de preselección para asegurar el bono de cobertura del periodo.",
+            })
+
+        if cuellos_de_botella and etapa_cuello_dias > 0:
+            insights.append({
+                'titulo': 'Cuello de Botella Operativo',
+                'tipo': 'aviso',
+                'badge': f"{etapa_cuello_max}: {etapa_cuello_dias} días prom.",
+                'texto': f"La etapa '{etapa_cuello_max}' concentra la mayor retención de candidatos con un promedio de {etapa_cuello_dias} días.",
+                'accion': "Agilizar retroalimentación con gerentes solicitantes o acelerar programación de citas.",
+            })
+
+        if asesoras_riesgo:
+            nom_riesgo = ", ".join(a['nombre'] for a in asesoras_riesgo[:3])
+            insights.append({
+                'titulo': 'Asesoras con Sobrecarga o Atraso',
+                'tipo': 'alerta',
+                'badge': f"{len(asesoras_riesgo)} asesora(s) en semáforo rojo",
+                'texto': f"Las asesoras ({nom_riesgo}) registran vacantes vencidas o baja tasa de cobertura en el periodo.",
+                'accion': "Evaluar redistribución temporal de requisiciones o apoyo en prospección.",
+            })
+        else:
+            insights.append({
+                'titulo': 'Equipo de Asesoras Equilibrado',
+                'tipo': 'exito',
+                'badge': "Carga balanceada",
+                'texto': "Las asesoras encargadas mantienen sus vacantes activas dentro de los parámetros esperados de SLA.",
+                'accion': "Continuar seguimiento semanal habitual.",
+            })
+            
+        total_evaluados = sum(a['total_candidatos'] for a in asesoras_scorecard)
+        total_reprob_integ = sum(a['integridad_reprobados'] for a in asesoras_scorecard)
+        total_reprob_pyx = sum(a['pyxoom_reprobados'] for a in asesoras_scorecard)
+        if total_evaluados > 0:
+            pct_descarte = round(((total_reprob_integ + total_reprob_pyx) / total_evaluados) * 100, 1)
+            insights.append({
+                'titulo': 'Filtros de Integridad y Psicometría',
+                'tipo': 'info',
+                'badge': f"{pct_descarte}% descarte técnico",
+                'texto': f"De {total_evaluados} candidatos evaluados, {total_reprob_integ} reprobaron Integridad y {total_reprob_pyx} Psicometría Pyxoom.",
+                'accion': "Calibrar fuentes de atracción para mejorar el índice de aprobación preliminar.",
+            })
+            
+        return {
+            'vacantes_atoradas': vacantes_atoradas,
+            'candidatos_estancados': candidatos_estancados,
+            'cuellos_de_botella': cuellos_de_botella,
+            'insights': insights,
+        }
+
+    @staticmethod
+    def get_movimientos_recientes(filtros, limit=25):
+        """Obtiene la bitácora de movimientos recientes para visualizar en Reporte 3."""
+        from .models import RegistroActividad
+        qs = RegistroActividad.objects.all().select_related('usuario').order_by('-fecha_hora')
+        fecha_desde = filtros.get('fecha_desde', '').strip()
+        fecha_hasta = filtros.get('fecha_hasta', '').strip()
+        if fecha_desde:
+            qs = qs.filter(fecha_hora__date__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha_hora__date__lte=fecha_hasta)
+        return list(qs[:limit])
 
     @staticmethod
     def generate_reporte_data(usuario, filtros, use_cache=True):
@@ -582,6 +912,12 @@ class ReportesService:
             key=lambda x: x.dias_transcurridos,
             reverse=True
         )[:8]
+
+        # 4. Métricas avanzadas para visualización in-app de Reportes 1, 2, 3 y Alertas
+        desglose_agencia_puesto = ReportesService.compute_desglose_agencia_puesto(lista_puestos)
+        detalle_vacantes_bono = ReportesService.compute_detalle_vacantes_bono(lista_puestos)
+        alertas_diagnosticos = ReportesService.compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard)
+        movimientos_recientes = ReportesService.get_movimientos_recientes(filtros, limit=30)
         
         resultado = {
             'puestos': lista_puestos,
@@ -593,7 +929,20 @@ class ReportesService:
             'vacantes_vencidas': vacantes_vencidas,
             'puestos_mas_vacantes': puestos_mas_vacantes,
             'vacantes_mayor_antiguedad': vacantes_mayor_antiguedad,
-            'filtros_aplicados': filtros
+            'filtros_aplicados': filtros,
+            # Nuevas estructuras para visualización interactiva in-app
+            'desglose_agencia_puesto': desglose_agencia_puesto,
+            'detalle_vacantes_bono': detalle_vacantes_bono,
+            'vacantes_atoradas': alertas_diagnosticos['vacantes_atoradas'],
+            'candidatos_estancados_detalle': sorted(alertas_diagnosticos['candidatos_estancados'], key=lambda x: x['dias_en_etapa'], reverse=True)[:15],
+            'cuellos_de_botella': alertas_diagnosticos['cuellos_de_botella'],
+            'insights_consultoria': alertas_diagnosticos['insights'],
+            'movimientos_recientes': movimientos_recientes,
+            'total_atoradas_count': len(alertas_diagnosticos['vacantes_atoradas']),
+            'total_estancados_count': len(alertas_diagnosticos['candidatos_estancados']),
+            'asesoras_riesgo_count': len([a for a in asesoras_scorecard if a.get('semaforo') == 'rojo']),
+            'cuellos_labels': [c['etapa'] for c in alertas_diagnosticos['cuellos_de_botella']],
+            'cuellos_data': [c['promedio_dias'] for c in alertas_diagnosticos['cuellos_de_botella']],
         }
         
         if use_cache:

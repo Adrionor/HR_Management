@@ -386,9 +386,22 @@ def reportes_view(request):
         'chart_asesoras_labels_json': json.dumps(datos_reporte['chart_data']['asesoras_labels']),
         'chart_asesoras_activas_json': json.dumps(datos_reporte['chart_data']['asesoras_activas']),
         'chart_asesoras_cubiertas_json': json.dumps(datos_reporte['chart_data']['asesoras_cubiertas']),
+
+        # Nuevas estructuras de BI interactivo en plataforma y diagnóstico
+        'desglose_agencia_puesto': datos_reporte.get('desglose_agencia_puesto', []),
+        'detalle_vacantes_bono': datos_reporte.get('detalle_vacantes_bono', []),
+        'vacantes_atoradas': datos_reporte.get('vacantes_atoradas', []),
+        'candidatos_estancados_detalle': datos_reporte.get('candidatos_estancados_detalle', []),
+        'cuellos_de_botella': datos_reporte.get('cuellos_de_botella', []),
+        'insights_consultoria': datos_reporte.get('insights_consultoria', []),
+        'movimientos_recientes': datos_reporte.get('movimientos_recientes', []),
+        'total_atoradas_count': datos_reporte.get('total_atoradas_count', 0),
+        'total_estancados_count': datos_reporte.get('total_estancados_count', 0),
+        'asesoras_riesgo_count': datos_reporte.get('asesoras_riesgo_count', 0),
+        'chart_cuellos_labels_json': json.dumps(datos_reporte.get('cuellos_labels', [])),
+        'chart_cuellos_data_json': json.dumps(datos_reporte.get('cuellos_data', [])),
     }
     
-    return render(request, 'reclutamiento/reportes.html', contexto)
     return render(request, 'reclutamiento/reportes.html', contexto)
 
 
