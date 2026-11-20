@@ -89,27 +89,33 @@ class ReportesService:
     def get_base_queryset(usuario):
         """
         Obtiene el queryset base de puestos según los permisos del usuario.
-        El personal de Capital Humano cuenta con visibilidad integral de agencias y marcas.
+        - Directora / Gerencia de Capital Humano y Superusuarios: Visibilidad global de todas las vacantes.
+        - Asesoras: Estrictamente restringido a sus vacantes asignadas individuales.
         """
         from .models import Puesto
-        from .permissions import es_personal_rh, es_asesora
+        from .permissions import es_gerente_ch
         
-        if usuario.is_superuser or usuario.is_staff or es_personal_rh(usuario):
+        if not usuario or not usuario.is_authenticated:
+            return Puesto.objects.none()
+            
+        if usuario.is_superuser or es_gerente_ch(usuario):
             return Puesto.objects.all()
-        elif es_asesora(usuario):
-            return Puesto.objects.filter(asesora_encargada=usuario)
-        return Puesto.objects.all()
+            
+        # Las asesoras únicamente tienen acceso a sus vacantes individuales asignadas
+        return Puesto.objects.filter(asesora_encargada=usuario)
     
     @staticmethod
-    def apply_filters(queryset, filtros):
+    def apply_filters(queryset, filtros, usuario=None):
         """
         Aplica filtros al queryset de puestos
         Args:
             queryset: QuerySet de Puesto
             filtros: dict con los filtros a aplicar
+            usuario: Usuario solicitante (para aislar filtros de asesoras individuales)
         Returns:
             QuerySet filtrado
         """
+        from .permissions import es_gerente_ch
         fecha_desde = filtros.get('fecha_desde', '').strip()
         fecha_hasta = filtros.get('fecha_hasta', '').strip()
         marca_filtro = filtros.get('marca', '').strip()
@@ -128,8 +134,15 @@ class ReportesService:
             queryset = queryset.filter(agencia__icontains=agencia_filtro)
         if ciudad_filtro:
             queryset = queryset.filter(ciudad=ciudad_filtro)
-        if asesora_filtro and asesora_filtro.isdigit():
+
+        # Regla de aislamiento RBAC: si el usuario no es Gerente CH ni superusuario,
+        # forzar siempre que solo consulte sus vacantes asignadas individuales
+        es_directora = (usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
+        if not es_directora and usuario and usuario.is_authenticated:
+            queryset = queryset.filter(asesora_encargada=usuario)
+        elif asesora_filtro and asesora_filtro.isdigit():
             queryset = queryset.filter(asesora_encargada_id=int(asesora_filtro))
+
         if puesto_filtro:
             if puesto_filtro.isdigit():
                 queryset = queryset.filter(titulo_id=int(puesto_filtro))
@@ -139,11 +152,12 @@ class ReportesService:
         return queryset
     
     @staticmethod
-    def get_catalogos_optimizados(queryset):
+    def get_catalogos_optimizados(queryset, usuario=None):
         """
         Obtiene los catálogos para filtros de forma optimizada
         """
         from .models import Marca, CatalogoPuesto
+        from .permissions import es_gerente_ch
         User = get_user_model()
         
         marcas_disponibles = Marca.objects.all().order_by('nombre')
@@ -162,10 +176,14 @@ class ReportesService:
             {'codigo': c, 'nombre': ciudades_map.get(c, c)} for c in ciudades_codigos
         ]
         
-        # Asesoras de RH activas
-        asesoras_disponibles = User.objects.filter(
-            Q(groups__name='Asesoras') | Q(puestos_asignados__isnull=False) | Q(is_staff=True)
-        ).distinct().order_by('first_name', 'username')
+        # Asesoras de RH: si es asesora individual, solo se muestra a sí misma en el catálogo
+        es_directora = (usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
+        if not es_directora and usuario and usuario.is_authenticated:
+            asesoras_disponibles = User.objects.filter(id=usuario.id)
+        else:
+            asesoras_disponibles = User.objects.filter(
+                Q(groups__name='Asesoras') | Q(puestos_asignados__isnull=False) | Q(is_staff=True)
+            ).distinct().order_by('first_name', 'username')
         
         return {
             'marcas': marcas_disponibles,
@@ -330,6 +348,7 @@ class ReportesService:
     def compute_agencias_scorecard(puestos):
         """Genera matriz consolidada por Marca, Agencia y Ciudad."""
         from .models import Proceso
+        from .permissions import es_gerente_ch
         agencias_dict = {}
         for p in puestos:
             ag = (p.agencia or "Sin Agencia").strip()
@@ -409,6 +428,7 @@ class ReportesService:
         Monitor de desempeño, productividad de cobertura y desglose de embudo por Asesora de RH.
         """
         from .models import Proceso
+        from .permissions import es_gerente_ch
         asesoras_dict = {}
         
         for p in puestos:
@@ -549,6 +569,7 @@ class ReportesService:
     def compute_desglose_agencia_puesto(puestos):
         """Genera el desglose analítico de vacantes por agencia y puesto (Hoja 2 de Reporte 1)."""
         from .models import Proceso
+        from .permissions import es_gerente_ch
         desglose_dict = {}
         for p in puestos:
             marca = p.marca.nombre if p.marca else "Sin Marca"
@@ -610,6 +631,7 @@ class ReportesService:
     def compute_detalle_vacantes_bono(puestos):
         """Genera el detalle de auditoría de cada vacante para seguimiento de SLA (Hoja 2 de Reporte 2)."""
         from .models import Proceso
+        from .permissions import es_gerente_ch
         resultado = []
         for p in puestos:
             criterio = ""
@@ -654,9 +676,10 @@ class ReportesService:
         return sorted(resultado, key=lambda x: (x['estatus_sla'] == 'VENCIDA', -x['dias_transcurridos']), reverse=True)
 
     @staticmethod
-    def compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard):
+    def compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard, usuario=None):
         """Calcula el radar de semáforos accionables, vacantes atoradas y diagnósticos de consultoría."""
         from .models import Proceso
+        from .permissions import es_gerente_ch
         
         terminales = [
             Proceso.Estatus.CONTRATADO,
@@ -728,6 +751,10 @@ class ReportesService:
                 
             # Candidatos estancados (>= 7 días en etapa activa)
             for pr in activos:
+                es_directora_usr = (usuario is None or usuario.is_superuser or es_gerente_ch(usuario))
+                if not es_directora_usr:
+                    if pr.asesora_asignada_id and pr.asesora_asignada_id != usuario.id:
+                        continue
                 dias_etapa = pr.dias_en_etapa_actual
                 if dias_etapa >= 7:
                     candidatos_estancados.append({
@@ -765,6 +792,7 @@ class ReportesService:
         # Insights Consultoría Senior
         asesoras_riesgo = [a for a in asesoras_scorecard if a.get('semaforo') == 'rojo']
         insights = []
+        es_directora_diag = (usuario is None or usuario.is_superuser or es_gerente_ch(usuario))
         
         total_atoradas = len(vacantes_atoradas)
         vencidas_n = sum(1 for v in vacantes_atoradas if v['tipo'] == 'VENCIDA')
@@ -776,7 +804,7 @@ class ReportesService:
                 'tipo': 'alerta' if vencidas_n > 0 else 'aviso',
                 'badge': f"{total_atoradas} vacantes en observación",
                 'texto': f"Se detectaron {vencidas_n} vacante(s) con SLA vencido y {sin_cand_n} con pipeline desierto (sin candidatos en proceso).",
-                'accion': "Priorizar asignación y revisión de cartera en las agencias con mayor atraso.",
+                'accion': "Priorizar asignación y revisión de cartera en las vacantes con mayor atraso.",
             })
         else:
             insights.append({
@@ -797,22 +825,40 @@ class ReportesService:
             })
 
         if asesoras_riesgo:
-            nom_riesgo = ", ".join(a['nombre'] for a in asesoras_riesgo[:3])
-            insights.append({
-                'titulo': 'Asesoras con Sobrecarga o Atraso',
-                'tipo': 'alerta',
-                'badge': f"{len(asesoras_riesgo)} asesora(s) en semáforo rojo",
-                'texto': f"Las asesoras ({nom_riesgo}) registran vacantes vencidas o baja tasa de cobertura en el periodo.",
-                'accion': "Evaluar redistribución temporal de requisiciones o apoyo en prospección.",
-            })
+            if es_directora_diag:
+                nom_riesgo = ", ".join(a['nombre'] for a in asesoras_riesgo[:3])
+                insights.append({
+                    'titulo': 'Asesoras con Sobrecarga o Atraso',
+                    'tipo': 'alerta',
+                    'badge': f"{len(asesoras_riesgo)} asesora(s) en semáforo rojo",
+                    'texto': f"Las asesoras ({nom_riesgo}) registran vacantes vencidas o baja tasa de cobertura en el periodo.",
+                    'accion': "Evaluar redistribución temporal de requisiciones o apoyo en prospección.",
+                })
+            else:
+                insights.append({
+                    'titulo': 'Alerta de Desempeño Individual',
+                    'tipo': 'alerta',
+                    'badge': "Semáforo Rojo",
+                    'texto': "Registras vacante(s) vencidas o requerimientos con atraso de SLA en el periodo actual.",
+                    'accion': "Priorizar la gestión de tus vacantes con mayor antigüedad y agilizar el avance de candidatos.",
+                })
         else:
-            insights.append({
-                'titulo': 'Equipo de Asesoras Equilibrado',
-                'tipo': 'exito',
-                'badge': "Carga balanceada",
-                'texto': "Las asesoras encargadas mantienen sus vacantes activas dentro de los parámetros esperados de SLA.",
-                'accion': "Continuar seguimiento semanal habitual.",
-            })
+            if es_directora_diag:
+                insights.append({
+                    'titulo': 'Equipo de Asesoras Equilibrado',
+                    'tipo': 'exito',
+                    'badge': "Carga balanceada",
+                    'texto': "Las asesoras encargadas mantienen sus vacantes activas dentro de los parámetros esperados de SLA.",
+                    'accion': "Continuar seguimiento semanal habitual.",
+                })
+            else:
+                insights.append({
+                    'titulo': 'Rendimiento en Tiempo',
+                    'tipo': 'exito',
+                    'badge': "Flujo en tiempo",
+                    'texto': "Tus vacantes asignadas se encuentran controladas y dentro de los parámetros de SLA esperados.",
+                    'accion': "Continuar con el avance habitual de candidatos.",
+                })
             
         total_evaluados = sum(a['total_candidatos'] for a in asesoras_scorecard)
         total_reprob_integ = sum(a['integridad_reprobados'] for a in asesoras_scorecard)
@@ -835,10 +881,14 @@ class ReportesService:
         }
 
     @staticmethod
-    def get_movimientos_recientes(filtros, limit=25):
+    def get_movimientos_recientes(filtros, usuario=None, limit=25):
         """Obtiene la bitácora de movimientos recientes para visualizar en Reporte 3."""
         from .models import RegistroActividad
+        from .permissions import es_gerente_ch
         qs = RegistroActividad.objects.all().select_related('usuario').order_by('-fecha_hora')
+        es_directora = (usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
+        if not es_directora and usuario and usuario.is_authenticated:
+            qs = qs.filter(usuario=usuario)
         fecha_desde = filtros.get('fecha_desde', '').strip()
         fecha_hasta = filtros.get('fecha_hasta', '').strip()
         if fecha_desde:
@@ -858,14 +908,14 @@ class ReportesService:
                 return cached_data
         
         queryset = ReportesService.get_base_queryset(usuario)
-        queryset = ReportesService.apply_filters(queryset, filtros)
+        queryset = ReportesService.apply_filters(queryset, filtros, usuario=usuario)
         queryset = queryset.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos', 'procesos__candidato')
         
         lista_puestos = list(queryset)
         
         kpis = ReportesService.compute_kpis(lista_puestos)
         chart_data = ReportesService.prepare_chart_data(lista_puestos)
-        catalogos = ReportesService.get_catalogos_optimizados(queryset)
+        catalogos = ReportesService.get_catalogos_optimizados(queryset, usuario=usuario)
         agencias_scorecard = ReportesService.compute_agencias_scorecard(lista_puestos)
         asesoras_scorecard = ReportesService.compute_asesoras_scorecard(lista_puestos)
         
@@ -913,8 +963,8 @@ class ReportesService:
         # 4. Métricas avanzadas para visualización in-app de Reportes 1, 2, 3 y Alertas
         desglose_agencia_puesto = ReportesService.compute_desglose_agencia_puesto(lista_puestos)
         detalle_vacantes_bono = ReportesService.compute_detalle_vacantes_bono(lista_puestos)
-        alertas_diagnosticos = ReportesService.compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard)
-        movimientos_recientes = ReportesService.get_movimientos_recientes(filtros, limit=30)
+        alertas_diagnosticos = ReportesService.compute_alertas_y_diagnosticos(lista_puestos, asesoras_scorecard, usuario=usuario)
+        movimientos_recientes = ReportesService.get_movimientos_recientes(filtros, usuario=usuario, limit=30)
         
         resultado = {
             'puestos': lista_puestos,
@@ -1226,7 +1276,7 @@ class ReportesService:
         Hoja 2: Detalle de cada vacante y cumplimiento de tiempos de SLA.
         """
         queryset = ReportesService.get_base_queryset(usuario)
-        queryset = ReportesService.apply_filters(queryset, filtros)
+        queryset = ReportesService.apply_filters(queryset, filtros, usuario=usuario)
         puestos = list(queryset.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos'))
         
         scorecard_asesoras = ReportesService.compute_asesoras_scorecard(puestos)
@@ -1382,8 +1432,12 @@ class ReportesService:
         Todos los movimientos con usuario responsable, fecha/hora exacta, días en etapa y notas.
         """
         from .models import RegistroActividad, Proceso, Puesto
+        from .permissions import es_gerente_ch
         
         qs_act = RegistroActividad.objects.all().select_related('usuario').order_by('-fecha_hora')
+        es_directora = (usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
+        if not es_directora and usuario and usuario.is_authenticated:
+            qs_act = qs_act.filter(usuario=usuario)
         
         fecha_desde_str = filtros.get('fecha_desde', '').strip()
         fecha_hasta_str = filtros.get('fecha_hasta', '').strip()

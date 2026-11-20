@@ -500,7 +500,8 @@
                     <input type="date" name="fecha_hasta" id="fecha_hasta" class="sap-input" value="{{ filtros_aplicados.fecha_hasta }}">
                 </div>
 
-                <!-- Asesora -->
+                <!-- Asesora (Selector visible solo para Dirección/Gerencia CH) -->
+                {% if es_directora_ch %}
                 <div class="sap-form-group" style="margin-bottom: 0;">
                     <label class="sap-label" for="asesora">Asesora RH:</label>
                     <select name="asesora" id="asesora" class="sap-select">
@@ -512,6 +513,7 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% endif %}
 
                 <!-- Marca (Automotriz) -->
                 <div class="sap-form-group" style="margin-bottom: 0;">
@@ -623,14 +625,14 @@
             </div>
         </div>
 
-        <!-- Tarjeta 4: Asesoras en Riesgo -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-auditoria');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-auditoria');}" tabindex="0" role="button" aria-label="Ver auditoría de asesoras en riesgo">
+        <!-- Tarjeta 4: Asesoras en Riesgo / Estado de SLA -->
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-auditoria');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-auditoria');}" tabindex="0" role="button" aria-label="Ver auditoría de asesoras">
             <div class="rh-warning-icon {% if asesoras_riesgo_count > 0 %}danger{% else %}success{% endif %}">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
             </div>
             <div>
                 <div class="rh-warning-num" style="color: {% if asesoras_riesgo_count > 0 %}var(--sap-error-text){% else %}var(--sap-success-text){% endif %};">{{ asesoras_riesgo_count }}</div>
-                <div class="rh-warning-label">Asesoras en Semáforo Rojo</div>
+                <div class="rh-warning-label">{% if es_directora_ch %}Asesoras en Semáforo Rojo{% else %}Alerta de SLA / Desempeño{% endif %}</div>
             </div>
         </div>
     </div>
@@ -765,8 +767,8 @@
             </div>
             <div class="rh-chart-card">
                 <div class="rh-chart-title">
-                    <span>Carga Activa vs Cobertura por Asesora</span>
-                    <span class="sap-badge sap-badge-neutral">Distribución</span>
+                    <span>{% if es_directora_ch %}Carga Activa vs Cobertura por Asesora{% else %}Mi Carga Activa vs Cobertura{% endif %}</span>
+                    <span class="sap-badge sap-badge-neutral">{% if es_directora_ch %}Distribución{% else %}Individual{% endif %}</span>
                 </div>
                 <div style="height: 250px; position: relative;">
                     <canvas id="chartAsesoras"></canvas>
@@ -849,10 +851,10 @@
             <div>
                 <h2 class="rh-report-action-title">
                     <svg class="sap-icon" style="color: #107e3e; width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-                    Reporte 2 — Auditoría de Desempeño y Productividad por Asesora
+                    {% if es_directora_ch %}Reporte 2 — Auditoría de Desempeño y Productividad por Asesora{% else %}Reporte 2 — Mi Monitor de Desempeño y Productividad{% endif %}
                 </h2>
                 <div class="rh-report-action-desc">
-                    Scorecard por asesora con semáforos de salud, cobertura en tiempo de SLA y efectividad en filtros técnicos.
+                    {% if es_directora_ch %}Scorecard por asesora con semáforos de salud, cobertura en tiempo de SLA y efectividad en filtros técnicos.{% else %}Indicadores individuales de salud operativa, cobertura en tiempo de SLA y efectividad en filtros técnicos.{% endif %}
                 </div>
             </div>
             <a href="{% url 'vista_reportes' %}?export=auditoria_bono&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="rh-btn-excel-export">
@@ -865,7 +867,7 @@
         <div class="sap-card" style="margin-bottom: 1.25rem;">
             <div class="sap-card-header">
                 <div>
-                    <h3 class="sap-card-title">Monitor de Rendimiento & Productividad por Asesora</h3>
+                    <h3 class="sap-card-title">{% if es_directora_ch %}Monitor de Rendimiento & Productividad por Asesora{% else %}Mi Rendimiento & Productividad Individual{% endif %}</h3>
                     <div style="font-size: 0.775rem; color: var(--sap-muted);">Semáforo de salud operativa, vacantes asignadas, cubiertas y tasa de conversión</div>
                 </div>
             </div>

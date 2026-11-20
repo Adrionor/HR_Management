@@ -948,10 +948,9 @@ class HRManagementTests(TestCase):
         )
 
         self.client.login(username='testuser', password='password123')
-        # GET permitido para consulta del equipo
+        # GET bloqueado con 403 para asesora ajena (Aislamiento individual RBAC)
         resp_get = self.client.get(reverse('detalle_proceso', args=[proceso.id]))
-        self.assertEqual(resp_get.status_code, 200)
-        self.assertFalse(resp_get.context['puede_modificar'])
+        self.assertEqual(resp_get.status_code, 403)
 
         # POST bloqueado con 403
         resp_post = self.client.post(reverse('detalle_proceso', args=[proceso.id]), {
@@ -1292,6 +1291,161 @@ class HRManagementTests(TestCase):
         reg = RegistroActividad.objects.filter(tipo_objeto='Candidato', id_objeto=cand.id).first()
         self.assertIsNotNone(reg)
         self.assertIn('Revirtió', reg.accion)
+
+
+class AislamientoInformacionAsesorasRBACTestCase(TestCase):
+    """
+    Pruebas rigurosas de aislamiento por rol (RBAC):
+    Las asesoras únicamente pueden gestionar, visualizar y descargar reportes que contengan
+    su información individual. Gerentes de CH y Directores tienen visibilidad global.
+    """
+
+    def setUp(self):
+        from django.contrib.auth.models import Group
+        self.grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.grupo_gerentes, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+
+        # Asesora 1
+        self.asesora_1 = User.objects.create_user(
+            username='asesora.ana', email='ana@test.com', password='password123',
+            first_name='Ana', last_name='López'
+        )
+        self.asesora_1.groups.add(self.grupo_asesoras)
+
+        # Asesora 2
+        self.asesora_2 = User.objects.create_user(
+            username='asesora.sofia', email='sofia@test.com', password='password123',
+            first_name='Sofía', last_name='Navarro'
+        )
+        self.asesora_2.groups.add(self.grupo_asesoras)
+
+        # Gerente CH
+        self.gerente_ch = User.objects.create_user(
+            username='gerente.ch', email='gerente@test.com', password='password123',
+            first_name='Laura', last_name='Directora'
+        )
+        self.gerente_ch.groups.add(self.grupo_gerentes)
+
+        # Catálogo y Marca
+        self.marca = Marca.objects.create(nombre='Chevrolet')
+        self.cat_puesto_1 = CatalogoPuesto.objects.create(nombre='Asesor de Ventas', dias_meta=20)
+        self.cat_puesto_2 = CatalogoPuesto.objects.create(nombre='Mecánico Master', dias_meta=15)
+
+        # Vacante Asesora 1
+        self.puesto_1 = Puesto.objects.create(
+            titulo=self.cat_puesto_1,
+            marca=self.marca,
+            agencia='Chevrolet Premier',
+            ciudad='CUL',
+            asesora_encargada=self.asesora_1,
+            solicitado_por=self.asesora_1,
+            cantidad_vacantes=1,
+            esta_abierto=True,
+            dias_meta=20
+        )
+
+        # Vacante Asesora 2
+        self.puesto_2 = Puesto.objects.create(
+            titulo=self.cat_puesto_2,
+            marca=self.marca,
+            agencia='Chevrolet Hermosillo Kino',
+            ciudad='HMO',
+            asesora_encargada=self.asesora_2,
+            solicitado_por=self.asesora_2,
+            cantidad_vacantes=1,
+            esta_abierto=True,
+            dias_meta=15
+        )
+
+        # Candidato y Proceso de Asesora 2
+        self.candidato_2 = Candidato.objects.create(
+            nombres='Carlos', apellidos='Ruiz', email='carlos@test.com'
+        )
+        self.proceso_2 = Proceso.objects.create(
+            candidato=self.candidato_2,
+            puesto=self.puesto_2,
+            asesora_asignada=self.asesora_2,
+            estatus_proceso=Proceso.Estatus.NUEVO
+        )
+
+    def test_asesora_solo_ve_sus_vacantes_en_reportes(self):
+        """Una asesora solo debe ver sus propias vacantes y métricas individuales en reportes."""
+        self.client.login(username='asesora.ana', password='password123')
+        resp = self.client.get(reverse('vista_reportes'))
+        self.assertEqual(resp.status_code, 200)
+
+        # El contexto solo debe traer la vacante de Ana (puesto_1), jamás la de Sofía (puesto_2)
+        puestos_en_reporte = resp.context['puestos'].object_list
+        self.assertIn(self.puesto_1, puestos_en_reporte)
+        self.assertNotIn(self.puesto_2, puestos_en_reporte)
+
+        # En el scorecard de asesoras solo debe aparecer Ana
+        scorecard = resp.context['asesoras_scorecard']
+        self.assertEqual(len(scorecard), 1)
+        self.assertEqual(scorecard[0]['asesora_id'], self.asesora_1.id)
+
+        # Catálogos de asesoras solo la incluyen a ella
+        asesoras_catalogo = list(resp.context['asesoras_disponibles'])
+        self.assertEqual(len(asesoras_catalogo), 1)
+        self.assertEqual(asesoras_catalogo[0].id, self.asesora_1.id)
+
+    def test_gerente_ch_ve_todas_las_vacantes_en_reportes(self):
+        """La Dirección / Gerencia de CH tiene visibilidad global de todas las vacantes y asesoras."""
+        self.client.login(username='gerente.ch', password='password123')
+        resp = self.client.get(reverse('vista_reportes'))
+        self.assertEqual(resp.status_code, 200)
+
+        puestos_en_reporte = resp.context['puestos'].object_list
+        self.assertIn(self.puesto_1, puestos_en_reporte)
+        self.assertIn(self.puesto_2, puestos_en_reporte)
+
+        # Scorecard incluye a ambas asesoras
+        scorecard = resp.context['asesoras_scorecard']
+        self.assertGreaterEqual(len(scorecard), 2)
+        asesoras_ids = [a['asesora_id'] for a in scorecard]
+        self.assertIn(self.asesora_1.id, asesoras_ids)
+        self.assertIn(self.asesora_2.id, asesoras_ids)
+
+    def test_asesora_no_puede_consultar_detalle_proceso_de_otra_asesora(self):
+        """Asesora 1 no puede acceder al detalle del proceso de Asesora 2 (403 Forbidden)."""
+        self.client.login(username='asesora.ana', password='password123')
+        resp = self.client.get(reverse('detalle_proceso', args=[self.proceso_2.id]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_gerente_ch_si_puede_consultar_detalle_proceso(self):
+        """Gerente CH puede acceder al detalle del proceso de cualquier asesora."""
+        self.client.login(username='gerente.ch', password='password123')
+        resp = self.client.get(reverse('detalle_proceso', args=[self.proceso_2.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_asesora_no_puede_consultar_vacante_de_otra_asesora(self):
+        """Asesora 1 no puede inspeccionar la vacante asignada a Asesora 2 (403 Forbidden)."""
+        self.client.login(username='asesora.ana', password='password123')
+        resp = self.client.get(reverse('puesto_detalle', args=[self.puesto_2.id]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_gerente_ch_si_puede_consultar_cualquier_vacante(self):
+        """Gerente CH puede inspeccionar el expediente de cualquier vacante."""
+        self.client.login(username='gerente.ch', password='password123')
+        resp = self.client.get(reverse('puesto_detalle', args=[self.puesto_2.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_descarga_excel_resumen_asesora_solo_contiene_sus_datos(self):
+        """Al descargar Excel (.xlsx), la asesora únicamente recibe su información individual."""
+        from reclutamiento.services import ReportesService
+        buf_asesora = ReportesService.generar_excel_resumen_ejecutivo({}, self.asesora_1)
+        self.assertIsNotNone(buf_asesora)
+        self.assertGreater(buf_asesora.getbuffer().nbytes, 0)
+
+        # En el dataset de la asesora 1, get_base_queryset solo trae su vacante
+        qs_ana = ReportesService.get_base_queryset(self.asesora_1)
+        self.assertEqual(qs_ana.count(), 1)
+        self.assertEqual(qs_ana.first(), self.puesto_1)
+
+        # Para el gerente CH, trae todas
+        qs_gerente = ReportesService.get_base_queryset(self.gerente_ch)
+        self.assertGreaterEqual(qs_gerente.count(), 2)
+
 
 
 

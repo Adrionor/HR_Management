@@ -20,8 +20,8 @@ from .models import Candidato, Puesto, Proceso, RegistroActividad, Publicacion, 
 from .permissions import (
     es_gerente_ch, es_asesora, es_personal_rh,
     puede_ver_operaciones, es_management, puede_ver_confidenciales, puede_ver_reportes,
-    puede_acceder_proceso, puede_crear_vacante, puede_ver_biblioteca,
-    puede_modificar_proceso, puede_modificar_vacante, puede_reiniciar_sla, puede_descargar_cv,
+    puede_acceder_proceso, puede_consultar_proceso, puede_crear_vacante, puede_ver_biblioteca,
+    puede_modificar_proceso, puede_consultar_vacante, puede_modificar_vacante, puede_reiniciar_sla, puede_descargar_cv,
     puede_revertir_no_contratable
 )
 
@@ -288,11 +288,14 @@ def reportes_view(request):
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     from .services import ReportesService
     
-    # Recopilar filtros del request (Enfoque 100% RH)
+    usuario = request.user
+    es_directora = es_gerente_ch(usuario) or usuario.is_superuser
+
+    # Recopilar filtros del request (Enfoque 100% RH con Aislamiento Estricto RBAC)
     filtros = {
         'fecha_desde': request.GET.get('fecha_desde', '').strip(),
         'fecha_hasta': request.GET.get('fecha_hasta', '').strip(),
-        'asesora': request.GET.get('asesora', '').strip(),
+        'asesora': request.GET.get('asesora', '').strip() if es_directora else str(usuario.id),
         'puesto': request.GET.get('puesto', '').strip(),
         'agencia': request.GET.get('agencia', '').strip(),
         'marca': request.GET.get('marca', '').strip(),
@@ -471,6 +474,7 @@ def reportes_view(request):
         'asesoras_riesgo_count': datos_reporte.get('asesoras_riesgo_count', 0),
         'chart_cuellos_labels_json': json.dumps(datos_reporte.get('cuellos_labels', [])),
         'chart_cuellos_data_json': json.dumps(datos_reporte.get('cuellos_data', [])),
+        'es_directora_ch': es_directora,
     }
     
     return render(request, 'reclutamiento/reportes.html', contexto)
@@ -825,11 +829,14 @@ def asignar_candidato_view(request, puesto_id):
 def puesto_detalle_view(request, puesto_id):
     # Usamos select_related para obtener la información de los usuarios y marca de forma eficiente
     puesto = get_object_or_404(
-        Puesto.objects.select_related('marca', 'solicitado_por'),
+        Puesto.objects.select_related('marca', 'solicitado_por', 'asesora_encargada'),
         id=puesto_id
     )
+    if not puede_consultar_vacante(request.user, puesto):
+        raise PermissionDenied("No tienes autorización para consultar vacantes asignadas a otra asesora.")
     contexto = {
-        'puesto': puesto
+        'puesto': puesto,
+        'es_directora_ch': es_gerente_ch(request.user) or request.user.is_superuser,
     }
     return render(request, 'reclutamiento/puesto_detalle.html', contexto)
 
@@ -844,12 +851,21 @@ def gestion_perfil_puesto_view(request, puesto_id):
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def historial_candidato_view(request, candidato_id):
     candidato = get_object_or_404(Candidato, id=candidato_id)
-    procesos_pasados = Proceso.objects.filter(candidato=candidato).order_by('-fecha_inicio_etapa').select_related(
-        'puesto', 'asesora_asignada')
+    es_directora = es_gerente_ch(request.user) or request.user.is_superuser
+    procesos_qs = Proceso.objects.filter(candidato=candidato).select_related(
+        'puesto', 'asesora_asignada', 'puesto__asesora_encargada'
+    )
+    if not es_directora:
+        procesos_qs = procesos_qs.filter(
+            Q(asesora_asignada=request.user) |
+            Q(puesto__asesora_encargada=request.user)
+        )
+    procesos_pasados = procesos_qs.order_by('-fecha_inicio_etapa')
 
     contexto = {
         'candidato': candidato,
-        'procesos': procesos_pasados
+        'procesos': procesos_pasados,
+        'es_directora_ch': es_directora,
     }
     return render(request, 'reclutamiento/historial_candidato.html', contexto)
 
@@ -994,9 +1010,15 @@ def reiniciar_vacante_view(request, puesto_id):
 @user_passes_test(puede_acceder_proceso, login_url=reverse_lazy('acceso_denegado'))
 def detalle_proceso_view(request, proceso_id):
     proceso = get_object_or_404(
-        Proceso.objects.select_related('candidato', 'puesto__titulo', 'puesto__solicitado_por', 'asesora_asignada'),
+        Proceso.objects.select_related(
+            'candidato', 'puesto__titulo', 'puesto__marca',
+            'puesto__solicitado_por', 'asesora_asignada', 'puesto__asesora_encargada'
+        ),
         id=proceso_id
     )
+
+    if not puede_consultar_proceso(request.user, proceso):
+        raise PermissionDenied("No tienes autorización para consultar o gestionar procesos asignados a otra asesora.")
 
     puede_modificar = puede_modificar_proceso(request.user, proceso)
 

@@ -53,27 +53,62 @@ def puede_ver_reportes(user):
 
 
 def puede_acceder_proceso(user):
-    """Permiso para consultar procesos de selección en la interfaz."""
+    """Permiso general de navegación para consultar procesos de selección en la interfaz."""
     return es_personal_rh(user)
 
 
-def puede_modificar_proceso(user, proceso):
+def puede_consultar_proceso(user, proceso):
     """
-    Control de acceso a nivel de objeto para modificar un proceso:
+    Control de acceso a nivel de objeto para consultar un proceso:
     - Gerencia de CH / Superusuarios: Acceso total.
-    - Asesoras: Si son la asesora asignada o encargada de la vacante,
-      o si el proceso/vacante aún no tiene asesora asignada (vacante abierta por tomar).
+    - Asesoras: Estrictamente si es la asesora asignada o encargada de la vacante,
+      o si aún no tiene ninguna asesora asignada (vacante abierta por tomar).
     """
     if not user or not user.is_authenticated or not proceso:
         return False
     if es_gerente_ch(user):
         return True
     if es_asesora(user):
-        return (
-            proceso.asesora_asignada_id == user.id
-            or proceso.asesora_asignada_id is None
-            or (proceso.puesto and (proceso.puesto.asesora_encargada_id == user.id or proceso.puesto.asesora_encargada_id is None))
-        )
+        if proceso.asesora_asignada_id:
+            return proceso.asesora_asignada_id == user.id
+        if proceso.puesto and proceso.puesto.asesora_encargada_id:
+            return proceso.puesto.asesora_encargada_id == user.id
+        return True
+    return False
+
+
+def puede_modificar_proceso(user, proceso):
+    """
+    Control de acceso a nivel de objeto para modificar un proceso:
+    - Gerencia de CH / Superusuarios: Acceso total.
+    - Asesoras: Estrictamente si es la asesora asignada o encargada de la vacante,
+      o si aún no tiene ninguna asesora asignada.
+    """
+    if not user or not user.is_authenticated or not proceso:
+        return False
+    if es_gerente_ch(user):
+        return True
+    if es_asesora(user):
+        if proceso.asesora_asignada_id:
+            return proceso.asesora_asignada_id == user.id
+        if proceso.puesto and proceso.puesto.asesora_encargada_id:
+            return proceso.puesto.asesora_encargada_id == user.id
+        return True
+    return False
+
+
+def puede_consultar_vacante(user, puesto):
+    """
+    Control de acceso a nivel de objeto para consultar el detalle de una vacante:
+    - Gerencia de CH / Superusuarios: Acceso global.
+    - Asesoras: Únicamente si es la asesora encargada o si está abierta sin asignar.
+    """
+    if not user or not user.is_authenticated or not puesto:
+        return False
+    if es_gerente_ch(user):
+        return True
+    if es_asesora(user):
+        return puesto.asesora_encargada_id == user.id or puesto.asesora_encargada_id is None
     return False
 
 
