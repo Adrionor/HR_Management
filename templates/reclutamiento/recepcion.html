@@ -206,7 +206,7 @@
     }
 
     .rh-notice-card:hover {
-        border-color: #b9bec5;
+        border-color: var(--sap-border-hover, #b9bec5);
     }
 
     .rh-notice-meta {
@@ -228,13 +228,13 @@
     .rh-notice-content {
         margin: 0;
         font-size: 0.825rem;
-        color: #374151;
+        color: var(--sap-text);
         line-height: 1.5;
     }
 
     .rh-notice-author {
         font-weight: 600;
-        color: #1d2d3e;
+        color: var(--sap-text);
     }
 
     .rh-notice-empty {
@@ -244,6 +244,15 @@
         padding: 2.5rem 1.5rem;
         text-align: center;
         color: var(--sap-muted);
+    }
+
+    /* Accesibilidad: Respeto a reducción de movimiento (WCAG AA 2.3.3) */
+    @media (prefers-reduced-motion: reduce) {
+        .rh-shortcut-card,
+        .rh-pulse-card {
+            transition: border-color 0.05s ease, box-shadow 0.05s ease !important;
+            transform: none !important;
+        }
     }
 </style>
 {% endblock %}
@@ -272,7 +281,7 @@
                 {% endif %}
             </span>
             <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-primary sap-btn-sm" title="Ir a la bandeja de trabajo con tablas operativas">
-                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 <span>Bandeja Operativa &rarr;</span>
             </a>
         </div>
@@ -281,8 +290,8 @@
     <!-- 2. Pulso de Indicadores Rápidos -->
     <section class="rh-pulse-grid" aria-label="Indicadores rápidos de operación">
         <a href="{% url 'mis_vacantes' %}" class="rh-pulse-card" title="Ver mis vacantes activas">
-            <div class="rh-pulse-icon" style="background: #e8f3ff; color: #0057b8;">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+            <div class="rh-pulse-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
             </div>
             <div>
                 <div class="rh-pulse-number">{{ mis_vacantes_count|default:"0" }}</div>
@@ -291,8 +300,8 @@
         </a>
 
         <a href="{% url 'mis_procesos' %}" class="rh-pulse-card" title="Ver mis candidatos en seguimiento">
-            <div class="rh-pulse-icon" style="background: #e7f6ec; color: #0e6231;">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+            <div class="rh-pulse-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
             </div>
             <div>
                 <div class="rh-pulse-number">{{ mis_procesos_count|default:"0" }}</div>
@@ -301,8 +310,8 @@
         </a>
 
         <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-pulse-card" title="Explorar bolsa de trabajo general">
-            <div class="rh-pulse-icon" style="background: #f1f3f5; color: #374151;">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            <div class="rh-pulse-icon" style="background: var(--sap-neutral-bg); color: var(--sap-neutral-text);">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
             </div>
             <div>
                 <div class="rh-pulse-number">{{ candidatos_bolsa_count|default:"0" }}</div>
@@ -311,8 +320,8 @@
         </a>
 
         <a href="{% url 'mis_procesos' %}" class="rh-pulse-card" title="Procesos detenidos más de 7 días">
-            <div class="rh-pulse-icon" style="background: {% if alertas_count > 0 %}#ffeef0{% else %}#e7f6ec{% endif %}; color: {% if alertas_count > 0 %}#b91c1c{% else %}#0e6231{% endif %};">
-                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <div class="rh-pulse-icon" style="background: {% if alertas_count > 0 %}var(--sap-error-bg){% else %}var(--sap-success-bg){% endif %}; color: {% if alertas_count > 0 %}var(--sap-error-text){% else %}var(--sap-success-text){% endif %};">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
             </div>
             <div>
                 <div class="rh-pulse-number">{{ alertas_count|default:"0" }}</div>
@@ -329,7 +338,7 @@
             <div class="sap-page-header" style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sap-border-subtle);">
                 <div>
                     <h2 id="secShortcutsTitle" class="sap-page-title" style="font-size: 1.15rem;">
-                        <svg class="sap-icon" style="color: var(--sap-primary);" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>
+                        <svg class="sap-icon" style="color: var(--sap-primary);" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>
                         Accesos Directos de Trabajo
                     </h2>
                     <p class="sap-page-subtitle">Rutas inmediatas a tus herramientas diarias de selección y cobertura.</p>
@@ -340,8 +349,8 @@
                 <!-- Acceso 1: Bandeja de Trabajo (Dashboard) -->
                 <a href="{% url 'dashboard' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #e8f3ff; color: #0057b8;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Bandeja Operativa</h3>
@@ -356,8 +365,8 @@
                 <!-- Acceso 2: Registrar Vacante -->
                 <a href="{% url 'crear_vacante' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #e7f6ec; color: #0e6231;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Registrar Vacante</h3>
@@ -372,8 +381,8 @@
                 <!-- Acceso 3: Mis Vacantes -->
                 <a href="{% url 'mis_vacantes' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #e8f3ff; color: #0057b8;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-info-bg); color: var(--sap-info-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Mis Vacantes Asignadas</h3>
@@ -388,8 +397,8 @@
                 <!-- Acceso 4: Mis Candidatos en Proceso -->
                 <a href="{% url 'mis_procesos' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #e7f6ec; color: #0e6231;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Mis Candidatos</h3>
@@ -404,8 +413,8 @@
                 <!-- Acceso 5: Bolsa de Trabajo -->
                 <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #f1f3f5; color: #374151;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-neutral-bg); color: var(--sap-neutral-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Bolsa de Trabajo</h3>
@@ -420,8 +429,8 @@
                 <!-- Acceso 6: Reportes & BI Excel -->
                 <a href="{% url 'vista_reportes' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #e7f6ec; color: #0e6231;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-success-bg); color: var(--sap-success-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Reportes & BI Excel</h3>
@@ -437,15 +446,15 @@
                 {% if es_directora_ch %}
                 <a href="{% url 'vista_historial_general' %}" class="rh-shortcut-card">
                     <div class="rh-shortcut-top">
-                        <div class="rh-shortcut-icon" style="background: #fff4e5; color: #8a3c00;">
-                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                        <div class="rh-shortcut-icon" style="background: var(--sap-warning-bg); color: var(--sap-warning-text);">
+                            <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                         </div>
                         <div>
                             <h3 class="rh-shortcut-title">Auditoría & Bitácora RH</h3>
                             <p class="rh-shortcut-desc">Registro histórico de excepciones, reinicios de ciclo y vetos de candidatos.</p>
                         </div>
                     </div>
-                    <span class="rh-shortcut-action" style="color: #8a3c00;">
+                    <span class="rh-shortcut-action" style="color: var(--sap-warning-text);">
                         Consultar bitácora directiva &rarr;
                     </span>
                 </a>
@@ -459,7 +468,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <div>
                         <h2 id="secNoticesTitle" class="sap-page-title" style="font-size: 1.15rem;">
-                            <svg class="sap-icon" style="color: #0057b8;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+                            <svg class="sap-icon" style="color: var(--sap-info-text);" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
                             Avisos de Capital Humano
                         </h2>
                         <p class="sap-page-subtitle">Comunicados oficiales, lineamientos y fechas clave del equipo.</p>
@@ -511,7 +520,7 @@
                 </article>
                 {% empty %}
                 <div class="rh-notice-empty">
-                    <svg class="sap-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: #0057b8; margin-bottom: 8px;">
+                    <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: var(--sap-info-text); margin-bottom: 8px;">
                         <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
                     </svg>
                     <div style="font-weight: 600; color: var(--sap-text);">Sin avisos recientes</div>
