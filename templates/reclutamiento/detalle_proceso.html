@@ -49,7 +49,7 @@
     }
 
     .fact-label {
-        font-size: 0.725rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         font-weight: 600;
         color: var(--sap-muted);
@@ -103,7 +103,7 @@
     }
 
     .sap-feed-time {
-        font-size: 0.725rem;
+        font-size: 0.75rem;
         color: var(--sap-muted);
         margin-bottom: 0.2rem;
     }
@@ -120,7 +120,7 @@
         border: 1px solid var(--sap-border);
         border-radius: var(--sap-radius-sm);
         padding: 0.5rem 0.65rem;
-        font-size: 0.78rem;
+        font-size: 0.8125rem;
         color: var(--sap-muted);
     }
 </style>
@@ -161,16 +161,16 @@
 
 <!-- Banner de Alerta si el candidato está detenido +30 días -->
 {% if proceso.esta_estancado or proceso.dias_en_etapa_actual >= 30 %}
-<div class="sap-card" style="border-left: 4px solid #b25900; background: #fff4e5; padding: 0.85rem 1.15rem; margin-bottom: 1.25rem;">
+<div class="sap-card" style="border: 1px solid #feddb0; background: #fffbf5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <svg class="sap-icon" style="color: #b25900; width: 22px; height: 22px; flex-shrink: 0;" viewBox="0 0 24 24">
+        <svg class="sap-icon" style="color: #8a3c00; width: 22px; height: 22px; flex-shrink: 0;" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
         <div>
-            <div style="font-weight: 700; color: #b25900; font-size: 0.875rem;">
+            <div style="font-weight: 700; color: #8a3c00; font-size: 0.875rem;">
                 ATENCIÓN OPERATIVA: Candidato Detenido +30 días
             </div>
-            <div style="font-size: 0.8rem; color: #7c2d12; margin-top: 2px;">
+            <div style="font-size: 0.8125rem; color: #713f12; margin-top: 2px;">
                 Este candidato lleva {{ proceso.dias_en_etapa_actual }} días en la etapa actual sin avance registrado. Actualiza su etapa o descártalo para mantener al día tus indicadores.
             </div>
         </div>
@@ -180,7 +180,7 @@
 
 <!-- Banner de Alerta Crítica si el candidato es No Contratable -->
 {% if proceso.candidato.es_no_contratable %}
-<div class="sap-card" style="border-left: 4px solid #b91c1c; background: #fef2f2; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+<div class="sap-card" style="border: 1px solid #fecaca; background: #fef2f2; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
         <svg class="sap-icon" style="color: #b91c1c; width: 28px; height: 28px; flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
@@ -197,14 +197,14 @@
 
 <!-- Barra de Progreso Horizontal (Flujo Guiado) o Banner de Estado Terminal -->
 {% if proceso.estatus_proceso == 'DESCARTADO_CH' or proceso.estatus_proceso == 'EN_BOLSA' %}
-<div class="sap-card" style="border-left: 4px solid #b25900; background: #fffbf0; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+<div class="sap-card" style="border: 1px solid #feddb0; background: #fffbf0; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-        <svg class="sap-icon" style="color: #b25900; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+        <svg class="sap-icon" style="color: #8a3c00; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
         <div>
-            <div style="font-weight: 600; color: #b25900; font-size: 0.95rem;">Proceso Concluido &bull; Descartado por Perfil / Enviado a Bolsa</div>
-            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+            <div style="font-weight: 600; color: #8a3c00; font-size: 0.95rem;">Proceso Concluido &bull; Descartado por Perfil / Enviado a Bolsa</div>
+            <div style="font-size: 0.8125rem; color: #475569; margin-top: 2px;">
                 {% if proceso.motivo_descarte %}
                     <strong>Motivo de descarte:</strong> {{ proceso.motivo_descarte }}
                 {% else %}
@@ -215,14 +215,14 @@
     </div>
 </div>
 {% elif proceso.estatus_proceso == 'NO_PRUEBAS' or proceso.estatus_proceso == 'NO_PSICO' %}
-<div class="sap-card" style="border-left: 4px solid #bb0000; background: #fff5f5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+<div class="sap-card" style="border: 1px solid #fecaca; background: #fff5f5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-        <svg class="sap-icon" style="color: #bb0000; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+        <svg class="sap-icon" style="color: #b91c1c; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
         <div>
-            <div style="font-weight: 600; color: #bb0000; font-size: 0.95rem;">Proceso Concluido &bull; No Aprobó Pruebas (Integridad / Pyxoom)</div>
-            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+            <div style="font-weight: 600; color: #b91c1c; font-size: 0.95rem;">Proceso Concluido &bull; No Aprobó Pruebas (Integridad / Pyxoom)</div>
+            <div style="font-size: 0.8125rem; color: #475569; margin-top: 2px;">
                 {% if proceso.motivo_descarte %}
                     <strong>Motivo de descarte:</strong> {{ proceso.motivo_descarte }}
                 {% else %}
@@ -233,23 +233,23 @@
     </div>
 </div>
 {% elif proceso.estatus_proceso == 'ABANDONO' %}
-<div class="sap-card" style="border-left: 4px solid #64748b; background: #f8fafc; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+<div class="sap-card" style="border: 1px solid #cbd5e1; background: #f8fafc; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
-        <svg class="sap-icon" style="color: #64748b; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+        <svg class="sap-icon" style="color: #475569; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
         <div>
             <div style="font-weight: 600; color: #334155; font-size: 0.95rem;">Proceso Concluido &bull; Abandonó el Proceso</div>
-            <div style="font-size: 0.8125rem; color: #4a5568; margin-top: 2px;">
+            <div style="font-size: 0.8125rem; color: #475569; margin-top: 2px;">
                 <strong>Motivo de abandono:</strong> {{ proceso.motivo_descarte|default:"Candidato no continuó en el proceso." }}
             </div>
         </div>
     </div>
 </div>
 {% elif proceso.estatus_proceso == 'CONTRATADO' %}
-<div class="sap-card" style="border-left: 4px solid #16a34a; background: #f0fdf4; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+<div class="sap-card" style="border: 1px solid #bbf7d0; background: #f0fdf4; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: center; gap: 0.85rem;">
-        <svg class="sap-icon" style="color: #16a34a; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
+        <svg class="sap-icon" style="color: #15803d; width: 26px; height: 26px; flex-shrink: 0;" viewBox="0 0 24 24">
             <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
         </svg>
         <div>
@@ -488,7 +488,7 @@
     <!-- Columna Derecha: Acción Directa (Avanzar Etapa) y Bitácora -->
     <div>
         <!-- Formulario Principal: Avanzar Etapa -->
-        <div class="sap-card" id="panelAvanzar" style="border-top: 3px solid var(--sap-primary);">
+        <div class="sap-card" id="panelAvanzar">
             <div class="sap-card-header">
                 <div>
                     <h2 class="sap-card-title">Avanzar Etapa de Selección</h2>
@@ -580,7 +580,7 @@
 
         <!-- Tarjeta de Acción Rápida: Boletinar como No Contratable -->
         {% if not proceso.candidato.es_no_contratable and puede_modificar %}
-        <div class="sap-card" style="border-top: 3px solid #b91c1c; margin-top: 1.25rem;">
+        <div class="sap-card" style="margin-top: 1.25rem;">
             <div class="sap-card-header">
                 <div>
                     <h2 class="sap-card-title" style="color: #b91c1c;">
@@ -615,11 +615,11 @@
 
         <!-- Tarjeta de Gestión: Revertir Boletinación (Exclusivo Gerencia de CH) -->
         {% if proceso.candidato.es_no_contratable and es_gerente_ch %}
-        <div class="sap-card" style="border-top: 3px solid #16a34a; margin-top: 1.25rem;">
+        <div class="sap-card" style="margin-top: 1.25rem;">
             <div class="sap-card-header">
                 <div>
-                    <h2 class="sap-card-title" style="color: #16a34a;">
-                        <svg class="sap-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #16a34a; vertical-align: middle;">
+                    <h2 class="sap-card-title" style="color: #15803d;">
+                        <svg class="sap-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #15803d; vertical-align: middle;">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
                         Revertir Boletinación (Reactivar Candidato)
@@ -635,11 +635,11 @@
                     <input type="hidden" name="action" value="revertir_no_contratable">
                     
                     <div class="sap-form-group">
-                        <label class="sap-label" for="motivo_reversion">Motivo Justificado de Reversión <span style="color: #16a34a; font-weight: 700;">(Obligatorio)</span>:</label>
+                        <label class="sap-label" for="motivo_reversion">Motivo Justificado de Reversión <span style="color: #15803d; font-weight: 700;">(Obligatorio)</span>:</label>
                         <textarea name="motivo_reversion" id="motivo_reversion" class="sap-textarea" rows="2" placeholder="Especifica la justificación directiva para reactivar al candidato..." required></textarea>
                     </div>
 
-                    <button type="submit" class="sap-btn sap-btn-sm" style="background: #16a34a; color: #ffffff; width: 100%; border: none;">
+                    <button type="submit" class="sap-btn sap-btn-sm" style="background: #15803d; color: #ffffff; width: 100%; border: none;">
                         <span>Confirmar Reversión y Reactivar Candidato</span>
                     </button>
                 </form>

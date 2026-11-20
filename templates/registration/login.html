@@ -263,39 +263,57 @@
             <!-- Accesos Rápidos con 1 Clic (Solo disponible en desarrollo/pruebas) -->
             {% if SHOW_DEMO_LOGIN %}
             <div
-                style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: left;">
+                style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--sap-radius); text-align: left;">
                 <div
-                    style="font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-                    <span>⚡ Entrar con 1 Clic (Sin escribir clave):</span>
-                    <span style="font-size: 0.72rem; font-weight: 500; color: #64748b;">Clave: admin</span>
+                    style="font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0070f2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        Acceso Rápido de Prueba:
+                    </span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #475569; background: #e2e8f0; padding: 1px 6px; border-radius: 4px;">Clave: admin</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.45rem;">
                     <button type="button" onclick="quickLogin('jorge.guzman')"
-                        style="width: 100%; text-align: left; padding: 6px 10px; font-size: 0.8rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s;"
+                        style="width: 100%; text-align: left; padding: 7px 10px; font-size: 0.8125rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between;"
                         onmouseover="this.style.borderColor='#0070f2';this.style.backgroundColor='#eff6ff'"
                         onmouseout="this.style.borderColor='#cbd5e1';this.style.backgroundColor='#ffffff'">
-                        👑 <strong>Jorge Guzmán</strong> <span style="color:#64748b; font-size: 0.75rem;">(Superadmin / Control Total)</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #0070f2;"></span>
+                            <strong>Jorge Guzmán</strong>
+                        </span>
+                        <span style="color:#475569; font-size: 0.75rem; font-weight: 600;">Superusuario / Control Total</span>
                     </button>
                     <button type="button" onclick="quickLogin('gerente.ch')"
-                        style="width: 100%; text-align: left; padding: 6px 10px; font-size: 0.8rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s;"
+                        style="width: 100%; text-align: left; padding: 7px 10px; font-size: 0.8125rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between;"
                         onmouseover="this.style.borderColor='#0070f2';this.style.backgroundColor='#eff6ff'"
                         onmouseout="this.style.borderColor='#cbd5e1';this.style.backgroundColor='#ffffff'">
-                        👔 <strong>Patricia Aréchiga</strong> <span style="color:#64748b; font-size: 0.75rem;">(Gerente
-                            Capital Humano)</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #8a3c00;"></span>
+                            <strong>Patricia Aréchiga</strong>
+                        </span>
+                        <span style="color:#475569; font-size: 0.75rem; font-weight: 600;">Gerencia Capital Humano</span>
                     </button>
                     <button type="button" onclick="quickLogin('asesora.arely')"
-                        style="width: 100%; text-align: left; padding: 6px 10px; font-size: 0.8rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s;"
+                        style="width: 100%; text-align: left; padding: 7px 10px; font-size: 0.8125rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between;"
                         onmouseover="this.style.borderColor='#0070f2';this.style.backgroundColor='#eff6ff'"
                         onmouseout="this.style.borderColor='#cbd5e1';this.style.backgroundColor='#ffffff'">
-                        👩‍💼 <strong>Arely Trujillo</strong> <span style="color:#64748b; font-size: 0.75rem;">(Asesora
-                            / Reclutadora)</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #0e6231;"></span>
+                            <strong>Arely Trujillo</strong>
+                        </span>
+                        <span style="color:#475569; font-size: 0.75rem; font-weight: 600;">Asesora de Reclutamiento</span>
                     </button>
                     <button type="button" onclick="quickLogin('asesora.sofia')"
-                        style="width: 100%; text-align: left; padding: 6px 10px; font-size: 0.8rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s;"
+                        style="width: 100%; text-align: left; padding: 7px 10px; font-size: 0.8125rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; color: #0f172a; font-weight: 500; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between;"
                         onmouseover="this.style.borderColor='#0070f2';this.style.backgroundColor='#eff6ff'"
                         onmouseout="this.style.borderColor='#cbd5e1';this.style.backgroundColor='#ffffff'">
-                        👩‍💼 <strong>Sofía Navarro</strong> <span style="color:#64748b; font-size: 0.75rem;">(Asesora /
-                            Reclutadora)</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #0e6231;"></span>
+                            <strong>Sofía Navarro</strong>
+                        </span>
+                        <span style="color:#475569; font-size: 0.75rem; font-weight: 600;">Asesora de Reclutamiento</span>
                     </button>
                 </div>
             </div>

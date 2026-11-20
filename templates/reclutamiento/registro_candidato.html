@@ -24,9 +24,11 @@
     .form-group-conditional { display: none; } /* Ocultamos el campo de motivo por defecto */
 
     .file-upload-wrapper input[type="file"] { display: none; }
-    .boton-file { display: inline-block; padding: 10px 15px; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 600; }
-    #file-chosen { margin-left: 10px; font-style: italic; color: #555; }
-    .boton-submit { width: 100%; padding: 12px; border: none; border-radius: 5px; background-color: #2ecc71; color: white; font-family: 'Poppins', sans-serif; font-size: 1.1em; font-weight: 600; cursor: pointer; margin-top: 1em; }
+    .boton-file { display: inline-block; padding: 10px 16px; background-color: #0070f2; color: #ffffff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background-color 0.15s ease; }
+    .boton-file:hover { background-color: #0057b8; }
+    #file-chosen { margin-left: 10px; font-style: italic; color: #475569; font-size: 0.875rem; }
+    .boton-submit { width: 100%; padding: 12px; border: none; border-radius: 6px; background-color: #0070f2; color: #ffffff; font-family: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1.25em; transition: background-color 0.15s ease; }
+    .boton-submit:hover { background-color: #0057b8; }
 
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background-color: white; padding: 2em; border-radius: 10px; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; }
@@ -35,9 +37,11 @@
     .modal-body p { margin: 0.5em 0; }
     .modal-body strong { color: #34495e; }
     .modal-actions { margin-top: 2em; text-align: right; }
-    .modal-actions button { padding: 10px 20px; border-radius: 5px; border: none; font-weight: 600; cursor: pointer; margin-left: 10px; }
-    #cancel-btn { background-color: #bdc3c7; }
-    #confirm-btn { background-color: #27ae60; color: white; }
+    .modal-actions button { padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; margin-left: 10px; font-size: 0.9rem; }
+    #cancel-btn { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    #cancel-btn:hover { background-color: #e2e8f0; }
+    #confirm-btn { background-color: #15803d; color: #ffffff; }
+    #confirm-btn:hover { background-color: #166534; }
 </style>
 {% endblock %}
 

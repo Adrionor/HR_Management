@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gestión de Talento Humano{% endblock %} | Premier Automotriz</title>
     
-    <!-- Tipografía Inter Corporativa -->
+    <!-- Tipografía SAP 72 & System Corporativa -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=72:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- DataTables & Chart.js -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -34,18 +34,18 @@
             --sap-muted: #59697a;
             
             /* Tipografía y Números */
-            --sap-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --sap-font: '72', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             
-            /* Estados Semánticos Sobrios (Sin Emojis) */
-            --sap-success-text: #107e3e;
+            /* Estados Semánticos Sobrios (Sin Emojis, WCAG AA >= 4.5:1) */
+            --sap-success-text: #0e6231;
             --sap-success-bg: #e7f6ec;
             --sap-success-border: #bfe7ce;
             
-            --sap-warning-text: #b25900;
+            --sap-warning-text: #8a3c00;
             --sap-warning-bg: #fff4e5;
             --sap-warning-border: #feddb0;
             
-            --sap-error-text: #bb0000;
+            --sap-error-text: #b91c1c;
             --sap-error-bg: #ffeef0;
             --sap-error-border: #fcced3;
             
@@ -53,7 +53,7 @@
             --sap-info-bg: #e8f3ff;
             --sap-info-border: #b6d8ff;
             
-            --sap-neutral-text: #495057;
+            --sap-neutral-text: #374151;
             --sap-neutral-bg: #f1f3f5;
             --sap-neutral-border: #d9dde3;
 
@@ -66,6 +66,33 @@
 
         * {
             box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        *::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        *::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        ::selection {
+            background-color: #cce5ff;
+            color: #00418a;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--sap-primary);
+            outline-offset: 2px;
         }
 
         body {
@@ -832,7 +859,7 @@
             box-shadow: 0 0 0 3px rgba(0, 112, 242, 0.25);
         }
         .sap-step-title {
-            font-size: 0.725rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--sap-muted);
             line-height: 1.25;
@@ -881,9 +908,8 @@
         .sap-action-callout {
             background-color: #f0f7ff;
             border: 1px solid #c7e0ff;
-            border-left: 4px solid var(--sap-primary);
-            border-radius: var(--sap-radius-sm);
-            padding: 0.85rem 1rem;
+            border-radius: var(--sap-radius-md);
+            padding: 0.95rem 1.25rem;
             display: flex;
             align-items: center;
             justify-content: space-between;

@@ -145,7 +145,7 @@
         background: #f8fafc;
         color: var(--sap-muted);
         font-weight: 600;
-        font-size: 0.725rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         padding: 0.65rem 1rem;
@@ -518,7 +518,7 @@
                     <div style="border-bottom: 1px solid var(--sap-border-subtle); padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
                         <div style="font-weight: 600; font-size: 0.85rem; color: var(--sap-text);">{{ aviso.titulo }}</div>
                         <div style="font-size: 0.8rem; color: var(--sap-muted); margin-top: 3px; line-height: 1.4;">{{ aviso.contenido|linebreaksbr }}</div>
-                        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+                        <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 4px;">
                             {{ aviso.fecha_creacion|date:"d/m/Y H:i" }} &bull; {{ aviso.creado_por.get_full_name|default:aviso.creado_por.username }}
                         </div>
                     </div>
@@ -531,7 +531,7 @@
             </div>
 
             <!-- Caja de Ayuda Operativa Directa -->
-            <div class="sap-card" style="background: #f8fafc; border-left: 3px solid var(--sap-primary);">
+            <div class="sap-card" style="background: #f8fafc; border-top: 2px solid var(--sap-primary);">
                 <div class="sap-card-body" style="padding: 1rem;">
                     <div style="font-weight: 600; font-size: 0.85rem; color: var(--sap-text); margin-bottom: 4px;">
                         Flujo Rápido de RH
