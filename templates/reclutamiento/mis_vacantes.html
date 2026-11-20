@@ -205,14 +205,20 @@
                                 </a>
 
                                 {% if vacante.dias_transcurridos > vacante.dias_meta %}
-                                <form action="{% url 'reiniciar_vacante' vacante.id %}" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('¿Desea reiniciar el conteo del SLA a 0 días para \'{{ vacante.titulo.nombre|escapejs }}\'? Esto iniciará el Ciclo #{{ vacante.numero_reinicios|add:1 }}.');">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="comentario" value="Reinicio operativo de SLA por vencimiento">
-                                    <button type="submit" class="sap-btn sap-btn-warning sap-btn-sm" title="Reiniciar conteo de días SLA">
-                                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                                        <span>Reiniciar conteo</span>
-                                    </button>
-                                </form>
+                                    {% if vacante.numero_reinicios >= 2 %}
+                                        <span class="sap-badge sap-badge-neutral" style="font-size: 0.72rem; padding: 3px 6px;" title="Límite máximo de 2 reinicios alcanzado">
+                                            Excepciones agotadas (2/2)
+                                        </span>
+                                    {% elif es_directora_ch and vacante.asesora_encargada != user %}
+                                        <form action="{% url 'reiniciar_vacante' vacante.id %}" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('¿Desea autorizar el reinicio del SLA para \'{{ vacante.titulo.nombre|escapejs }}\'? Esto iniciará el Ciclo #{{ vacante.numero_reinicios|add:1 }} (Máximo 2 permitidos).');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="comentario" value="Excepción de SLA autorizada por Gerencia de CH">
+                                            <button type="submit" class="sap-btn sap-btn-warning sap-btn-sm" title="Autorizar reinicio de SLA (Ciclo {{ vacante.numero_reinicios|add:1 }}/2)">
+                                                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                                <span>Autorizar reinicio ({{ vacante.numero_reinicios|add:1 }}/2)</span>
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </td>

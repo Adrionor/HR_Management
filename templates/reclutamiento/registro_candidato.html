@@ -60,6 +60,7 @@
             <div class="form-group">{{ form.email.label_tag }}{{ form.email }}{{ form.email.errors }}</div>
             <div class="form-group">{{ form.telefono.label_tag }}{{ form.telefono }}{{ form.telefono.errors }}</div>
             <div class="form-group">{{ form.rfc.label_tag }}{{ form.rfc }}{{ form.rfc.errors }}</div>
+            <div class="form-group">{{ form.ciudad_residencia.label_tag }}{{ form.ciudad_residencia }}{{ form.ciudad_residencia.errors }}</div>
             <div class="form-group">{{ form.fecha_nacimiento.label_tag }}{{ form.fecha_nacimiento }}{{ form.fecha_nacimiento.errors }}</div>
             <div class="form-group form-group--full-width">{{ form.puesto_de_interes.label_tag }}{{ form.puesto_de_interes }}{{ form.puesto_de_interes.errors }}</div>
             <div class="form-group">{{ form.nivel_educativo.label_tag }}{{ form.nivel_educativo }}{{ form.nivel_educativo.errors }}</div>
@@ -90,18 +91,24 @@
             </div>
         </div>
         <button type="button" id="review-button" class="boton-submit">Revisar y Enviar mis Datos</button>
+        <noscript>
+            <div style="margin-top: 1rem; text-align: center;">
+                <button type="submit" class="boton-submit" style="background-color: #0070f2;">Enviar mis Datos Directamente</button>
+            </div>
+        </noscript>
     </form>
 </div>
 
-<div id="confirmation-modal" class="modal-overlay">
+<div id="confirmation-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
     <div class="modal-content">
-        <div class="modal-header"><h3>Por favor, verifica tus datos</h3></div>
+        <div class="modal-header"><h3 id="modal-title">Por favor, verifica tus datos</h3></div>
         <div class="modal-body">
             <p><strong>Nombres:</strong> <span id="confirm-nombres"></span></p>
             <p><strong>Apellidos:</strong> <span id="confirm-apellidos"></span></p>
             <p><strong>Email:</strong> <span id="confirm-email"></span></p>
             <p><strong>Teléfono:</strong> <span id="confirm-telefono"></span></p>
             <p><strong>RFC:</strong> <span id="confirm-rfc"></span></p>
+            <p><strong>Ciudad de Residencia:</strong> <span id="confirm-ciudad"></span></p>
             <p><strong>Fecha de Nacimiento:</strong> <span id="confirm-nacimiento"></span></p>
             <p><strong>Puesto de Interés:</strong> <span id="confirm-puesto"></span></p>
             <p><strong>Nivel Educativo:</strong> <span id="confirm-educacion"></span></p>
@@ -113,8 +120,8 @@
             <p><strong>CV Adjunto:</strong> <span id="confirm-cv"></span></p>
         </div>
         <div class="modal-actions">
-            <button id="cancel-btn">Editar</button>
-            <button id="confirm-btn">Confirmar y Enviar</button>
+            <button id="cancel-btn" type="button">Editar</button>
+            <button id="confirm-btn" type="button">Confirmar y Enviar</button>
         </div>
     </div>
 </div>
@@ -150,7 +157,8 @@ $(document).ready(function() {
         $('#confirm-email').text($('input[name="email"]').val());
         $('#confirm-telefono').text($('input[name="telefono"]').val());
         $('#confirm-rfc').text($('input[name="rfc"]').val());
-        $('#confirm-fecha-nacimiento').text($('input[name="fecha_nacimiento"]').val());
+        $('#confirm-ciudad').text($('#id_ciudad_residencia option:selected').text() || $('select[name="ciudad_residencia"]').val() || 'No especificada');
+        $('#confirm-nacimiento').text($('input[name="fecha_nacimiento"]').val());
         $('#confirm-puesto').text($('#id_puesto_de_interes option:selected').text());
         $('#confirm-educacion').text($('#id_nivel_educativo option:selected').text());
         $('#confirm-experiencia').text($('input[name="años_de_experiencia"]').val());
@@ -168,11 +176,27 @@ $(document).ready(function() {
             $('#motivo-confirm-wrapper').hide();
         }
         modal.css('display', 'flex');
+        $('#cancel-btn').focus();
     });
 
-    $('#cancel-btn').on('click', function(e) { modal.hide(); });
+    $('#cancel-btn').on('click', function(e) {
+        modal.hide();
+        $('#review-button').focus();
+    });
     $('#confirm-btn').on('click', function() { form.submit(); });
-    $('.modal-overlay').on('click', function(e) { if(e.target === this) { modal.hide(); }});
+    $('.modal-overlay').on('click', function(e) {
+        if(e.target === this) {
+            modal.hide();
+            $('#review-button').focus();
+        }
+    });
+
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && modal.is(':visible')) {
+            modal.hide();
+            $('#review-button').focus();
+        }
+    });
 });
 </script>
 {% endblock %}

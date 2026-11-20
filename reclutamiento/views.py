@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import Count, Q
 from django.urls import reverse_lazy
 from django.http import HttpResponse
@@ -18,7 +19,9 @@ from .models import Candidato, Puesto, Proceso, RegistroActividad, Publicacion, 
 from .permissions import (
     es_gerente_ch, es_asesora, es_personal_rh,
     puede_ver_operaciones, es_management, puede_ver_confidenciales, puede_ver_reportes,
-    puede_acceder_proceso, puede_crear_vacante, puede_ver_biblioteca
+    puede_acceder_proceso, puede_crear_vacante, puede_ver_biblioteca,
+    puede_modificar_proceso, puede_modificar_vacante, puede_reiniciar_sla, puede_descargar_cv,
+    puede_revertir_no_contratable
 )
 
 # Decorador para borrar cache
@@ -104,7 +107,11 @@ def registro_candidato_view(request):
                 form.save_m2m()
                 return redirect('registro_exitoso')
     else:
-        form = RegistroCandidatoForm()
+        puesto_param = request.GET.get('puesto', '').strip()
+        initial_data = {}
+        if puesto_param:
+            initial_data['puesto_de_interes'] = puesto_param
+        form = RegistroCandidatoForm(initial=initial_data)
 
     return render(request, 'reclutamiento/registro_candidato.html', {'form': form})
 
@@ -130,7 +137,7 @@ def puede_ver_biblioteca(user):
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def dashboard(request):
     usuario = request.user
-    es_directora = es_gerente_ch(usuario) or usuario.is_superuser or usuario.is_staff
+    es_directora = es_gerente_ch(usuario) or usuario.is_superuser
 
     terminales_proceso = [
         Proceso.Estatus.DESCARTADO_CH,
@@ -634,10 +641,22 @@ def bolsa_trabajo_readonly_view(request):
 
 
 @login_required
-@user_passes_test(es_asesora, login_url=reverse_lazy('acceso_denegado'))
+@user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 @no_cache_page
 def asignar_candidato_view(request, puesto_id):
     puesto = get_object_or_404(Puesto, id=puesto_id)
+
+    # 1. Bloqueo estricto si la vacante está cerrada
+    if not puesto.esta_abierto:
+        messages.error(
+            request,
+            f"La vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' se encuentra cerrada o cubierta. No es posible asignarle candidatos."
+        )
+        return redirect('mis_vacantes')
+
+    # 2. Control de acceso por objeto: Solo la asesora encargada o Gerencia de CH
+    if not puede_modificar_vacante(request.user, puesto):
+        raise PermissionDenied("No tienes autorización para gestionar o asignar candidatos a esta vacante.")
 
     # Estatus de procesos activos (no finalizados)
     estatus_activos = [
@@ -651,47 +670,53 @@ def asignar_candidato_view(request, puesto_id):
         candidato_id = request.POST.get('candidato_id')
         candidato = get_object_or_404(Candidato, id=candidato_id)
 
-        # 1. Bloqueo estricto si el candidato está marcado como NO CONTRATABLE
-        if candidato.es_no_contratable:
-            messages.error(
-                request,
-                f"Operación Bloqueada: El candidato '{candidato.nombre_completo}' está registrado como NO CONTRATABLE y no puede ser asignado a ninguna vacante. Motivo: {candidato.motivo_no_contratable or 'Boletinado por RH'}."
+        # 3. Bloqueo atómico contra condiciones de carrera y candidatos duplicados
+        with transaction.atomic():
+            puesto_locked = Puesto.objects.select_for_update().get(id=puesto.id)
+            if not puesto_locked.esta_abierto:
+                messages.error(request, "La vacante fue cerrada mientras se procesaba la postulación.")
+                return redirect('mis_vacantes')
+
+            candidato_locked = Candidato.objects.select_for_update().get(id=candidato.id)
+            if candidato_locked.es_no_contratable:
+                messages.error(
+                    request,
+                    f"Operación Bloqueada: El candidato '{candidato_locked.nombre_completo}' está registrado como NO CONTRATABLE y no puede ser asignado a ninguna vacante. Motivo: {candidato_locked.motivo_no_contratable or 'Boletinado por RH'}."
+                )
+                return redirect('asignar_candidato', puesto_id=puesto.id)
+
+            proceso_activo_existente = Proceso.objects.select_for_update().filter(
+                candidato=candidato_locked,
+                estatus_proceso__in=estatus_activos
+            ).select_related('puesto', 'puesto__titulo').first()
+
+            if proceso_activo_existente:
+                puesto_nombre = (
+                    proceso_activo_existente.puesto.titulo.nombre
+                    if proceso_activo_existente.puesto and proceso_activo_existente.puesto.titulo
+                    else "otra vacante"
+                )
+                messages.warning(
+                    request,
+                    f"El candidato '{candidato_locked.nombre_completo}' ya cuenta con un proceso activo ({proceso_activo_existente.get_estatus_proceso_display()}) en '{puesto_nombre}'."
+                )
+                return redirect('asignar_candidato', puesto_id=puesto.id)
+
+            # Iniciar en etapa inicial NUEVO
+            nuevo_proceso = Proceso.objects.create(
+                candidato=candidato_locked,
+                puesto=puesto_locked,
+                asesora_asignada=request.user,
+                estatus_proceso=Proceso.Estatus.NUEVO
             )
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion=f"Tomó al candidato '{candidato_locked.nombre_completo}' para el puesto '{puesto_locked.titulo.nombre if puesto_locked.titulo else puesto_locked.id}'",
+                tipo_objeto="Proceso",
+                id_objeto=nuevo_proceso.id
+            )
+            messages.success(request, f"Candidato '{candidato_locked.nombre_completo}' asignado al proceso para la vacante.")
             return redirect('asignar_candidato', puesto_id=puesto.id)
-
-        # 2. Validar si el candidato ya tiene algún proceso activo actualmente
-        proceso_activo_existente = Proceso.objects.filter(
-            candidato=candidato,
-            estatus_proceso__in=estatus_activos
-        ).select_related('puesto', 'puesto__titulo').first()
-
-        if proceso_activo_existente:
-            puesto_nombre = (
-                proceso_activo_existente.puesto.titulo.nombre
-                if proceso_activo_existente.puesto and proceso_activo_existente.puesto.titulo
-                else "otra vacante"
-            )
-            messages.warning(
-                request,
-                f"El candidato '{candidato.nombre_completo}' ya cuenta con un proceso activo ({proceso_activo_existente.get_estatus_proceso_display()}) en '{puesto_nombre}'."
-            )
-            return redirect('asignar_candidato', puesto_id=puesto.id)
-
-        # 3. Iniciar en etapa inicial NUEVO
-        nuevo_proceso = Proceso.objects.create(
-            candidato=candidato,
-            puesto=puesto,
-            asesora_asignada=request.user,
-            estatus_proceso=Proceso.Estatus.NUEVO
-        )
-        RegistroActividad.objects.create(
-            usuario=request.user,
-            accion=f"Tomó al candidato '{candidato.nombre_completo}' para el puesto '{puesto.titulo.nombre if puesto.titulo else puesto.id}'",
-            tipo_objeto="Proceso",
-            id_objeto=nuevo_proceso.id
-        )
-        messages.success(request, f"Candidato '{candidato.nombre_completo}' asignado al proceso para la vacante.")
-        return redirect('asignar_candidato', puesto_id=puesto.id)
 
     # Lógica GET para mostrar la lista de candidatos disponibles
     candidatos_disponibles, filtros = obtener_candidatos_bolsa(request)
@@ -748,14 +773,43 @@ def historial_candidato_view(request, candidato_id):
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def candidato_detalle_view(request, candidato_id):
     candidato = get_object_or_404(Candidato, id=candidato_id)
-    contexto = { 'candidato': candidato }
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'revertir_no_contratable':
+            if not puede_revertir_no_contratable(request.user):
+                raise PermissionDenied("La reversión del estatus de NO CONTRATABLE está reservada exclusivamente a la Gerencia de Capital Humano.")
+
+            motivo = request.POST.get('motivo_reversion', '').strip()
+            if not motivo:
+                messages.error(request, 'Es obligatorio indicar el motivo de la reversión para reactivar al candidato.')
+                return redirect('candidato_detalle', candidato_id=candidato.id)
+
+            candidato.es_no_contratable = False
+            candidato.motivo_no_contratable = ''
+            candidato.save()
+
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion=f"Revirtió estatus de NO CONTRATABLE para '{candidato.nombre_completo}' (Habilitado nuevamente para contratación)",
+                tipo_objeto="Candidato",
+                id_objeto=candidato.id,
+                detalles=f"Autorizado por Gerencia CH. Justificación: {motivo}"
+            )
+            messages.success(request, f"¡El candidato '{candidato.nombre_completo}' ha sido reactivado exitosamente!")
+            return redirect('candidato_detalle', candidato_id=candidato.id)
+
+    contexto = {
+        'candidato': candidato,
+        'es_gerente_ch': es_gerente_ch(request.user),
+    }
     return render(request, 'reclutamiento/candidato_detalle.html', contexto)
 
 @login_required
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def mis_procesos_view(request):
     usuario = request.user
-    es_directora = es_gerente_ch(usuario) or usuario.is_superuser or usuario.is_staff
+    es_directora = es_gerente_ch(usuario) or usuario.is_superuser
 
     estatus_finalizados = [
         Proceso.Estatus.DESCARTADO_CH,
@@ -788,7 +842,7 @@ def mis_procesos_view(request):
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def mis_vacantes_view(request):
     usuario = request.user
-    es_directora = es_gerente_ch(usuario) or usuario.is_superuser or usuario.is_staff
+    es_directora = es_gerente_ch(usuario) or usuario.is_superuser
 
     if es_directora:
         vacantes_activas = Puesto.objects.filter(
@@ -809,24 +863,40 @@ def mis_vacantes_view(request):
 
 @login_required
 @require_POST
-@user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
 def reiniciar_vacante_view(request, puesto_id):
     """
     Reinicia el reloj de SLA de una vacante vencida para un nuevo ciclo de días meta.
-    Incrementa numero_reinicios y actualiza fecha_inicio_sla_custom, registrando la auditoría
-    en RegistroActividad para el cálculo de bono.
+    Requiere autorización exclusiva de Gerencia de CH (perfil distinto al responsable).
+    Exige justificación obligatoria y registra la auditoría.
     """
     puesto = get_object_or_404(Puesto, id=puesto_id)
+    if puesto.numero_reinicios >= 2:
+        messages.error(
+            request,
+            f"Operación Bloqueada: La vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' ya alcanzó el límite máximo permitido de 2 reinicios de SLA (excepciones autorizadas agotadas)."
+        )
+        return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+
+    if not puede_reiniciar_sla(request.user, puesto):
+        raise PermissionDenied(
+            "No tienes autorización para reiniciar el SLA de esta vacante. "
+            "La aprobación de excepciones está reservada a la Gerencia de Capital Humano "
+            "y debe ser realizada por alguien distinto a la persona responsable de la vacante."
+        )
+
     comentario = request.POST.get('comentario', '').strip()
+    if not comentario:
+        messages.error(request, 'Es obligatorio especificar el motivo o justificación de la excepción para reiniciar el SLA.')
+        return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
 
     puesto.reiniciar_sla(nueva_fecha=timezone.now(), comentario=comentario)
 
     RegistroActividad.objects.create(
         usuario=request.user,
-        accion=f"Reinició el conteo de SLA para la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' (Ciclo #{puesto.numero_reinicios})",
+        accion=f"Autorizó reinicio de SLA para la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' (Ciclo #{puesto.numero_reinicios})",
         tipo_objeto="Puesto",
         id_objeto=puesto.id,
-        detalles=comentario or f"Reinicio operativo de ciclo SLA por vencimiento de vacante (Ciclo #{puesto.numero_reinicios})"
+        detalles=f"Motivo justificado: {comentario}"
     )
 
     messages.success(
@@ -844,16 +914,16 @@ def detalle_proceso_view(request, proceso_id):
         id=proceso_id
     )
 
-    # En el modelo exclusivo de RH, todo el personal autorizado de RH gestiona el proceso
-    puede_gestionar = puede_ver_operaciones(request.user)
-
-    if not puede_gestionar:
-        raise PermissionDenied
+    puede_modificar = puede_modificar_proceso(request.user, proceso)
 
     if request.method == 'POST':
+        if not puede_modificar:
+            raise PermissionDenied("No tienes autorización para modificar este proceso. Solo la asesora asignada o la Gerencia de CH pueden realizar cambios.")
+
         action = request.POST.get('action')
 
         if action == 'actualizar_estatus':
+            estatus_anterior_raw = proceso.estatus_proceso
             estatus_anterior = proceso.get_estatus_proceso_display()
             nuevo_estatus = request.POST.get('estatus_proceso')
             nuevas_notas = request.POST.get('retroalimentacion', '').strip()
@@ -865,6 +935,8 @@ def detalle_proceso_view(request, proceso_id):
             if nuevo_estatus not in Proceso.Estatus.values:
                 messages.error(request, 'El estatus seleccionado no es válido.')
                 return redirect('detalle_proceso', proceso_id=proceso.id)
+
+            cambio_etapa = (nuevo_estatus != estatus_anterior_raw)
 
             # 2. Motivo obligatorio al descartar o abandono
             estatus_terminales_descarte = [
@@ -892,33 +964,85 @@ def detalle_proceso_view(request, proceso_id):
             elif resultado_pyxoom == 'CLEAR':
                 proceso.resultado_pyxoom = None
 
-            proceso.estatus_proceso = nuevo_estatus
-            proceso.retroalimentacion = nuevas_notas
-            proceso.fecha_inicio_etapa = timezone.now()
-            proceso.save()
-
-            # 4. Verificación de vacante si fue contratado
+            # 4. Actualización con transacción atómica y control de sobrecontratación
             if nuevo_estatus == Proceso.Estatus.CONTRATADO:
-                puesto = proceso.puesto
-                if puesto:
-                    cubiertas = puesto.plazas_cubiertas
-                    total = puesto.cantidad_vacantes
-                    if cubiertas >= total:
-                        puesto.esta_abierto = False
-                        puesto.save()
-                        messages.success(
-                            request,
-                            f"¡Candidato '{proceso.candidato.nombre_completo}' contratado y vacante completada al 100%! ({cubiertas} de {total} plazas)."
-                        )
-                    else:
-                        messages.success(
-                            request,
-                            f"¡Candidato '{proceso.candidato.nombre_completo}' contratado! Plaza cubierta ({cubiertas} de {total}). La vacante continúa abierta."
-                        )
+                if proceso.puesto:
+                    with transaction.atomic():
+                        puesto_locked = Puesto.objects.select_for_update().get(id=proceso.puesto_id)
+                        # Validar si no estaba contratado y ya se llenaron las plazas
+                        if estatus_anterior_raw != Proceso.Estatus.CONTRATADO and puesto_locked.plazas_cubiertas >= puesto_locked.cantidad_vacantes:
+                            messages.error(
+                                request,
+                                f"Operación Bloqueada: La vacante '{puesto_locked.titulo.nombre if puesto_locked.titulo else puesto_locked.id}' ya cubrió todas sus plazas disponibles ({puesto_locked.plazas_cubiertas} de {puesto_locked.cantidad_vacantes}). No es posible sobrecontratar."
+                            )
+                            return redirect('detalle_proceso', proceso_id=proceso.id)
+
+                        proceso.estatus_proceso = nuevo_estatus
+                        proceso.retroalimentacion = nuevas_notas
+                        if cambio_etapa:
+                            proceso.fecha_inicio_etapa = timezone.now()
+                        proceso.save()
+
+                        # Si se cubrieron todas las plazas, cerrar vacante
+                        if puesto_locked.plazas_cubiertas >= puesto_locked.cantidad_vacantes:
+                            puesto_locked.esta_abierto = False
+                            puesto_locked.save(update_fields=['esta_abierto'])
+                            messages.success(
+                                request,
+                                f"¡Candidato '{proceso.candidato.nombre_completo}' contratado y vacante completada al 100%! ({puesto_locked.plazas_cubiertas} de {puesto_locked.cantidad_vacantes} plazas)."
+                            )
+                        else:
+                            messages.success(
+                                request,
+                                f"¡Candidato '{proceso.candidato.nombre_completo}' contratado! Plaza cubierta ({puesto_locked.plazas_cubiertas} de {puesto_locked.cantidad_vacantes}). La vacante continúa abierta."
+                            )
                 else:
+                    proceso.estatus_proceso = nuevo_estatus
+                    proceso.retroalimentacion = nuevas_notas
+                    if cambio_etapa:
+                        proceso.fecha_inicio_etapa = timezone.now()
+                    proceso.save()
                     messages.success(request, f"¡Candidato '{proceso.candidato.nombre_completo}' contratado exitosamente!")
-            else:
+
+            elif estatus_anterior_raw == Proceso.Estatus.CONTRATADO and nuevo_estatus != Proceso.Estatus.CONTRATADO:
+                # Reversión de contratación
+                if proceso.puesto:
+                    with transaction.atomic():
+                        puesto_locked = Puesto.objects.select_for_update().get(id=proceso.puesto_id)
+                        proceso.estatus_proceso = nuevo_estatus
+                        proceso.retroalimentacion = nuevas_notas
+                        if cambio_etapa:
+                            proceso.fecha_inicio_etapa = timezone.now()
+                        proceso.save()
+
+                        # Reabrir vacante automáticamente si estaba cerrada y ahora hay plazas libres
+                        if not puesto_locked.esta_abierto and puesto_locked.plazas_cubiertas < puesto_locked.cantidad_vacantes:
+                            puesto_locked.esta_abierto = True
+                            puesto_locked.save(update_fields=['esta_abierto'])
+                            messages.info(
+                                request,
+                                f"La vacante '{puesto_locked.titulo.nombre if puesto_locked.titulo else puesto_locked.id}' ha sido reabierta automáticamente porque existen plazas libres ({puesto_locked.plazas_cubiertas} de {puesto_locked.cantidad_vacantes})."
+                            )
+                else:
+                    proceso.estatus_proceso = nuevo_estatus
+                    proceso.retroalimentacion = nuevas_notas
+                    if cambio_etapa:
+                        proceso.fecha_inicio_etapa = timezone.now()
+                    proceso.save()
                 messages.success(request, f"Etapa actualizada a '{proceso.get_estatus_proceso_display()}' exitosamente.")
+
+            else:
+                # Actualización de notas o cambio de etapa estándar
+                proceso.estatus_proceso = nuevo_estatus
+                proceso.retroalimentacion = nuevas_notas
+                # Regla de integridad: No reiniciar fecha_inicio_etapa si la etapa no cambió
+                if cambio_etapa:
+                    proceso.fecha_inicio_etapa = timezone.now()
+                proceso.save()
+                if cambio_etapa:
+                    messages.success(request, f"Etapa actualizada a '{proceso.get_estatus_proceso_display()}' exitosamente.")
+                else:
+                    messages.success(request, "Notas y datos de evaluación guardados sin alterar el reloj de etapa.")
 
             # 5. Registro detallado en auditoría
             detalles_log = []
@@ -931,9 +1055,15 @@ def detalle_proceso_view(request, proceso_id):
             if proceso.resultado_pyxoom:
                 detalles_log.append(f"Pyxoom: {proceso.get_resultado_pyxoom_display()}")
 
+            accion_desc = (
+                f"Cambió etapa de '{estatus_anterior}' a '{proceso.get_estatus_proceso_display()}' para '{proceso.candidato.nombre_completo}'"
+                if cambio_etapa
+                else f"Actualizó notas / evaluaciones en etapa '{proceso.get_estatus_proceso_display()}' para '{proceso.candidato.nombre_completo}'"
+            )
+
             RegistroActividad.objects.create(
                 usuario=request.user,
-                accion=f"Cambió etapa de '{estatus_anterior}' a '{proceso.get_estatus_proceso_display()}' para '{proceso.candidato.nombre_completo}'",
+                accion=accion_desc,
                 tipo_objeto="Proceso",
                 id_objeto=proceso.id,
                 detalles=" | ".join(detalles_log) if detalles_log else None
@@ -985,23 +1115,29 @@ def detalle_proceso_view(request, proceso_id):
                 f"¡El candidato '{candidato.nombre_completo}' ha sido marcado permanentemente como NO CONTRATABLE!"
             )
 
-        elif action == 'transferir_proceso':
-            nueva_asesora_id = request.POST.get('nueva_asesora_id')
-            if nueva_asesora_id:
-                nueva_asesora = get_object_or_404(User, id=nueva_asesora_id)
-                asesora_anterior = proceso.asesora_asignada
-                nombre_anterior = asesora_anterior.username if asesora_anterior else 'Sin asesora previa'
-                proceso.asesora_asignada = nueva_asesora
-                proceso.estatus_proceso = Proceso.Estatus.ENT_CH
-                proceso.fecha_inicio_etapa = timezone.now()
-                proceso.save()
-                RegistroActividad.objects.create(
-                    usuario=request.user,
-                    accion=f"Transfirió el proceso de '{nombre_anterior}' a '{nueva_asesora.username}' para '{proceso.candidato.nombre_completo}'",
-                    tipo_objeto="Proceso", id_objeto=proceso.id
-                )
-                messages.success(request, f'Proceso transferido a {nueva_asesora.username}.')
-                return redirect('mis_procesos')
+        elif action == 'revertir_no_contratable':
+            if not puede_revertir_no_contratable(request.user):
+                raise PermissionDenied("La reversión del estatus de NO CONTRATABLE está reservada exclusivamente a la Gerencia de Capital Humano.")
+
+            motivo = request.POST.get('motivo_reversion', '').strip()
+            if not motivo:
+                messages.error(request, 'Es obligatorio indicar el motivo de la reversión para reactivar al candidato.')
+                return redirect('detalle_proceso', proceso_id=proceso.id)
+
+            candidato = proceso.candidato
+            candidato.es_no_contratable = False
+            candidato.motivo_no_contratable = ''
+            candidato.save()
+
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion=f"Revirtió boletinación de NO CONTRATABLE para '{candidato.nombre_completo}'",
+                tipo_objeto="Candidato",
+                id_objeto=candidato.id,
+                detalles=f"Autorizado por Gerencia CH. Justificación: {motivo}"
+            )
+            messages.success(request, f"¡El candidato '{candidato.nombre_completo}' ha sido reactivado exitosamente!")
+            return redirect('detalle_proceso', proceso_id=proceso.id)
 
         elif action == 'add_publication':
             form_publicacion = PublicacionForm(request.POST)
@@ -1032,6 +1168,8 @@ def detalle_proceso_view(request, proceso_id):
         'estatus_choices': Proceso.Estatus.choices,
         'integridad_choices': Proceso.ResultadoIntegridad.choices,
         'pyxoom_choices': Proceso.ResultadoPyxoom.choices,
+        'puede_modificar': puede_modificar,
+        'es_gerente_ch': es_gerente_ch(request.user),
     }
     return render(request, 'reclutamiento/detalle_proceso.html', contexto)
 
@@ -1082,8 +1220,9 @@ def editar_perfil_biblioteca_view(request, perfil_id):
 
 
 @login_required
+@user_passes_test(puede_descargar_cv, login_url=reverse_lazy('acceso_denegado'))
 def descargar_cv_view(request, candidato_id):
-    """Vista para servir CVs con URLs firmadas de S3 o descarga local"""
+    """Vista para servir CVs con URLs firmadas de S3 o descarga local (protegida para personal de RH)"""
     from django.http import HttpResponseRedirect, Http404
     candidato = get_object_or_404(Candidato, id=candidato_id)
 

@@ -179,8 +179,12 @@ class RegistroCandidatoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Obtenemos los puestos activos de la base de datos
-        puestos_activos = Puesto.objects.filter(esta_abierto=True, estatus_autorizacion='AUTORIZADO')
+        # Obtenemos los puestos activos de la base de datos (excluyendo estrictamente confidenciales)
+        puestos_activos = Puesto.objects.filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO',
+            es_confidencial=False
+        ).select_related('titulo')
 
         # Creamos una lista de opciones para el menú desplegable
         opciones_puestos = [

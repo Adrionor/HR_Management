@@ -493,18 +493,24 @@
                 <div>
                     <h2 class="sap-card-title">Avanzar Etapa de Selección</h2>
                     <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
-                        Control operativo exclusivo de RH &bull; Actualiza la etapa y los resultados del candidato
+                        Control operativo de RH &bull; Actualiza la etapa y los resultados del candidato
                     </div>
                 </div>
             </div>
             <div class="sap-card-body">
+                {% if not puede_modificar %}
+                <div style="background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 0.85rem; border-radius: var(--sap-radius-sm); margin-bottom: 1rem; font-size: 0.8125rem; display: flex; align-items: center; gap: 8px;">
+                    <svg class="sap-icon" viewBox="0 0 24 24" style="color: #d97706; width: 20px; height: 20px; flex-shrink: 0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <span><strong>Modo Consulta (Solo Lectura):</strong> Este candidato está asignado a otra asesora. Solo la persona asignada o la Gerencia de Capital Humano pueden modificar la etapa, notas y evaluaciones.</span>
+                </div>
+                {% endif %}
                 <form method="post" id="formAvanzarEtapa">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="actualizar_estatus">
                     
                     <div class="sap-form-group">
                         <label class="sap-label" for="estatus_proceso">Nueva Etapa del Proceso:</label>
-                        <select name="estatus_proceso" id="estatus_proceso" class="sap-select">
+                        <select name="estatus_proceso" id="estatus_proceso" class="sap-select" {% if not puede_modificar %}disabled{% endif %}>
                             {% for value, text in estatus_choices %}
                             <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>
                                 {{ text }}
@@ -521,7 +527,7 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                             <div class="sap-form-group" style="margin-bottom: 0;">
                                 <label class="sap-label" for="resultado_integridad" style="font-size: 0.75rem;">Examen de Integridad:</label>
-                                <select name="resultado_integridad" id="resultado_integridad" class="sap-select" style="font-size: 0.8125rem;">
+                                <select name="resultado_integridad" id="resultado_integridad" class="sap-select" style="font-size: 0.8125rem;" {% if not puede_modificar %}disabled{% endif %}>
                                     <option value="">-- Sin evaluar / Pendiente --</option>
                                     {% for val, label in integridad_choices %}
                                     <option value="{{ val }}" {% if proceso.resultado_integridad == val %}selected{% endif %}>
@@ -533,7 +539,7 @@
 
                             <div class="sap-form-group" style="margin-bottom: 0;">
                                 <label class="sap-label" for="resultado_pyxoom" style="font-size: 0.75rem;">Psicometría Pyxoom:</label>
-                                <select name="resultado_pyxoom" id="resultado_pyxoom" class="sap-select" style="font-size: 0.8125rem;">
+                                <select name="resultado_pyxoom" id="resultado_pyxoom" class="sap-select" style="font-size: 0.8125rem;" {% if not puede_modificar %}disabled{% endif %}>
                                     <option value="">-- Sin evaluar / Pendiente --</option>
                                     {% for val, label in pyxoom_choices %}
                                     <option value="{{ val }}" {% if proceso.resultado_pyxoom == val %}selected{% endif %}>
@@ -550,24 +556,30 @@
                         <label class="sap-label" for="motivo_descarte">
                             Motivo de Descarte / Abandono <span id="label_descarte_obligatorio" style="color: #b91c1c; font-weight: 700; display: none;">(Obligatorio)</span>:
                         </label>
-                        <textarea name="motivo_descarte" id="motivo_descarte" class="sap-textarea" rows="2" placeholder="Obligatorio al descartar o marcar abandono...">{{ proceso.motivo_descarte }}</textarea>
+                        <textarea name="motivo_descarte" id="motivo_descarte" class="sap-textarea" rows="2" placeholder="Obligatorio al descartar o marcar abandono..." {% if not puede_modificar %}disabled{% endif %}>{{ proceso.motivo_descarte }}</textarea>
                     </div>
 
                     <div class="sap-form-group">
                         <label class="sap-label" for="retroalimentacion">Observaciones / Notas de Seguimiento:</label>
-                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-textarea" rows="3" placeholder="Escribe el resultado de la entrevista, confirmación de jefe o notas para la siguiente etapa...">{{ proceso.retroalimentacion }}</textarea>
+                        <textarea name="retroalimentacion" id="retroalimentacion" class="sap-textarea" rows="3" placeholder="Escribe el resultado de la entrevista, confirmación de jefe o notas para la siguiente etapa..." {% if not puede_modificar %}disabled{% endif %}>{{ proceso.retroalimentacion }}</textarea>
                     </div>
 
+                    {% if puede_modificar %}
                     <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%; padding: 8px 12px; font-size: 0.875rem;">
                         <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                         <span>Guardar y avanzar etapa</span>
                     </button>
+                    {% else %}
+                    <div style="text-align: center; color: var(--sap-muted); font-size: 0.8125rem; padding: 8px; background: #f1f5f9; border-radius: 4px;">
+                        Edición restringida a la asesora asignada o Gerencia de CH
+                    </div>
+                    {% endif %}
                 </form>
             </div>
         </div>
 
         <!-- Tarjeta de Acción Rápida: Boletinar como No Contratable -->
-        {% if not proceso.candidato.es_no_contratable %}
+        {% if not proceso.candidato.es_no_contratable and puede_modificar %}
         <div class="sap-card" style="border-top: 3px solid #b91c1c; margin-top: 1.25rem;">
             <div class="sap-card-header">
                 <div>
@@ -601,32 +613,34 @@
         </div>
         {% endif %}
 
-        <!-- Formulario Condicional: Transferir a Otra Asesora -->
-        {% if proceso.asesora_asignada == user and proceso.estatus_proceso == 'REF' %}
-        <div class="sap-card" style="border-left: 3px solid var(--sap-warning-text); margin-top: 1.25rem;">
+        <!-- Tarjeta de Gestión: Revertir Boletinación (Exclusivo Gerencia de CH) -->
+        {% if proceso.candidato.es_no_contratable and es_gerente_ch %}
+        <div class="sap-card" style="border-top: 3px solid #16a34a; margin-top: 1.25rem;">
             <div class="sap-card-header">
-                <h2 class="sap-card-title" style="color: var(--sap-warning-text);">Transferir a Asesora de Agencia</h2>
+                <div>
+                    <h2 class="sap-card-title" style="color: #16a34a;">
+                        <svg class="sap-icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; color: #16a34a; vertical-align: middle;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Revertir Boletinación (Reactivar Candidato)
+                    </h2>
+                    <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
+                        Facultad exclusiva de Gerencia de CH &bull; Habilita nuevamente al candidato para ser considerado en vacantes
+                    </div>
+                </div>
             </div>
             <div class="sap-card-body">
-                <p style="font-size: 0.8125rem; color: var(--sap-muted); margin: 0 0 0.85rem 0;">
-                    El candidato ha concluido la validación de referencias. Puedes transferir la responsabilidad a la asesora de la agencia correspondiente.
-                </p>
-                <form method="post">
+                <form method="post" onsubmit="return confirm('¿Confirma que desea levantar el veto de NO CONTRATABLE para este candidato?');">
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="transferir_proceso">
+                    <input type="hidden" name="action" value="revertir_no_contratable">
+                    
                     <div class="sap-form-group">
-                        <label class="sap-label" for="nueva_asesora_id">Asesora Receptora:</label>
-                        <select name="nueva_asesora_id" id="nueva_asesora_id" class="sap-select" required>
-                            <option value="">-- Seleccionar asesora --</option>
-                            {% for asesora in asesoras_disponibles %}
-                                {% if asesora != user %}
-                                <option value="{{ asesora.id }}">{{ asesora.get_full_name|default:asesora.username }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
+                        <label class="sap-label" for="motivo_reversion">Motivo Justificado de Reversión <span style="color: #16a34a; font-weight: 700;">(Obligatorio)</span>:</label>
+                        <textarea name="motivo_reversion" id="motivo_reversion" class="sap-textarea" rows="2" placeholder="Especifica la justificación directiva para reactivar al candidato..." required></textarea>
                     </div>
-                    <button type="submit" class="sap-btn sap-btn-warning sap-btn-sm" style="width: 100%;">
-                        Confirmar transferencia
+
+                    <button type="submit" class="sap-btn sap-btn-sm" style="background: #16a34a; color: #ffffff; width: 100%; border: none;">
+                        <span>Confirmar Reversión y Reactivar Candidato</span>
                     </button>
                 </form>
             </div>

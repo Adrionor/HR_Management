@@ -209,7 +209,14 @@ class Puesto(models.Model):
         super().save(*args, **kwargs)
 
     def reiniciar_sla(self, nueva_fecha=None, comentario=""):
-        """Reinicia el reloj de SLA de la vacante e incrementa el contador de reinicios."""
+        """
+        Reinicia el reloj de SLA de la vacante e incrementa el contador de reinicios.
+        Regla de negocio: Límite estricto de máximo 2 reinicios por vacante.
+        """
+        if self.numero_reinicios >= 2:
+            from django.core.exceptions import ValidationError
+            raise ValidationError("Límite máximo alcanzado: Solo se permiten hasta 2 reinicios de SLA por vacante.")
+
         self.fecha_inicio_sla_custom = nueva_fecha or timezone.now()
         self.numero_reinicios += 1
         if comentario:
@@ -278,11 +285,14 @@ class Puesto(models.Model):
     def cumplio_meta_bono(self):
         """
         Retorna True si:
-        1) Cubrió las plazas requeridas (esta_completamente_cubierta), O
-        2) Envió al menos 3 candidatos aptos a etapa ENT_JF (o posterior) dentro del plazo de dias_meta del ciclo actual.
+        1) Cubrió las plazas requeridas (esta_completamente_cubierta) estrictamente dentro
+           del plazo de dias_meta del ciclo activo (dias_transcurridos <= dias_meta), O
+        2) Envió al menos 3 candidatos aptos (con pruebas de integridad y psicometría aprobadas
+           y sin estar boletinados como No Contratables) a entrevista con jefe (ENT_JF o posterior)
+           dentro de la ventana de días meta del ciclo activo, validado históricamente.
         """
         if self.esta_completamente_cubierta:
-            return True
+            return self.dias_transcurridos <= self.dias_meta
 
         fecha_inicio = self.fecha_inicio_sla
         if not fecha_inicio:
@@ -290,7 +300,7 @@ class Puesto(models.Model):
 
         fecha_limite = fecha_inicio + timezone.timedelta(days=self.dias_meta)
 
-        etapas_validas = [
+        etapas_jefe = [
             Proceso.Estatus.ENT_JF,
             Proceso.Estatus.CONF_JF,
             Proceso.Estatus.MEDICO,
@@ -300,17 +310,60 @@ class Puesto(models.Model):
             Proceso.Estatus.CONTRATADO,
         ]
 
-        candidatos_enviados = 0
-        procesos = self.procesos.all() if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache else self.procesos.all()
-        for pr in procesos:
-            if pr.estatus_proceso in etapas_validas:
-                fecha_eval = pr.fecha_inicio_etapa or timezone.now()
-                if fecha_inicio <= fecha_eval <= fecha_limite:
-                    candidatos_enviados += 1
-                elif fecha_eval <= fecha_limite:
-                    candidatos_enviados += 1
+        candidatos_calificados = 0
+        procesos = self.procesos.all() if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache else self.procesos.select_related('candidato').all()
 
-        return candidatos_enviados >= 3
+        for pr in procesos:
+            # 1. Candidato no marcado como No Contratable
+            if getattr(pr.candidato, 'es_no_contratable', False):
+                continue
+
+            # 2. Pruebas de integridad y psicometría no reprobadas
+            if pr.resultado_integridad == Proceso.ResultadoIntegridad.NO_APROBADO:
+                continue
+            if pr.resultado_pyxoom == Proceso.ResultadoPyxoom.REPROBADO:
+                continue
+
+            # 3. Fecha histórica de envío a entrevista con jefe dentro de los días meta del ciclo
+            fecha_envio = None
+            if pr.estatus_proceso in etapas_jefe:
+                logs = pr.registros_de_actividad.filter(
+                    models.Q(accion__icontains='Entrevista con Jefe') |
+                    models.Q(accion__icontains='ENT_JF')
+                ).order_by('fecha_hora')
+                first_log = logs.first()
+                if first_log:
+                    fecha_envio = first_log.fecha_hora
+                else:
+                    fecha_envio = pr.fecha_inicio_etapa or timezone.now()
+            else:
+                logs = pr.registros_de_actividad.filter(
+                    models.Q(accion__icontains='Entrevista con Jefe') |
+                    models.Q(accion__icontains='ENT_JF')
+                ).order_by('fecha_hora')
+                first_log = logs.first()
+                if first_log:
+                    fecha_envio = first_log.fecha_hora
+
+            if fecha_envio and (fecha_inicio <= fecha_envio <= fecha_limite):
+                candidatos_calificados += 1
+
+        return candidatos_calificados >= 3
+
+    @property
+    def fecha_inicio_sla_original(self):
+        """Conserva la fecha de solicitud original sin alterar para auditoría."""
+        return self.fecha_solicitud or timezone.now()
+
+    @property
+    def fecha_limite_sla_original(self):
+        """Conserva la fecha límite original del SLA para auditoría."""
+        return self.fecha_inicio_sla_original + timezone.timedelta(days=self.dias_meta)
+
+    @property
+    def dias_transcurridos_total(self):
+        """Total de días transcurridos desde la creación original de la vacante."""
+        return max(0, (timezone.now() - self.fecha_inicio_sla_original).days)
 
     @property
     def etapa_operativa(self):
@@ -325,9 +378,6 @@ class Puesto(models.Model):
         if not self.asesora_encargada:
             return '2. Por Asignar Asesora'
 
-        if not hasattr(self, 'perfil_detallado'):
-            return '3. Por Definir Perfil'
-
         terminales = (
             Proceso.Estatus.DESCARTADO_CH,
             Proceso.Estatus.NO_PRUEBAS,
@@ -338,12 +388,12 @@ class Puesto(models.Model):
         if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache:
             procesos_activos = [pr for pr in self.procesos.all() if pr.estatus_proceso not in terminales]
             if not procesos_activos:
-                return '4. En Búsqueda'
+                return '3. En Búsqueda'
             estatus_set = {pr.estatus_proceso for pr in procesos_activos}
         else:
             procesos_activos = self.procesos.exclude(estatus_proceso__in=terminales)
             if not procesos_activos.exists():
-                return '4. En Búsqueda'
+                return '3. En Búsqueda'
             estatus_set = set(procesos_activos.values_list('estatus_proceso', flat=True))
 
         tramites = [
@@ -353,10 +403,10 @@ class Puesto(models.Model):
             Proceso.Estatus.ALTA_ADMIN,
         ]
         if any(e in estatus_set for e in tramites):
-            return '5. En Trámites de Ingreso'
+            return '6. En Trámites de Ingreso'
 
         if Proceso.Estatus.ENT_JF in estatus_set or Proceso.Estatus.CONF_JF in estatus_set:
-            return '4. En Entrevista / Decisión con Jefe'
+            return '5. En Entrevista / Decisión con Jefe'
 
         filtros = [
             Proceso.Estatus.NUEVO,
@@ -366,9 +416,9 @@ class Puesto(models.Model):
             Proceso.Estatus.REF,
         ]
         if any(e in estatus_set for e in filtros):
-            return '3. En Filtros y Evaluaciones RH'
+            return '4. En Filtros y Evaluaciones RH'
 
-        return '2. En Búsqueda'
+        return '3. En Búsqueda'
 
     @property
     def candidato_mas_avanzado(self):

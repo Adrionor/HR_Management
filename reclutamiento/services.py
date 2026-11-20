@@ -206,7 +206,7 @@ class ReportesService:
         
         cumplimiento_sla = round(
             ((len(en_tiempo) + len(por_vencer)) / total_activas * 100), 1
-        ) if total_activas > 0 else 100.0
+        ) if total_activas > 0 else 0.0
         
         tiempos = [p.dias_transcurridos for p in puestos]
         promedio_dias_cobertura = round(sum(tiempos) / len(tiempos), 1) if tiempos else 0
@@ -270,7 +270,7 @@ class ReportesService:
             'total_plazas_cubiertas': 0,
             'total_plazas_canceladas': 0,
             'total_plazas_pendientes': 0,
-            'cumplimiento_sla': 100.0,
+            'cumplimiento_sla': 0.0,
             'promedio_dias_cobertura': 0,
             'candidatos_listos_ingreso': 0,
             'candidatos_en_proceso': 0,
@@ -381,7 +381,7 @@ class ReportesService:
         scorecard = []
         for key, data in agencias_dict.items():
             plazas_pendientes = max(0, data['plazas_solicitadas'] - data['plazas_cubiertas'] - data['plazas_canceladas'])
-            cumplimiento = round((data['en_tiempo'] / data['activas'] * 100), 1) if data['activas'] > 0 else 100.0
+            cumplimiento = round((data['en_tiempo'] / data['activas'] * 100), 1) if data['activas'] > 0 else 0.0
             scorecard.append({
                 'marca': data['marca'],
                 'agencia': data['agencia'],
@@ -688,8 +688,8 @@ class ReportesService:
         activas_p = sum(1 for p in puestos_periodo if p.esta_abierto)
         activas_a = sum(1 for p in puestos_acum if p.esta_abierto)
         
-        cumpl_p = round(((activas_p - vencidas_p) / activas_p * 100), 1) if activas_p > 0 else 100.0
-        cumpl_a = round(((activas_a - vencidas_a) / activas_a * 100), 1) if activas_a > 0 else 100.0
+        cumpl_p = round(((activas_p - vencidas_p) / activas_p * 100), 1) if activas_p > 0 else 0.0
+        cumpl_a = round(((activas_a - vencidas_a) / activas_a * 100), 1) if activas_a > 0 else 0.0
         
         ws1.append(["BALANCE GENERAL DE VACANTES Y PLAZAS", "EN EL PERIODO", "ACUMULADO HISTÓRICO", "REGLA DE CONTROL"])
         row_header_idx = ws1.max_row

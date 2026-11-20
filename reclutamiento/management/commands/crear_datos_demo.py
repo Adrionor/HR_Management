@@ -1,4 +1,5 @@
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
 from datetime import timedelta
@@ -8,24 +9,31 @@ from reclutamiento.models import (
 )
 
 class Command(BaseCommand):
-    help = 'Genera datos de prueba realistas para la herramienta exclusiva de RH (sin flujos externos ni perfiles de puesto).'
+    help = 'Genera datos de prueba realistas para la herramienta exclusiva de RH en entornos de desarrollo.'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--reset',
             action='store_true',
-            default=True,
-            help='Borra y regenera limpiamente todos los datos demo de RH (por defecto True).'
+            default=False,
+            help='Borra y regenera limpiamente los datos demo de RH (por defecto False por seguridad).'
         )
         parser.add_argument(
-            '--no-reset',
-            dest='reset',
-            action='store_false',
-            help='No borra los registros previos antes de sembrar.'
+            '--confirm-production-reset',
+            action='store_true',
+            default=False,
+            help='Confirmación requerida si se ejecuta en entornos donde DEBUG=False.'
         )
 
     def handle(self, *args, **options):
-        reset = options.get('reset', True)
+        reset = options.get('reset', False)
+        confirm_prod = options.get('confirm_production_reset', False)
+
+        # Protección estricta contra borrado accidental en entornos de producción
+        if not getattr(settings, 'DEBUG', False) and reset and not confirm_prod:
+            raise CommandError(
+                "SEGURIDAD: No se permite ejecutar --reset con DEBUG=False sin la bandera explícita --confirm-production-reset."
+            )
         if reset:
             self.stdout.write("Limpiando registros demo anteriores...")
             RegistroActividad.objects.all().delete()

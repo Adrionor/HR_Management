@@ -10,11 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 try:
     import dj_database_url
 except ImportError:
     dj_database_url = None
+
+IS_TESTING = 'test' in sys.argv or 'pytest' in sys.modules
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,10 +33,15 @@ if env_file.exists():
                 os.environ.setdefault(key.strip(), val.strip())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-prod-key-premier-hr-management-2026-safe-fallback')
+FALLBACK_INSECURE_KEY = 'django-insecure-prod-key-premier-hr-management-2026-safe-fallback'
+SECRET_KEY = os.environ.get('SECRET_KEY', FALLBACK_INSECURE_KEY)
+if not DEBUG and not IS_TESTING:
+    if not SECRET_KEY or SECRET_KEY == FALLBACK_INSECURE_KEY:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("SECRET_KEY de producción no configurada o insegura en variables de entorno.")
 
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
 parsed_hosts = []
@@ -43,19 +51,22 @@ if allowed_hosts_env:
         if h:
             parsed_hosts.append(h)
 
-# Acepta comodines y dominios de despliegue para evitar Bad Request (400)
-ALLOWED_HOSTS = list(set(parsed_hosts + [
-    '*',
+trusted_platform_domains = [
     '.herokuapp.com',
     '.pythonanywhere.com',
     '.elasticbeanstalk.com',
-    '.amazonaws.com',
     'talentopremier.com',
     'www.talentopremier.com',
-    'localhost',
-    '127.0.0.1',
-    '0.0.0.0',
-]))
+]
+
+if DEBUG or IS_TESTING:
+    ALLOWED_HOSTS = list(set(parsed_hosts + trusted_platform_domains + ['*', 'localhost', '127.0.0.1', 'testserver']))
+else:
+    # Producción estricta: Jamás permitir wildcard '*'
+    ALLOWED_HOSTS = list(set(parsed_hosts + trusted_platform_domains + ['localhost', '127.0.0.1']))
+    if not parsed_hosts and not any(h in ALLOWED_HOSTS for h in trusted_platform_domains):
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("ALLOWED_HOSTS debe estar explícitamente configurado en producción.")
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -108,6 +119,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'reclutamiento.context_processors.demo_flags',
             ],
         },
     },
@@ -127,12 +139,16 @@ DB_NAME = os.environ.get('DB_NAME')
 database_url = os.environ.get('DATABASE_URL')
 
 if not USE_SQLITE and DB_HOST and DB_NAME:
+    db_pass = os.environ.get('DB_PASSWORD')
+    if not db_pass and not IS_TESTING:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("DB_PASSWORD debe configurarse en variables de entorno para bases externas.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': DB_NAME,
             'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'GrupoPremier433'),
+            'PASSWORD': db_pass or '',
             'HOST': DB_HOST,
             'PORT': os.environ.get('DB_PORT', '5432'),
         }
@@ -194,10 +210,23 @@ LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
-AUTHENTICATION_BACKENDS = [
-    'reclutamiento.auth_backends.DemoAuthBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
+ENABLE_DEMO_LOGIN = os.environ.get('ENABLE_DEMO_LOGIN', 'False').lower() in ('true', '1', 't') and DEBUG
+
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
+if ENABLE_DEMO_LOGIN:
+    AUTHENTICATION_BACKENDS.insert(0, 'reclutamiento.auth_backends.DemoAuthBackend')
+
+# Configuración de Seguridad en Cookies y Cabeceras
+if not DEBUG and not IS_TESTING:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+else:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    X_FRAME_OPTIONS = 'DENY'
 
 
 # ==============================================================================

@@ -6,7 +6,7 @@ from django.utils import timezone
 from reclutamiento.models import (
     Marca, CatalogoPuesto, Puesto, Candidato, Proceso, PerfilDePuesto, PerfilUsuario
 )
-from reclutamiento.forms import SolicitudPuestoForm
+from reclutamiento.forms import SolicitudPuestoForm, RegistroCandidatoForm
 
 
 class HRManagementTests(TestCase):
@@ -107,22 +107,10 @@ class HRManagementTests(TestCase):
         # 1. Autorizado sin asesora -> Por Asignar Asesora
         self.assertEqual(puesto.etapa_operativa, '2. Por Asignar Asesora')
 
-        # 2. Asignado a asesora sin perfil detallado
+        # 2. Asignado a asesora sin procesos activos -> En Búsqueda
         puesto.asesora_encargada = self.user
         puesto.save()
-        self.assertEqual(puesto.etapa_operativa, '3. Por Definir Perfil')
-
-        # 3. Con perfil detallado pero sin procesos -> En Búsqueda
-        PerfilDePuesto.objects.create(
-            puesto=puesto,
-            rango_edad='25-35',
-            preferencia_sexo='I',
-            area_experiencia_enfoque='VTAS',
-            importancia_apariencia='BAJA',
-            feedback_anterior='N/A',
-            requiere_licencia='SI'
-        )
-        self.assertEqual(puesto.etapa_operativa, '4. En Búsqueda')
+        self.assertEqual(puesto.etapa_operativa, '3. En Búsqueda')
 
         # 4. Agregar candidato en proceso y contratar 1 plaza (vacante debe seguir abierta)
         cand = Candidato.objects.create(
@@ -208,8 +196,9 @@ class HRManagementTests(TestCase):
         import openpyxl
         import io
 
-        self.user.is_staff = True
-        self.user.save()
+        from django.contrib.auth.models import Group
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.user.groups.add(grupo_ch)
         self.client.login(username='testuser', password='password123')
 
         # Crear datos de prueba
@@ -288,8 +277,9 @@ class HRManagementTests(TestCase):
 
     def test_modulos_externos_desactivados(self):
         """Verifica que los módulos y rutas ajenos a RH estén desactivados y redirijan al dashboard o mis vacantes."""
-        self.user.is_staff = True
-        self.user.save()
+        from django.contrib.auth.models import Group
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.user.groups.add(grupo_ch)
         self.client.login(username='testuser', password='password123')
 
         puesto = Puesto.objects.create(
@@ -743,11 +733,13 @@ class HRManagementTests(TestCase):
         self.assertIn('NO CONTRATABLE', reg_cand.accion)
 
     def test_reiniciar_vacante_view(self):
-        """Verifica que reiniciar_vacante_view incremente numero_reinicios y actualice fecha_inicio_sla_custom."""
+        """Verifica que reiniciar_vacante_view incremente numero_reinicios y actualice fecha_inicio_sla_custom al ser autorizado por Gerente CH."""
         from django.contrib.auth.models import Group
         from reclutamiento.models import RegistroActividad
-        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
-        self.user.groups.add(grupo_asesoras)
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.user.groups.add(grupo_ch)
+
+        otra_asesora = User.objects.create_user(username='otra.asesora', password='password123')
 
         fecha_antigua = timezone.now() - timezone.timedelta(days=25)
         puesto = Puesto.objects.create(
@@ -756,6 +748,7 @@ class HRManagementTests(TestCase):
             agencia='Toyota Premier',
             ciudad='CUL',
             area='VTAS',
+            asesora_encargada=otra_asesora,
             fecha_solicitud=fecha_antigua,
             dias_meta=20,
             esta_abierto=True,
@@ -779,7 +772,7 @@ class HRManagementTests(TestCase):
         # Registro en auditoría
         reg = RegistroActividad.objects.filter(tipo_objeto='Puesto', id_objeto=puesto.id).first()
         self.assertIsNotNone(reg)
-        self.assertIn('Reinició el conteo de SLA', reg.accion)
+        self.assertIn('Autorizó reinicio de SLA', reg.accion)
 
     def test_bolsa_trabajo_filtros_y_expirados(self):
         """Verifica filtros por puesto y ciudad, y exclusión por defecto de candidatos inactivos >365 días."""
@@ -877,6 +870,428 @@ class HRManagementTests(TestCase):
     def test_bloqueo_por_es_no_contratable(self):
         """Alias para validación unitaria de bloqueo por es_no_contratable."""
         self.test_asignar_candidato_bloquea_no_contratable()
+
+    def test_asesora_no_puede_reiniciar_propio_o_ajeno_sla(self):
+        """P1: Una asesora no puede reiniciar su propio SLA ni el de otra asesora (403)."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=self.user,
+            fecha_solicitud=timezone.now() - timezone.timedelta(days=30),
+            dias_meta=20,
+            esta_abierto=True,
+            sueldo_base=15000
+        )
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {
+            'comentario': 'Intento no autorizado de reinicio'
+        })
+        self.assertEqual(resp.status_code, 403)
+        puesto.refresh_from_db()
+        self.assertEqual(puesto.numero_reinicios, 0)
+
+    def test_gerente_ch_no_puede_reiniciar_propia_vacante_responsable(self):
+        """P1: La persona que aprueba la excepción debe ser distinta a la responsable."""
+        from django.contrib.auth.models import Group
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.user.groups.add(grupo_ch)
+
+        # Si el gerente es asignado como responsable de la vacante, no puede autoreiniciarla
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=self.user,
+            esta_abierto=True,
+            sueldo_base=15000
+        )
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {
+            'comentario': 'Intento de auto-excepción'
+        })
+        self.assertEqual(resp.status_code, 403)
+
+    def test_asesora_no_puede_modificar_proceso_ajeno(self):
+        """P1: Una asesora no puede modificar procesos de otra asesora."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        otra_asesora = User.objects.create_user(username='asesora.otra', password='password123')
+        otra_asesora.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=otra_asesora,
+            esta_abierto=True,
+            sueldo_base=15000
+        )
+        candidato = Candidato.objects.create(nombres='Candidato', apellidos='Prueba', email='c@test.com')
+        proceso = Proceso.objects.create(
+            candidato=candidato,
+            puesto=puesto,
+            asesora_asignada=otra_asesora,
+            estatus_proceso=Proceso.Estatus.NUEVO
+        )
+
+        self.client.login(username='testuser', password='password123')
+        # GET permitido para consulta del equipo
+        resp_get = self.client.get(reverse('detalle_proceso', args=[proceso.id]))
+        self.assertEqual(resp_get.status_code, 200)
+        self.assertFalse(resp_get.context['puede_modificar'])
+
+        # POST bloqueado con 403
+        resp_post = self.client.post(reverse('detalle_proceso', args=[proceso.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.CONTACTO,
+            'retroalimentacion': 'Intento no autorizado'
+        })
+        self.assertEqual(resp_post.status_code, 403)
+        proceso.refresh_from_db()
+        self.assertEqual(proceso.estatus_proceso, Proceso.Estatus.NUEVO)
+
+    def test_guardar_notas_no_reinicia_fecha_inicio_etapa(self):
+        """P2: Guardar notas sin cambiar etapa conserva fecha_inicio_etapa."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        fecha_original = timezone.now() - timezone.timedelta(days=12)
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=self.user,
+            esta_abierto=True,
+            sueldo_base=15000
+        )
+        candidato = Candidato.objects.create(nombres='Luis', apellidos='Notas', email='luis@test.com')
+        proceso = Proceso.objects.create(
+            candidato=candidato,
+            puesto=puesto,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.CONTACTO,
+            fecha_inicio_etapa=fecha_original
+        )
+
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.post(reverse('detalle_proceso', args=[proceso.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.CONTACTO,
+            'retroalimentacion': 'Se añadió nota de seguimiento sin cambiar etapa'
+        })
+        self.assertEqual(resp.status_code, 302)
+        proceso.refresh_from_db()
+        self.assertEqual(proceso.retroalimentacion, 'Se añadió nota de seguimiento sin cambiar etapa')
+        # La fecha de inicio de etapa no debe haber cambiado
+        self.assertEqual(proceso.fecha_inicio_etapa.date(), fecha_original.date())
+
+    def test_sobrecontratacion_bloqueada_select_for_update(self):
+        """P2: Evita sobrecontratar una vacante que ya cubrió sus plazas."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=self.user,
+            cantidad_vacantes=1,
+            esta_abierto=True,
+            sueldo_base=15000
+        )
+        cand1 = Candidato.objects.create(nombres='Ana', apellidos='Hired', email='ana@test.com')
+        cand2 = Candidato.objects.create(nombres='Beto', apellidos='Overhire', email='beto2@test.com')
+
+        proc1 = Proceso.objects.create(
+            candidato=cand1, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.DOCS
+        )
+        proc2 = Proceso.objects.create(
+            candidato=cand2, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.DOCS
+        )
+
+        self.client.login(username='testuser', password='password123')
+
+        # Contratar al primero -> Éxito y llena la plaza (1/1)
+        resp1 = self.client.post(reverse('detalle_proceso', args=[proc1.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.CONTRATADO
+        })
+        self.assertEqual(resp1.status_code, 302)
+        puesto.refresh_from_db()
+        self.assertFalse(puesto.esta_abierto)
+        self.assertEqual(puesto.plazas_cubiertas, 1)
+
+        # Intentar contratar al segundo en la misma vacante llena -> Bloqueado
+        resp2 = self.client.post(reverse('detalle_proceso', args=[proc2.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.CONTRATADO
+        })
+        self.assertEqual(resp2.status_code, 302)
+        proc2.refresh_from_db()
+        self.assertNotEqual(proc2.estatus_proceso, Proceso.Estatus.CONTRATADO)
+        puesto.refresh_from_db()
+        self.assertEqual(puesto.plazas_cubiertas, 1)
+
+    def test_reversion_contratacion_reabre_vacante(self):
+        """P2: Revertir una contratación reabre la vacante automáticamente si estaba cerrada."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=self.user,
+            cantidad_vacantes=1,
+            esta_abierto=False,
+            sueldo_base=15000
+        )
+        cand = Candidato.objects.create(nombres='Carlos', apellidos='Cancelado', email='carlos@test.com')
+        proc = Proceso.objects.create(
+            candidato=cand, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.CONTRATADO
+        )
+        self.assertEqual(puesto.plazas_cubiertas, 1)
+
+        self.client.login(username='testuser', password='password123')
+        # Revertir a PRUEBAS
+        resp = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+            'action': 'actualizar_estatus',
+            'estatus_proceso': Proceso.Estatus.PRUEBAS
+        })
+        self.assertEqual(resp.status_code, 302)
+        puesto.refresh_from_db()
+        self.assertTrue(puesto.esta_abierto)
+        self.assertEqual(puesto.plazas_cubiertas, 0)
+
+    def test_no_asignar_candidato_a_vacante_cerrada(self):
+        """P2: No permitir asignar candidatos a una vacante cerrada."""
+        from django.contrib.auth.models import Group
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        self.user.groups.add(grupo_asesoras)
+
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            asesora_encargada=self.user,
+            esta_abierto=False,
+            sueldo_base=15000
+        )
+        cand = Candidato.objects.create(nombres='Dora', apellidos='Libre', email='dora@test.com')
+
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.get(reverse('asignar_candidato', args=[puesto.id]))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_vacantes_confidenciales_ocultas_en_registro_publico(self):
+        """P1/P4: Las vacantes confidenciales no aparecen en opciones públicas ni en homepage."""
+        puesto_conf = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Dirección General Secreta',
+            ciudad='CUL',
+            area='ADMIN',
+            estatus_autorizacion='AUTORIZADO',
+            esta_abierto=True,
+            es_confidencial=True,
+            sueldo_base=50000
+        )
+        form = RegistroCandidatoForm()
+        choices_keys = [c[0] for c in form.fields['puesto_de_interes'].choices]
+        self.assertNotIn(puesto_conf.id, choices_keys)
+
+        resp = self.client.get(reverse('homepage_publica'))
+        self.assertNotContains(resp, 'Dirección General Secreta')
+
+    def test_preseleccion_puesto_por_parametro_url(self):
+        """P4: Preselección del puesto en formulario de registro vía query param ?puesto=ID."""
+        puesto_pub = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion='AUTORIZADO',
+            esta_abierto=True,
+            es_confidencial=False,
+            sueldo_base=15000
+        )
+        resp = self.client.get(reverse('registro_candidato') + f'?puesto={puesto_pub.id}')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(str(resp.context['form'].initial.get('puesto_de_interes')), str(puesto_pub.id))
+
+    def test_descarga_cv_restringida_a_personal_rh(self):
+        """P1: Descarga de CV prohibida a usuarios externos o sin rol de RH."""
+        cand = Candidato.objects.create(nombres='Eva', apellidos='Test', email='eva@test.com')
+        self.client.login(username='testuser', password='password123')
+        resp = self.client.get(reverse('descargar_cv', args=[cand.id]))
+        # testuser no pertenece a Asesoras ni Gerencia de CH
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('acceso-denegado', resp.url)
+
+    def test_bono_cobertura_fuera_de_tiempo_no_cumple(self):
+        """P3: Vacante completamente cubierta pero fuera de tiempo NO cumple bono."""
+        fecha_antigua = timezone.now() - timezone.timedelta(days=25)
+        puesto_tardio = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            cantidad_vacantes=1,
+            esta_abierto=False,
+            fecha_solicitud=fecha_antigua,
+            dias_meta=20
+        )
+        cand = Candidato.objects.create(nombres='Tarde', apellidos='Contratado', email='tarde@example.com')
+        Proceso.objects.create(
+            candidato=cand,
+            puesto=puesto_tardio,
+            asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.CONTRATADO,
+            fecha_inicio_etapa=timezone.now()
+        )
+        self.assertTrue(puesto_tardio.esta_completamente_cubierta)
+        self.assertGreater(puesto_tardio.dias_transcurridos, puesto_tardio.dias_meta)
+        self.assertFalse(puesto_tardio.cumplio_meta_bono)
+
+    def test_bono_candidatos_reprobados_no_califican(self):
+        """P3: Candidatos con pruebas reprobadas o boletinados no cuentan para la terna del bono."""
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            cantidad_vacantes=2,
+            esta_abierto=True,
+            dias_meta=20
+        )
+        c1 = Candidato.objects.create(nombres='Aprobado1', apellidos='Test', email='ap1@test.com')
+        c2 = Candidato.objects.create(nombres='Aprobado2', apellidos='Test', email='ap2@test.com')
+        c_reprobado_psico = Candidato.objects.create(nombres='Reprobado', apellidos='Psico', email='rep@test.com')
+        c_boletinado = Candidato.objects.create(nombres='Boletinado', apellidos='Veto', email='veto@test.com', es_no_contratable=True)
+
+        # 2 candidatos válidos
+        Proceso.objects.create(candidato=c1, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.ENT_JF)
+        Proceso.objects.create(candidato=c2, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.ENT_JF)
+        # 1 reprobó Pyxoom
+        Proceso.objects.create(
+            candidato=c_reprobado_psico, puesto=puesto, asesora_asignada=self.user,
+            estatus_proceso=Proceso.Estatus.ENT_JF, resultado_pyxoom=Proceso.ResultadoPyxoom.REPROBADO
+        )
+        # 1 es boletinado No Contratable
+        Proceso.objects.create(candidato=c_boletinado, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.ENT_JF)
+
+        # Solo 2 candidatos calificados válidos -> No cumple bono de terna
+        self.assertFalse(puesto.cumplio_meta_bono)
+
+    def test_limite_maximo_dos_reinicios_sla(self):
+        """P2: Límite estricto de máximo 2 reinicios permitidos por vacante."""
+        from django.contrib.auth.models import Group
+        from django.core.exceptions import ValidationError
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.user.groups.add(grupo_ch)
+
+        otra_asesora = User.objects.create_user(username='asesora.responsable', password='password123')
+        puesto = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            asesora_encargada=otra_asesora,
+            esta_abierto=True,
+            dias_meta=20
+        )
+        self.client.login(username='testuser', password='password123')
+
+        # 1er reinicio -> Exitoso
+        resp1 = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {'comentario': 'Excepción 1'})
+        self.assertEqual(resp1.status_code, 302)
+        puesto.refresh_from_db()
+        self.assertEqual(puesto.numero_reinicios, 1)
+
+        # 2do reinicio -> Exitoso
+        resp2 = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {'comentario': 'Excepción 2'})
+        self.assertEqual(resp2.status_code, 302)
+        puesto.refresh_from_db()
+        self.assertEqual(puesto.numero_reinicios, 2)
+
+        # 3er intento en vista -> Bloqueado y permanece en 2
+        resp3 = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {'comentario': 'Excepción 3'})
+        self.assertEqual(resp3.status_code, 302)
+        puesto.refresh_from_db()
+        self.assertEqual(puesto.numero_reinicios, 2)
+
+        # 3er intento a nivel de modelo -> Lanza ValidationError
+        with self.assertRaises(ValidationError):
+            puesto.reiniciar_sla(comentario='Intento directo en modelo')
+
+    def test_reversion_no_contratable_restringida_a_gerente_ch(self):
+        """P1: La reversión de NO CONTRATABLE está reservada a la Gerencia de CH con motivo obligatorio."""
+        from django.contrib.auth.models import Group
+        from reclutamiento.models import RegistroActividad
+        grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+        grupo_ch, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+
+        asesora = User.objects.create_user(username='asesora.test', password='password123')
+        asesora.groups.add(grupo_asesoras)
+
+        gerente = User.objects.create_user(username='gerente.ch.test', password='password123')
+        gerente.groups.add(grupo_ch)
+
+        cand = Candidato.objects.create(
+            nombres='Mario', apellidos='Veto', email='mario@test.com',
+            es_no_contratable=True, motivo_no_contratable='Falta grave'
+        )
+
+        # Asesora intenta revertir -> 403 Forbidden
+        self.client.login(username='asesora.test', password='password123')
+        resp_asesora = self.client.post(reverse('candidato_detalle', args=[cand.id]), {
+            'action': 'revertir_no_contratable',
+            'motivo_reversion': 'Intento de asesora'
+        })
+        self.assertEqual(resp_asesora.status_code, 403)
+        cand.refresh_from_db()
+        self.assertTrue(cand.es_no_contratable)
+
+        # Gerente de CH revierte con motivo -> Exitoso
+        self.client.login(username='gerente.ch.test', password='password123')
+        resp_gerente = self.client.post(reverse('candidato_detalle', args=[cand.id]), {
+            'action': 'revertir_no_contratable',
+            'motivo_reversion': 'Aclaración de RH favorable'
+        })
+        self.assertEqual(resp_gerente.status_code, 302)
+        cand.refresh_from_db()
+        self.assertFalse(cand.es_no_contratable)
+        self.assertEqual(cand.motivo_no_contratable, '')
+
+        # Se registra auditoría
+        reg = RegistroActividad.objects.filter(tipo_objeto='Candidato', id_objeto=cand.id).first()
+        self.assertIsNotNone(reg)
+        self.assertIn('Revirtió', reg.accion)
 
 
 

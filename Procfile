@@ -1,2 +1,2 @@
-release: python manage.py migrate && python manage.py crear_datos_demo --reset
+release: python manage.py migrate
 web: gunicorn mi_proyecto.wsgi --log-file -
