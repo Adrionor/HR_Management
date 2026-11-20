@@ -1,0 +1,529 @@
+{% extends "reclutamiento/base_interno.html" %}
+{% load static %}
+
+{% block title %}Recepción y Accesos de Trabajo | Premier Automotriz{% endblock %}
+
+{% block breadcrumb %}
+    <span class="sap-breadcrumb-separator">/</span>
+    <span class="sap-breadcrumb-current">Recepción y Accesos</span>
+{% endblock %}
+
+{% block back_button %}
+    <!-- Vista principal de recepción: no requiere botón regresar -->
+{% endblock %}
+
+{% block style %}
+<style>
+    .rh-reception-container {
+        max-width: 1440px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Hero Banner de Bienvenida */
+    .rh-welcome-hero {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.5rem 1.75rem;
+        box-shadow: var(--sap-shadow-card);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+    }
+
+    .rh-welcome-title {
+        margin: 0 0 0.35rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        letter-spacing: -0.01em;
+    }
+
+    .rh-welcome-subtitle {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--sap-muted);
+        line-height: 1.4;
+    }
+
+    /* Resumen de Pulso Operativo (KPIs rápidos) */
+    .rh-pulse-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 1rem;
+    }
+
+    .rh-pulse-card {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1rem 1.25rem;
+        box-shadow: var(--sap-shadow-card);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .rh-pulse-card:hover {
+        border-color: var(--sap-primary);
+        box-shadow: 0 3px 10px rgba(0, 112, 242, 0.08);
+    }
+
+    .rh-pulse-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: var(--sap-radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .rh-pulse-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rh-pulse-label {
+        font-size: 0.75rem;
+        color: var(--sap-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-top: 2px;
+    }
+
+    /* Grid Principal: Accesos a la Izquierda, Avisos a la Derecha */
+    .rh-reception-layout {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    @media (max-width: 1040px) {
+        .rh-reception-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Tarjetas de Accesos Rápidos de Trabajo */
+    .rh-shortcuts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+    }
+
+    .rh-shortcut-card {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.25rem;
+        box-shadow: var(--sap-shadow-card);
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 140px;
+        transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .rh-shortcut-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--sap-primary);
+        box-shadow: 0 4px 14px rgba(0, 112, 242, 0.1);
+    }
+
+    .rh-shortcut-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .rh-shortcut-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--sap-radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .rh-shortcut-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--sap-text);
+        margin: 0 0 2px 0;
+    }
+
+    .rh-shortcut-desc {
+        font-size: 0.8125rem;
+        color: var(--sap-muted);
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    .rh-shortcut-action {
+        font-size: 0.785rem;
+        font-weight: 600;
+        color: var(--sap-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: auto;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--sap-border-subtle);
+    }
+
+    /* Módulo de Avisos de Capital Humano */
+    .rh-notice-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .rh-notice-card {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 1.15rem 1.25rem;
+        box-shadow: var(--sap-shadow-card);
+        transition: border-color 0.15s ease;
+    }
+
+    .rh-notice-card:hover {
+        border-color: #b9bec5;
+    }
+
+    .rh-notice-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.4rem;
+        font-size: 0.75rem;
+        color: var(--sap-muted);
+    }
+
+    .rh-notice-title {
+        margin: 0 0 0.4rem 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--sap-text);
+    }
+
+    .rh-notice-content {
+        margin: 0;
+        font-size: 0.825rem;
+        color: #374151;
+        line-height: 1.5;
+    }
+
+    .rh-notice-author {
+        font-weight: 600;
+        color: #1d2d3e;
+    }
+
+    .rh-notice-empty {
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: var(--sap-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rh-reception-container">
+
+    <!-- 1. Hero de Bienvenida Personalizado -->
+    <header class="rh-welcome-hero">
+        <div>
+            <h1 class="rh-welcome-title">
+                Portal de Recepción &bull; {{ user.get_full_name|default:user.username }}
+            </h1>
+            <p class="rh-welcome-subtitle">
+                Sistema Corporativo de Capital Humano &bull; Premier Automotriz &bull; {% now "l, j \d\e F \d\e Y" %}
+            </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="sap-badge sap-badge-info" style="font-size: 0.8rem; padding: 5px 12px;">
+                {% if user.is_superuser %}
+                    Superusuario RH
+                {% elif es_directora_ch %}
+                    Directora / Gerencia CH
+                {% else %}
+                    Asesora de Reclutamiento
+                {% endif %}
+            </span>
+            <a href="{% url 'dashboard' %}" class="sap-btn sap-btn-primary sap-btn-sm" title="Ir a la bandeja de trabajo con tablas operativas">
+                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                <span>Bandeja Operativa &rarr;</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- 2. Pulso de Indicadores Rápidos -->
+    <section class="rh-pulse-grid" aria-label="Indicadores rápidos de operación">
+        <a href="{% url 'mis_vacantes' %}" class="rh-pulse-card" title="Ver mis vacantes activas">
+            <div class="rh-pulse-icon" style="background: #e8f3ff; color: #0057b8;">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+            </div>
+            <div>
+                <div class="rh-pulse-number">{{ mis_vacantes_count|default:"0" }}</div>
+                <div class="rh-pulse-label">Vacantes Abiertas</div>
+            </div>
+        </a>
+
+        <a href="{% url 'mis_procesos' %}" class="rh-pulse-card" title="Ver mis candidatos en seguimiento">
+            <div class="rh-pulse-icon" style="background: #e7f6ec; color: #0e6231;">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+            </div>
+            <div>
+                <div class="rh-pulse-number">{{ mis_procesos_count|default:"0" }}</div>
+                <div class="rh-pulse-label">Candidatos en Proceso</div>
+            </div>
+        </a>
+
+        <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-pulse-card" title="Explorar bolsa de trabajo general">
+            <div class="rh-pulse-icon" style="background: #f1f3f5; color: #374151;">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <div>
+                <div class="rh-pulse-number">{{ candidatos_bolsa_count|default:"0" }}</div>
+                <div class="rh-pulse-label">Banco de Talento</div>
+            </div>
+        </a>
+
+        <a href="{% url 'mis_procesos' %}" class="rh-pulse-card" title="Procesos detenidos más de 7 días">
+            <div class="rh-pulse-icon" style="background: {% if alertas_count > 0 %}#ffeef0{% else %}#e7f6ec{% endif %}; color: {% if alertas_count > 0 %}#b91c1c{% else %}#0e6231{% endif %};">
+                <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            </div>
+            <div>
+                <div class="rh-pulse-number">{{ alertas_count|default:"0" }}</div>
+                <div class="rh-pulse-label">Demoras (+7 días)</div>
+            </div>
+        </a>
+    </section>
+
+    <!-- 3. Layout Principal: Accesos Directos (Izq) vs Avisos Generales (Der) -->
+    <main class="rh-reception-layout">
+
+        <!-- Columna Izquierda: Accesos Directos al Trabajo -->
+        <section aria-labelledby="secShortcutsTitle">
+            <div class="sap-page-header" style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sap-border-subtle);">
+                <div>
+                    <h2 id="secShortcutsTitle" class="sap-page-title" style="font-size: 1.15rem;">
+                        <svg class="sap-icon" style="color: var(--sap-primary);" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/></svg>
+                        Accesos Directos de Trabajo
+                    </h2>
+                    <p class="sap-page-subtitle">Rutas inmediatas a tus herramientas diarias de selección y cobertura.</p>
+                </div>
+            </div>
+
+            <div class="rh-shortcuts-grid">
+                <!-- Acceso 1: Bandeja de Trabajo (Dashboard) -->
+                <a href="{% url 'dashboard' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #e8f3ff; color: #0057b8;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Bandeja Operativa</h3>
+                            <p class="rh-shortcut-desc">Monitorea tus tablas de candidatos en seguimiento, vacantes y actividad del equipo.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action">
+                        Abrir mesa de trabajo &rarr;
+                    </span>
+                </a>
+
+                <!-- Acceso 2: Registrar Vacante -->
+                <a href="{% url 'crear_vacante' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #e7f6ec; color: #0e6231;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Registrar Vacante</h3>
+                            <p class="rh-shortcut-desc">Captura una nueva requisición de personal autorizada con su formato escaneado.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action">
+                        Nueva requisición &rarr;
+                    </span>
+                </a>
+
+                <!-- Acceso 3: Mis Vacantes -->
+                <a href="{% url 'mis_vacantes' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #e8f3ff; color: #0057b8;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Mis Vacantes Asignadas</h3>
+                            <p class="rh-shortcut-desc">Revisa el cumplimiento de SLA, plazas cubiertas y estatus para meta de bono.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action">
+                        Ver vacantes abiertas &rarr;
+                    </span>
+                </a>
+
+                <!-- Acceso 4: Mis Candidatos en Proceso -->
+                <a href="{% url 'mis_procesos' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #e7f6ec; color: #0e6231;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Mis Candidatos</h3>
+                            <p class="rh-shortcut-desc">Avanza postulantes por las etapas de entrevistas, pruebas psicométricas y médico.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action">
+                        Ver candidatos activos &rarr;
+                    </span>
+                </a>
+
+                <!-- Acceso 5: Bolsa de Trabajo -->
+                <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #f1f3f5; color: #374151;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Bolsa de Trabajo</h3>
+                            <p class="rh-shortcut-desc">Consulta el repositorio general de talento para vincular candidatos a vacantes.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action">
+                        Explorar repositorio &rarr;
+                    </span>
+                </a>
+
+                <!-- Acceso 6: Reportes & BI Excel -->
+                <a href="{% url 'vista_reportes' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #e7f6ec; color: #0e6231;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Reportes & BI Excel</h3>
+                            <p class="rh-shortcut-desc">Métricas analíticas, auditoría de bonos, sábanas generales y exportación Excel.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action">
+                        Consultar analítica &rarr;
+                    </span>
+                </a>
+
+                <!-- Acceso 7 (Exclusivo Gerencia de CH / Superusuario): Auditoría RH -->
+                {% if es_directora_ch %}
+                <a href="{% url 'vista_historial_general' %}" class="rh-shortcut-card">
+                    <div class="rh-shortcut-top">
+                        <div class="rh-shortcut-icon" style="background: #fff4e5; color: #8a3c00;">
+                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="rh-shortcut-title">Auditoría & Bitácora RH</h3>
+                            <p class="rh-shortcut-desc">Registro histórico de excepciones, reinicios de ciclo y vetos de candidatos.</p>
+                        </div>
+                    </div>
+                    <span class="rh-shortcut-action" style="color: #8a3c00;">
+                        Consultar bitácora directiva &rarr;
+                    </span>
+                </a>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Columna Derecha: Avisos de Capital Humano -->
+        <section aria-labelledby="secNoticesTitle">
+            <div class="sap-page-header" style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sap-border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div>
+                        <h2 id="secNoticesTitle" class="sap-page-title" style="font-size: 1.15rem;">
+                            <svg class="sap-icon" style="color: #0057b8;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+                            Avisos de Capital Humano
+                        </h2>
+                        <p class="sap-page-subtitle">Comunicados oficiales, lineamientos y fechas clave del equipo.</p>
+                    </div>
+                    <span class="sap-badge sap-badge-neutral tabular-nums">{{ avisos|length }} vigentes</span>
+                </div>
+            </div>
+
+            <!-- Publicador rápido para Directora / Gerencia CH -->
+            {% if es_directora_ch %}
+            <details class="sap-details" style="margin-top: 0; margin-bottom: 1rem;">
+                <summary class="sap-details-summary">
+                    <span>+ Publicar Nuevo Comunicado de CH</span>
+                </summary>
+                <div class="sap-details-content">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="crear_aviso">
+                        <div class="sap-form-group">
+                            <label class="sap-label" for="id_aviso_titulo">Título del Comunicado:</label>
+                            <input type="text" id="id_aviso_titulo" name="titulo" class="sap-input" placeholder="Ej. Actualización de políticas de evaluación psicométrica" required>
+                        </div>
+                        <div class="sap-form-group">
+                            <label class="sap-label" for="id_aviso_contenido">Mensaje o Contenido:</label>
+                            <textarea id="id_aviso_contenido" name="contenido" class="sap-textarea" rows="3" placeholder="Redacta el aviso oficial para las asesoras de reclutamiento..." required></textarea>
+                        </div>
+                        <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="width: 100%;">
+                            Publicar Comunicado en Recepción
+                        </button>
+                    </form>
+                </div>
+            </details>
+            {% endif %}
+
+            <!-- Feed de Avisos Oficiales -->
+            <div class="rh-notice-feed">
+                {% for aviso in avisos %}
+                <article class="rh-notice-card">
+                    <div class="rh-notice-meta">
+                        <span class="rh-notice-author">
+                            {{ aviso.creado_por.get_full_name|default:aviso.creado_por.username }}
+                        </span>
+                        <span class="tabular-nums">
+                            {{ aviso.fecha_creacion|date:"d/m/Y, H:i" }}
+                        </span>
+                    </div>
+                    <h3 class="rh-notice-title">{{ aviso.titulo }}</h3>
+                    <p class="rh-notice-content">{{ aviso.contenido|linebreaksbr }}</p>
+                </article>
+                {% empty %}
+                <div class="rh-notice-empty">
+                    <svg class="sap-icon" viewBox="0 0 24 24" style="width: 32px; height: 32px; color: #0057b8; margin-bottom: 8px;">
+                        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/>
+                    </svg>
+                    <div style="font-weight: 600; color: var(--sap-text);">Sin avisos recientes</div>
+                    <div style="font-size: 0.785rem; color: var(--sap-muted); margin-top: 4px;">
+                        No hay comunicados generales vigentes emitidos por la Dirección de Capital Humano.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+    </main>
+
+</div>
+{% endblock %}

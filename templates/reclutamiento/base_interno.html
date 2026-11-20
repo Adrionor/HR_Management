@@ -1154,7 +1154,7 @@
     <!-- 1. SAP ShellBar (48px) -->
     <header class="sap-shellbar">
         <div class="sap-shellbar-left">
-            <a href="{% url 'dashboard' %}" class="sap-logo-link">
+            <a href="{% url 'recepcion' %}" class="sap-logo-link">
                 <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Premier Automotriz">
                 <div>
                     <span class="sap-brand-title">Premier Automotriz</span>
@@ -1162,7 +1162,8 @@
                 </div>
             </a>
             <nav class="sap-shellbar-nav">
-                <a href="{% url 'dashboard' %}" class="sap-nav-item">Portal Principal</a>
+                <a href="{% url 'recepcion' %}" class="sap-nav-item">Recepción</a>
+                <a href="{% url 'dashboard' %}" class="sap-nav-item">Bandeja de Trabajo</a>
                 <a href="{% url 'crear_vacante' %}" class="sap-nav-item">Registrar Vacante</a>
                 <a href="{% url 'mis_vacantes' %}" class="sap-nav-item">Mis Vacantes</a>
                 <a href="{% url 'mis_procesos' %}" class="sap-nav-item">Mis Candidatos</a>
@@ -1256,7 +1257,7 @@
     <!-- 2. Sub-Barra de Navegación Operativa (Ruta Breadcrumb + Botón Regresar) -->
     <div class="sap-subbar">
         <nav class="sap-breadcrumb-nav" aria-label="Ruta de navegación">
-            <a href="{% url 'dashboard' %}" class="sap-breadcrumb-item">
+            <a href="{% url 'recepcion' %}" class="sap-breadcrumb-item">
                 <svg class="sap-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 <span>Inicio</span>
             </a>

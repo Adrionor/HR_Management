@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -132,6 +133,75 @@ def puede_ver_biblioteca(user):
 # ===================================================================
 # VISTAS INTERNAS (DECORADORES CORREGIDOS)
 # ===================================================================
+
+@login_required
+@user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))
+def recepcion_view(request):
+    usuario = request.user
+    es_directora = es_gerente_ch(usuario) or usuario.is_superuser
+
+    # Publicar nuevo comunicado oficial (exclusivo para Directora / Gerencia CH)
+    if request.method == 'POST' and request.POST.get('action') == 'crear_aviso':
+        if es_directora:
+            titulo = request.POST.get('titulo', '').strip()
+            contenido = request.POST.get('contenido', '').strip()
+            if titulo and contenido:
+                Aviso.objects.create(
+                    titulo=titulo,
+                    contenido=contenido,
+                    creado_por=usuario,
+                    esta_activo=True
+                )
+                messages.success(request, "El comunicado de Capital Humano ha sido publicado exitosamente en Recepción.")
+                return redirect('recepcion')
+            else:
+                messages.error(request, "Por favor completa el título y el mensaje del comunicado.")
+        else:
+            messages.error(request, "No tienes permisos para emitir comunicados oficiales de Capital Humano.")
+
+    terminales_proceso = [
+        Proceso.Estatus.DESCARTADO_CH,
+        Proceso.Estatus.NO_PRUEBAS,
+        Proceso.Estatus.ABANDONO,
+        Proceso.Estatus.CONTRATADO,
+        Proceso.Estatus.NO_APROBADO_PSICO,
+        Proceso.Estatus.EN_BOLSA,
+        Proceso.Estatus.CONTRATADO_CERRADO,
+    ]
+
+    if es_directora:
+        mis_procesos_qs = Proceso.objects.exclude(estatus_proceso__in=terminales_proceso)
+        mis_vacantes_qs = Puesto.objects.filter(esta_abierto=True)
+    else:
+        mis_procesos_qs = Proceso.objects.filter(asesora_asignada=usuario).exclude(estatus_proceso__in=terminales_proceso)
+        mis_vacantes_qs = Puesto.objects.filter(asesora_encargada=usuario, esta_abierto=True)
+
+    mis_procesos_count = mis_procesos_qs.count()
+    mis_vacantes_count = mis_vacantes_qs.count()
+    candidatos_bolsa_count = Candidato.objects.count()
+
+    fecha_limite = timezone.now() - timedelta(days=7)
+    alertas_qs = Proceso.objects.filter(
+        fecha_inicio_etapa__lte=fecha_limite
+    ).exclude(
+        estatus_proceso__in=terminales_proceso
+    )
+    if not es_directora:
+        alertas_qs = alertas_qs.filter(asesora_asignada=usuario)
+    alertas_count = alertas_qs.count()
+
+    avisos = Aviso.objects.filter(esta_activo=True).select_related('creado_por').order_by('-fecha_creacion')
+
+    contexto = {
+        'mis_procesos_count': mis_procesos_count,
+        'mis_vacantes_count': mis_vacantes_count,
+        'candidatos_bolsa_count': candidatos_bolsa_count,
+        'alertas_count': alertas_count,
+        'avisos': avisos,
+        'es_directora_ch': es_directora,
+    }
+    return render(request, 'reclutamiento/recepcion.html', contexto)
+
 
 @login_required
 @user_passes_test(puede_ver_operaciones, login_url=reverse_lazy('acceso_denegado'))

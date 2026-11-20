@@ -10,6 +10,8 @@ urlpatterns = [
     path('verificar-unicidad/', views.verificar_unicidad_view, name='verificar_unicidad'),
 
     # Internas
+    path('inicio/', views.recepcion_view, name='recepcion'),
+    path('recepcion/', views.recepcion_view, name='recepcion_alias'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('acceso-denegado/', views.acceso_denegado_view, name='acceso_denegado'),
 
