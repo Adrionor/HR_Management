@@ -34,7 +34,7 @@
 
     .rh-dashboard-title {
         margin: 0;
-        font-size: 1.35rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--sap-text);
         letter-spacing: -0.01em;
@@ -42,83 +42,103 @@
 
     .rh-dashboard-subtitle {
         margin: 0.25rem 0 0 0;
-        font-size: 0.825rem;
+        font-size: 0.8125rem;
         color: var(--sap-muted);
     }
 
-    /* Grid de Tarjetas Operativas de RH */
-    .rh-cards-grid {
+    /* Menú / Barra Operativa Minimalista */
+    .rh-menu-bar {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 0.75rem;
     }
 
-    .rh-op-card {
+    .rh-menu-item {
         background: #ffffff;
         border: 1px solid var(--sap-border);
         border-radius: var(--sap-radius-md);
-        padding: 1.15rem 1.25rem;
+        padding: 0.85rem 1rem;
         box-shadow: var(--sap-shadow-card);
         text-decoration: none;
         color: inherit;
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        min-height: 125px;
-        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+        align-items: center;
+        gap: 0.75rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     }
 
-    .rh-op-card:hover {
+    .rh-menu-item:hover {
         border-color: var(--sap-primary);
-        box-shadow: 0 4px 12px rgba(0, 112, 242, 0.08);
-        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 112, 242, 0.08);
+        background-color: #fafbfc;
     }
 
-    .rh-op-card-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .rh-op-card-title {
-        font-size: 0.8125rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--sap-muted);
-        margin: 0;
-    }
-
-    .rh-op-card-icon {
-        width: 32px;
-        height: 32px;
+    .rh-menu-icon {
+        width: 36px;
+        height: 36px;
         border-radius: var(--sap-radius-sm);
-        background: #f0f7ff;
+        background: var(--sap-info-bg);
         color: var(--sap-primary);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        transition: background-color 0.15s ease, color 0.15s ease;
     }
 
-    .rh-op-card-counter {
-        font-size: 2.1rem;
+    .rh-menu-item:hover .rh-menu-icon {
+        background: var(--sap-primary);
+        color: #ffffff;
+    }
+
+    .rh-menu-item-cta .rh-menu-icon {
+        background: var(--sap-primary);
+        color: #ffffff;
+    }
+
+    .rh-menu-item-cta:hover .rh-menu-icon {
+        background: var(--sap-primary-hover);
+        color: #ffffff;
+    }
+
+    .rh-menu-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .rh-menu-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--sap-muted);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .rh-menu-data {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        margin-top: 2px;
+        line-height: 1.2;
+    }
+
+    .rh-menu-value {
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--sap-text);
         font-variant-numeric: tabular-nums;
-        line-height: 1.1;
-        margin: 0.35rem 0;
     }
 
-    .rh-op-card-action {
-        font-size: 0.785rem;
-        font-weight: 600;
-        color: var(--sap-primary);
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: auto;
+    .rh-menu-desc {
+        font-size: 0.75rem;
+        color: var(--sap-text-secondary);
+        font-weight: 400;
+        white-space: nowrap;
     }
 
     /* Layout Principal (2 Columnas) */
@@ -184,7 +204,7 @@
             </p>
         </div>
         <div>
-            <span class="sap-badge sap-badge-info" style="font-size: 0.8rem; padding: 4px 10px;">
+            <span class="sap-badge sap-badge-info" style="font-size: 0.8125rem; padding: 4px 10px;">
                 {% if user.is_superuser %}
                     Superusuario RH
                 {% elif es_directora_ch %}
@@ -196,106 +216,94 @@
         </div>
     </header>
 
-    <!-- Tarjetas Operativas de RH (Sin Ruido, Contadores Grandes y Enlaces Directos) -->
-    <section class="rh-cards-grid">
+    <!-- Menú Operativo Minimalista de Capital Humano -->
+    <nav class="rh-menu-bar" aria-label="Accesos rápidos operativos">
         <!-- 1. Registrar Vacante -->
-        <a href="{% url 'crear_vacante' %}" class="rh-op-card" title="Registrar una nueva vacante directamente">
-            <div class="rh-op-card-top">
-                <span class="rh-op-card-title">Registrar Vacante</span>
-                <div class="rh-op-card-icon" style="background: #e7f6ec; color: #107e3e;">
-                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <a href="{% url 'crear_vacante' %}" class="rh-menu-item rh-menu-item-cta" title="Registrar una nueva requisición de personal">
+            <div class="rh-menu-icon">
+                <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </div>
+            <div class="rh-menu-info">
+                <span class="rh-menu-label">Nueva Requisición</span>
+                <div class="rh-menu-data">
+                    <span class="rh-menu-value" style="font-size: 0.95rem; color: var(--sap-primary);">+ Registrar</span>
+                    <span class="rh-menu-desc">vacante</span>
                 </div>
             </div>
-            <div class="rh-op-card-counter" style="color: #107e3e; font-size: 1.6rem; margin: 0.6rem 0;">
-                + Nueva
-            </div>
-            <span class="rh-op-card-action" style="color: #107e3e;">
-                Capturar requisición &rarr;
-            </span>
         </a>
 
         <!-- 2. Mis Vacantes -->
-        <a href="{% url 'mis_vacantes' %}" class="rh-op-card" title="Ver vacantes asignadas activas">
-            <div class="rh-op-card-top">
-                <span class="rh-op-card-title">Mis Vacantes</span>
-                <div class="rh-op-card-icon">
-                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+        <a href="{% url 'mis_vacantes' %}" class="rh-menu-item" title="Consultar vacantes activas asignadas">
+            <div class="rh-menu-icon">
+                <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+            </div>
+            <div class="rh-menu-info">
+                <span class="rh-menu-label">Mis Vacantes</span>
+                <div class="rh-menu-data">
+                    <span class="rh-menu-value">{{ mis_vacantes_count|default:"0" }}</span>
+                    <span class="rh-menu-desc">abiertas</span>
                 </div>
             </div>
-            <div class="rh-op-card-counter">
-                {{ mis_vacantes_count|default:"0" }}
-            </div>
-            <span class="rh-op-card-action">
-                Ver vacantes abiertas &rarr;
-            </span>
         </a>
 
-        <!-- 3. Mis Candidatos en Proceso -->
-        <a href="{% url 'mis_procesos' %}" class="rh-op-card" title="Candidatos en seguimiento activo">
-            <div class="rh-op-card-top">
-                <span class="rh-op-card-title">Mis Candidatos</span>
-                <div class="rh-op-card-icon" style="background: #e8f3ff; color: #0070f2;">
-                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+        <!-- 3. Mis Candidatos -->
+        <a href="{% url 'mis_procesos' %}" class="rh-menu-item" title="Candidatos en seguimiento activo">
+            <div class="rh-menu-icon">
+                <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+            </div>
+            <div class="rh-menu-info">
+                <span class="rh-menu-label">Mis Candidatos</span>
+                <div class="rh-menu-data">
+                    <span class="rh-menu-value">{{ mis_procesos_count|default:"0" }}</span>
+                    <span class="rh-menu-desc">en proceso</span>
                 </div>
             </div>
-            <div class="rh-op-card-counter">
-                {{ mis_procesos_count|default:"0" }}
-            </div>
-            <span class="rh-op-card-action">
-                Candidatos en proceso &rarr;
-            </span>
         </a>
 
         <!-- 4. Bolsa de Trabajo -->
-        <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-op-card" title="Repositorio general de talento disponible">
-            <div class="rh-op-card-top">
-                <span class="rh-op-card-title">Bolsa de Trabajo</span>
-                <div class="rh-op-card-icon" style="background: #f1f3f5; color: #495057;">
-                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        <a href="{% url 'bolsa_trabajo_consulta' %}" class="rh-menu-item" title="Repositorio general de candidatos disponibles">
+            <div class="rh-menu-icon">
+                <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            </div>
+            <div class="rh-menu-info">
+                <span class="rh-menu-label">Bolsa de Talento</span>
+                <div class="rh-menu-data">
+                    <span class="rh-menu-value">{{ candidatos_bolsa_count|default:"0" }}</span>
+                    <span class="rh-menu-desc">perfiles</span>
                 </div>
             </div>
-            <div class="rh-op-card-counter">
-                {{ candidatos_bolsa_count|default:"0" }}
-            </div>
-            <span class="rh-op-card-action">
-                Explorar candidatos &rarr;
-            </span>
         </a>
 
         <!-- 5. Reportes Excel -->
-        <a href="{% url 'vista_reportes' %}" class="rh-op-card" title="Generación y exportación de reportes analíticos">
-            <div class="rh-op-card-top">
-                <span class="rh-op-card-title">Reportes Excel</span>
-                <div class="rh-op-card-icon" style="background: #e7f6ec; color: #107e3e;">
-                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        <a href="{% url 'vista_reportes' %}" class="rh-menu-item" title="Generación y exportación de reportes analíticos">
+            <div class="rh-menu-icon">
+                <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            </div>
+            <div class="rh-menu-info">
+                <span class="rh-menu-label">Reportes BI</span>
+                <div class="rh-menu-data">
+                    <span class="rh-menu-value" style="font-size: 0.95rem;">BI / Excel</span>
+                    <span class="rh-menu-desc">descargas</span>
                 </div>
             </div>
-            <div class="rh-op-card-counter" style="font-size: 1.6rem; margin: 0.6rem 0;">
-                BI / Excel
-            </div>
-            <span class="rh-op-card-action">
-                Descargar reportes &rarr;
-            </span>
         </a>
 
-        <!-- 6. Bitácora de Auditoría (Para Directora/Gerencia CH o Superuser) -->
+        <!-- 6. Auditoría RH (Solo Directora/Gerencia CH o Superuser) -->
         {% if es_directora_ch %}
-        <a href="{% url 'vista_historial_general' %}" class="rh-op-card" title="Registro detallado de movimientos de personal y procesos">
-            <div class="rh-op-card-top">
-                <span class="rh-op-card-title">Auditoría RH</span>
-                <div class="rh-op-card-icon" style="background: #fff4e5; color: #b25900;">
-                    <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        <a href="{% url 'vista_historial_general' %}" class="rh-menu-item" title="Registro detallado de movimientos de personal y procesos">
+            <div class="rh-menu-icon">
+                <svg class="sap-icon" style="width: 18px; height: 18px;" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            </div>
+            <div class="rh-menu-info">
+                <span class="rh-menu-label">Auditoría RH</span>
+                <div class="rh-menu-data">
+                    <span class="rh-menu-value" style="font-size: 0.95rem;">Bitácora</span>
+                    <span class="rh-menu-desc">historial</span>
                 </div>
             </div>
-            <div class="rh-op-card-counter" style="font-size: 1.6rem; margin: 0.6rem 0; color: #b25900;">
-                Auditoría
-            </div>
-            <span class="rh-op-card-action" style="color: #b25900;">
-                Consultar bitácora &rarr;
-            </span>
         </a>
         {% endif %}
-    </section>
+    </nav>
 
     <!-- Layout Principal: Tablas de Trabajo Operativo (Izq) y Panel de Soporte/Avisos (Der) -->
     <main class="rh-main-layout">
@@ -345,7 +353,7 @@
                                     </td>
                                     <td>
                                         {% if proc.esta_estancado or proc.dias_en_etapa_actual >= 30 %}
-                                            <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; border-color: #fca5a5;">
+                                            <span class="sap-badge sap-badge-error">
                                                 <span class="sap-badge-dot"></span>Detenido +30 días ({{ proc.dias_en_etapa_actual }}d)
                                             </span>
                                         {% else %}
@@ -414,9 +422,9 @@
                                         <span class="tabular-nums" style="font-weight: 600;">{{ vac.dias_transcurridos }}</span>
                                         <span style="color: var(--sap-muted); font-size: 0.75rem;">/ {{ vac.dias_meta }}d</span>
                                         {% if vac.dias_transcurridos > vac.dias_meta %}
-                                            <span class="sap-badge sap-badge-error" style="margin-left: 4px; font-size: 0.7rem; padding: 1px 5px;">Vencida</span>
+                                            <span class="sap-badge sap-badge-error" style="margin-left: 4px; font-size: 0.75rem; padding: 1px 5px;">Vencida</span>
                                         {% else %}
-                                            <span class="sap-badge sap-badge-success" style="margin-left: 4px; font-size: 0.7rem; padding: 1px 5px;">En tiempo</span>
+                                            <span class="sap-badge sap-badge-success" style="margin-left: 4px; font-size: 0.75rem; padding: 1px 5px;">En tiempo</span>
                                         {% endif %}
                                     </td>
                                     <td style="text-align: right;">
