@@ -159,44 +159,9 @@ def recepcion_view(request):
         else:
             messages.error(request, "No tienes permisos para emitir comunicados oficiales de Capital Humano.")
 
-    terminales_proceso = [
-        Proceso.Estatus.DESCARTADO_CH,
-        Proceso.Estatus.NO_PRUEBAS,
-        Proceso.Estatus.ABANDONO,
-        Proceso.Estatus.CONTRATADO,
-        Proceso.Estatus.NO_APROBADO_PSICO,
-        Proceso.Estatus.EN_BOLSA,
-        Proceso.Estatus.CONTRATADO_CERRADO,
-    ]
-
-    if es_directora:
-        mis_procesos_qs = Proceso.objects.exclude(estatus_proceso__in=terminales_proceso)
-        mis_vacantes_qs = Puesto.objects.filter(esta_abierto=True)
-    else:
-        mis_procesos_qs = Proceso.objects.filter(asesora_asignada=usuario).exclude(estatus_proceso__in=terminales_proceso)
-        mis_vacantes_qs = Puesto.objects.filter(asesora_encargada=usuario, esta_abierto=True)
-
-    mis_procesos_count = mis_procesos_qs.count()
-    mis_vacantes_count = mis_vacantes_qs.count()
-    candidatos_bolsa_count = Candidato.objects.count()
-
-    fecha_limite = timezone.now() - timedelta(days=7)
-    alertas_qs = Proceso.objects.filter(
-        fecha_inicio_etapa__lte=fecha_limite
-    ).exclude(
-        estatus_proceso__in=terminales_proceso
-    )
-    if not es_directora:
-        alertas_qs = alertas_qs.filter(asesora_asignada=usuario)
-    alertas_count = alertas_qs.count()
-
     avisos = Aviso.objects.filter(esta_activo=True).select_related('creado_por').order_by('-fecha_creacion')
 
     contexto = {
-        'mis_procesos_count': mis_procesos_count,
-        'mis_vacantes_count': mis_vacantes_count,
-        'candidatos_bolsa_count': candidatos_bolsa_count,
-        'alertas_count': alertas_count,
         'avisos': avisos,
         'es_directora_ch': es_directora,
     }
