@@ -1,7 +1,7 @@
 # reclutamiento/forms.py
 import os
 from django import forms
-from .models import Puesto, Candidato, Publicacion, PerfilDePuesto
+from .models import Puesto, Candidato, Publicacion, PerfilDePuesto, Marca
 from django.core.exceptions import ValidationError
 try:
     import filetype
@@ -12,6 +12,18 @@ except ImportError:
 from django.utils import timezone
 
 
+class AgenciaChoiceField(forms.ModelChoiceField):
+    """Campo de selección para Agencia que carga las Marcas de la BD y acepta nombres en texto."""
+    def to_python(self, value):
+        if value in self.empty_values:
+            return None
+        try:
+            return super().to_python(value)
+        except forms.ValidationError:
+            marca, _ = Marca.objects.get_or_create(nombre=str(value).strip())
+            return marca
+
+
 class SolicitudPuestoForm(forms.ModelForm):
     fecha_solicitud = forms.DateTimeField(
         required=False,
@@ -19,6 +31,45 @@ class SolicitudPuestoForm(forms.ModelForm):
         input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d'],
         label="Fecha de Solicitud (Requisición Física)"
     )
+    agencia = AgenciaChoiceField(
+        queryset=Marca.objects.all().order_by('nombre'),
+        empty_label="-- Selecciona una Agencia / Marca --",
+        label="Agencia o Sucursal",
+        widget=forms.Select(attrs={'class': 'sap-select'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            if self.instance.marca:
+                self.initial['agencia'] = self.instance.marca.id
+            elif self.instance.agencia:
+                marca_match = Marca.objects.filter(nombre__iexact=self.instance.agencia).first()
+                if marca_match:
+                    self.initial['agencia'] = marca_match.id
+
+    def clean(self):
+        cleaned_data = super().clean()
+        agencia_val = cleaned_data.get('agencia')
+        if isinstance(agencia_val, Marca):
+            self._selected_marca = agencia_val
+            cleaned_data['agencia'] = agencia_val.nombre
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        marca_obj = getattr(self, '_selected_marca', None) or self.cleaned_data.get('agencia')
+        if isinstance(marca_obj, Marca):
+            instance.marca = marca_obj
+            instance.agencia = marca_obj.nombre
+        elif not instance.marca and instance.agencia:
+            marca_match = Marca.objects.filter(nombre__iexact=instance.agencia).first()
+            if marca_match:
+                instance.marca = marca_match
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
     class Meta:
         model = Puesto
