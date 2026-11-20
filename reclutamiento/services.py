@@ -699,14 +699,14 @@ class ReportesService:
                     'enviados_jefe': len(candidatos_en_jefe),
                     'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
                 })
-            # 2. Sin candidatos en proceso
-            elif len(activos) == 0:
+            # 2. Sin candidatos en proceso pero con tiempo transcurrido considerable (mínimo 5 días o >= 30% del SLA consumido)
+            elif len(activos) == 0 and (p.dias_transcurridos >= 5 or (p.dias_meta > 0 and (p.dias_transcurridos / p.dias_meta) >= 0.30)):
                 vacantes_atoradas.append({
                     'puesto': p,
                     'tipo': 'SIN_CANDIDATOS',
                     'severidad': 'media',
                     'badge_class': 'sap-badge-warning',
-                    'motivo': "Pipeline Vacío (0 candidatos en proceso)",
+                    'motivo': f"Pipeline Desierto ({p.dias_transcurridos}d sin candidatos)",
                     'dias_transcurridos': p.dias_transcurridos,
                     'dias_meta': p.dias_meta,
                     'candidatos_activos': 0,
