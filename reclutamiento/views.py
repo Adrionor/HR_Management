@@ -336,8 +336,10 @@ def reportes_view(request):
     except EmptyPage:
         puestos_page = paginator.page(paginator.num_pages)
     
-    # Pestaña activa por defecto o solicitada
-    active_tab = request.GET.get('tab', 'semaforos')
+    # Pestaña activa validada por defecto
+    valid_tabs = ['tab-resumen', 'tab-auditoria', 'tab-sabana', 'tab-alertas', 'tab-agencias']
+    tab_param = request.GET.get('tab', '').strip()
+    active_tab = tab_param if tab_param in valid_tabs else 'tab-resumen'
 
     # Preparar contexto para el template
     contexto = {

@@ -19,3 +19,4 @@ Thumbs.db
 
 # Static files recopilados
 staticfiles/
+.impeccable/

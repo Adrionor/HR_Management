@@ -36,9 +36,35 @@
 
     .rh-filter-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 0.85rem;
         align-items: flex-end;
+    }
+
+    .rh-date-presets {
+        display: flex;
+        gap: 6px;
+        margin-top: 0.65rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .rh-preset-btn {
+        background: #f1f5f9;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-sm);
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        color: var(--sap-muted);
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.15s ease;
+    }
+
+    .rh-preset-btn:hover {
+        background: #e2e8f0;
+        color: var(--sap-text);
+        border-color: #cbd5e1;
     }
 
     /* 2. Radar de Alertas y Semáforos de Acción Inmediata */
@@ -58,14 +84,16 @@
         gap: 12px;
         box-shadow: var(--sap-shadow-card);
         cursor: pointer;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         text-decoration: none;
         color: inherit;
+        outline: none;
     }
 
-    .rh-warning-kpi:hover {
+    .rh-warning-kpi:hover, .rh-warning-kpi:focus-visible {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        border-color: var(--sap-primary);
     }
 
     .rh-warning-icon {
@@ -79,23 +107,23 @@
     }
 
     .rh-warning-icon.danger {
-        background-color: #fee2e2;
-        color: #b91c1c;
+        background-color: var(--sap-error-bg);
+        color: var(--sap-error-text);
     }
 
     .rh-warning-icon.warning {
-        background-color: #fef3c7;
-        color: #d97706;
+        background-color: var(--sap-warning-bg);
+        color: var(--sap-warning-text);
     }
 
     .rh-warning-icon.info {
         background-color: #e0f2fe;
-        color: #0284c7;
+        color: #0369a1;
     }
 
     .rh-warning-icon.success {
-        background-color: #dcfce7;
-        color: #16a34a;
+        background-color: var(--sap-success-bg);
+        color: var(--sap-success-text);
     }
 
     .rh-warning-num {
@@ -106,15 +134,15 @@
     }
 
     .rh-warning-label {
-        font-size: 0.775rem;
+        font-size: 0.75rem;
         font-weight: 600;
         color: var(--sap-muted);
         text-transform: uppercase;
         letter-spacing: 0.03em;
-        margin-top: 2px;
+        margin-top: 3px;
     }
 
-    /* 3. Executive Insights Grid */
+    /* 3. Executive Insights Grid (Normalized: Clean 1px border without AI slop side-tabs) */
     .rh-insights-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
@@ -131,26 +159,26 @@
         flex-direction: column;
         justify-content: space-between;
         gap: 0.65rem;
-        border-left: 4px solid var(--sap-primary);
+        position: relative;
     }
 
     .rh-insight-card.alerta {
-        border-left-color: #bb0000;
+        border-color: var(--sap-error-border);
         background: #fffafa;
     }
 
     .rh-insight-card.aviso {
-        border-left-color: #b25900;
+        border-color: var(--sap-warning-border);
         background: #fffdf8;
     }
 
     .rh-insight-card.exito {
-        border-left-color: #107e3e;
+        border-color: var(--sap-success-border);
         background: #f7fdf9;
     }
 
     .rh-insight-card.info {
-        border-left-color: #0070f2;
+        border-color: #bae6fd;
         background: #f8fbff;
     }
 
@@ -162,14 +190,17 @@
     }
 
     .rh-insight-title {
-        font-size: 0.825rem;
+        font-size: 0.85rem;
         font-weight: 700;
         color: var(--sap-text);
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .rh-insight-text {
-        font-size: 0.8rem;
+        font-size: 0.8125rem;
         color: #334155;
         line-height: 1.45;
         margin: 0;
@@ -178,8 +209,8 @@
     .rh-insight-action {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #0284c7;
-        background: #f0f9ff;
+        color: #0369a1;
+        background: #e0f2fe;
         padding: 4px 8px;
         border-radius: 4px;
         display: inline-block;
@@ -200,7 +231,7 @@
         background: #dcfce7;
     }
 
-    /* 4. Navegación de Pestañas BI */
+    /* 4. Navegación de Pestañas BI (Accessible WAI-ARIA) */
     .rh-bi-tabs-bar {
         display: flex;
         gap: 6px;
@@ -229,9 +260,10 @@
         gap: 8px;
         transition: all 0.15s ease;
         white-space: nowrap;
+        outline: none;
     }
 
-    .rh-bi-tab-btn:hover {
+    .rh-bi-tab-btn:hover, .rh-bi-tab-btn:focus-visible {
         background-color: #f1f5f9;
         color: var(--sap-text);
     }
@@ -349,7 +381,7 @@
     }
 
     .rh-balance-lbl {
-        font-size: 0.725rem;
+        font-size: 0.75rem;
         font-weight: 600;
         color: var(--sap-muted);
         text-transform: uppercase;
@@ -382,7 +414,7 @@
         align-items: center;
     }
 
-    /* Semáforo Pill */
+    /* Semáforo Pill (Normalized for WCAG AA >= 4.5:1) */
     .rh-semaforo-pill {
         display: inline-flex;
         align-items: center;
@@ -394,21 +426,21 @@
     }
 
     .rh-semaforo-pill.verde {
-        background: #dcfce7;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
+        background: var(--sap-success-bg);
+        color: var(--sap-success-text);
+        border: 1px solid var(--sap-success-border);
     }
 
     .rh-semaforo-pill.amarillo {
-        background: #fef3c7;
-        color: #b45309;
-        border: 1px solid #fde68a;
+        background: var(--sap-warning-bg);
+        color: var(--sap-warning-text);
+        border: 1px solid var(--sap-warning-border);
     }
 
     .rh-semaforo-pill.rojo {
-        background: #fee2e2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
+        background: var(--sap-error-bg);
+        color: var(--sap-error-text);
+        border: 1px solid var(--sap-error-border);
     }
 
     .rh-semaforo-dot {
@@ -416,6 +448,14 @@
         height: 7px;
         border-radius: 50%;
         background-color: currentColor;
+    }
+
+    /* Standardized Caption Text (Normalized: >= 12px floor) */
+    .rh-table-subtext {
+        font-size: 0.75rem;
+        color: var(--sap-muted);
+        line-height: 1.3;
+        margin-top: 2px;
     }
 </style>
 {% endblock %}
@@ -442,9 +482,11 @@
         </div>
     </div>
 
-    <!-- 1. BARRA DE FILTROS RÁPIDOS -->
+    <!-- 1. BARRA DE FILTROS RÁPIDOS (Normalizada con Marca y Ciudad) -->
     <div class="rh-filter-card">
-        <form method="get" action="{% url 'vista_reportes' %}">
+        <form method="get" action="{% url 'vista_reportes' %}" id="formFiltrosReportes">
+            <input type="hidden" name="tab" id="form-active-tab" value="{{ active_tab }}">
+            
             <div class="rh-filter-grid">
                 <!-- Fecha Inicio -->
                 <div class="sap-form-group" style="margin-bottom: 0;">
@@ -466,6 +508,19 @@
                         {% for a in asesoras_disponibles %}
                         <option value="{{ a.id }}" {% if filtros_aplicados.asesora == a.id|stringformat:"s" %}selected{% endif %}>
                             {{ a.get_full_name|default:a.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Marca (Automotriz) -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="marca">Marca:</label>
+                    <select name="marca" id="marca" class="sap-select">
+                        <option value="">-- Todas las marcas --</option>
+                        {% for m in marcas_disponibles %}
+                        <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>
+                            {{ m.nombre }}
                         </option>
                         {% endfor %}
                     </select>
@@ -497,6 +552,19 @@
                     </select>
                 </div>
 
+                <!-- Ciudad -->
+                <div class="sap-form-group" style="margin-bottom: 0;">
+                    <label class="sap-label" for="ciudad">Ciudad:</label>
+                    <select name="ciudad" id="ciudad" class="sap-select">
+                        <option value="">-- Todas las ciudades --</option>
+                        {% for c in ciudades_disponibles %}
+                        <option value="{{ c.codigo }}" {% if filtros_aplicados.ciudad == c.codigo %}selected{% endif %}>
+                            {{ c.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- Botones Filtrar / Limpiar -->
                 <div style="display: flex; gap: 6px;">
                     <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="flex: 1;">
@@ -508,72 +576,94 @@
                     </a>
                 </div>
             </div>
+
+            <!-- Atajos rápidos de fecha -->
+            <div class="rh-date-presets">
+                <span style="font-size: 0.75rem; color: var(--sap-muted); font-weight: 600;">Atajos de Fecha:</span>
+                <button type="button" class="rh-preset-btn" onclick="setPresetRango('mes');">Mes Actual</button>
+                <button type="button" class="rh-preset-btn" onclick="setPresetRango('trimestre');">Últimos 90 Días</button>
+                <button type="button" class="rh-preset-btn" onclick="setPresetRango('anio');">Año en Curso</button>
+                <button type="button" class="rh-preset-btn" onclick="setPresetRango('todo');">Todo el Histórico</button>
+            </div>
         </form>
     </div>
 
     <!-- 2. RADAR DE ALERTA TEMPRANA Y SEMÁFOROS DE ACCIÓN INMEDIATA -->
     <div class="rh-early-warning-grid">
         <!-- Tarjeta 1: Vacantes Atoradas / Críticas -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-alertas');">
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-alertas');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-alertas');}" tabindex="0" role="button" aria-label="Ver vacantes críticas y atoradas">
             <div class="rh-warning-icon danger">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
             </div>
             <div>
-                <div class="rh-warning-num" style="color: #b91c1c;">{{ total_atoradas_count }}</div>
+                <div class="rh-warning-num" style="color: var(--sap-error-text);">{{ total_atoradas_count }}</div>
                 <div class="rh-warning-label">Vacantes Críticas / Atoradas</div>
             </div>
         </div>
 
         <!-- Tarjeta 2: Cumplimiento SLA Global -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-resumen');">
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-resumen');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-resumen');}" tabindex="0" role="button" aria-label="Ver resumen de cumplimiento de SLA">
             <div class="rh-warning-icon {% if cumplimiento_sla >= 85 %}success{% elif cumplimiento_sla >= 70 %}warning{% else %}danger{% endif %}">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
             </div>
             <div>
-                <div class="rh-warning-num" style="color: {% if cumplimiento_sla >= 85 %}#16a34a{% elif cumplimiento_sla >= 70 %}#d97706{% else %}#b91c1c{% endif %};">{{ cumplimiento_sla }}%</div>
+                <div class="rh-warning-num" style="color: {% if cumplimiento_sla >= 85 %}var(--sap-success-text){% elif cumplimiento_sla >= 70 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">{{ cumplimiento_sla }}%</div>
                 <div class="rh-warning-label">Cumplimiento SLA a Tiempo</div>
             </div>
         </div>
 
         <!-- Tarjeta 3: Candidatos Estancados (+7d) -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-alertas');">
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-alertas');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-alertas');}" tabindex="0" role="button" aria-label="Ver candidatos detenidos más de 7 días">
             <div class="rh-warning-icon warning">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
             </div>
             <div>
-                <div class="rh-warning-num" style="color: #d97706;">{{ total_estancados_count }}</div>
+                <div class="rh-warning-num" style="color: var(--sap-warning-text);">{{ total_estancados_count }}</div>
                 <div class="rh-warning-label">Candidatos Detenidos (+7 días)</div>
             </div>
         </div>
 
         <!-- Tarjeta 4: Asesoras en Riesgo -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-auditoria');">
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-auditoria');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-auditoria');}" tabindex="0" role="button" aria-label="Ver auditoría de asesoras en riesgo">
             <div class="rh-warning-icon {% if asesoras_riesgo_count > 0 %}danger{% else %}success{% endif %}">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
             </div>
             <div>
-                <div class="rh-warning-num" style="color: {% if asesoras_riesgo_count > 0 %}#b91c1c{% else %}#16a34a{% endif %};">{{ asesoras_riesgo_count }}</div>
+                <div class="rh-warning-num" style="color: {% if asesoras_riesgo_count > 0 %}var(--sap-error-text){% else %}var(--sap-success-text){% endif %};">{{ asesoras_riesgo_count }}</div>
                 <div class="rh-warning-label">Asesoras en Semáforo Rojo</div>
             </div>
         </div>
     </div>
 
-    <!-- 3. DIAGNÓSTICOS EJECUTIVOS DE CONSULTORÍA SENIOR (INSIGHTS) -->
+    <!-- 3. DIAGNÓSTICOS EJECUTIVOS DE CONSULTORÍA (Normalizados sin side-tabs ni emojis) -->
     {% if insights_consultoria %}
     <div>
-        <div class="sap-section-label" style="margin-bottom: 0.5rem;">Insights Estratégicos & Recomendaciones de Acción</div>
+        <div class="sap-section-label" style="margin-bottom: 0.5rem;">Diagnóstico Estratégico & Recomendaciones de Acción</div>
         <div class="rh-insights-grid">
             {% for ins in insights_consultoria %}
             <div class="rh-insight-card {{ ins.tipo }}">
                 <div class="rh-insight-header">
-                    <h3 class="rh-insight-title">{{ ins.titulo }}</h3>
+                    <h2 class="rh-insight-title">
+                        <svg class="sap-icon" style="width: 16px; height: 16px; color: {% if ins.tipo == 'alerta' %}var(--sap-error-text){% elif ins.tipo == 'aviso' %}var(--sap-warning-text){% elif ins.tipo == 'exito' %}var(--sap-success-text){% else %}var(--sap-primary){% endif %};" viewBox="0 0 24 24">
+                            {% if ins.tipo == 'alerta' %}
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                            {% elif ins.tipo == 'aviso' %}
+                            <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2z"/>
+                            {% elif ins.tipo == 'exito' %}
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            {% else %}
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                            {% endif %}
+                        </svg>
+                        {{ ins.titulo }}
+                    </h2>
                     <span class="sap-badge {% if ins.tipo == 'alerta' %}sap-badge-error{% elif ins.tipo == 'aviso' %}sap-badge-warning{% elif ins.tipo == 'exito' %}sap-badge-success{% else %}sap-badge-info{% endif %}">
                         {{ ins.badge }}
                     </span>
                 </div>
                 <p class="rh-insight-text">{{ ins.texto }}</p>
                 <div>
-                    <span class="rh-insight-action">💡 <strong>Acción Sugerida:</strong> {{ ins.accion }}</span>
+                    <span class="rh-insight-action"><strong>Acción Sugerida:</strong> {{ ins.accion }}</span>
                 </div>
             </div>
             {% endfor %}
@@ -581,32 +671,37 @@
     </div>
     {% endif %}
 
-    <!-- 4. BARRA DE NAVEGACIÓN DE PESTAÑAS BI -->
-    <div class="rh-bi-tabs-bar">
-        <button type="button" class="rh-bi-tab-btn active" id="btn-tab-resumen" onclick="activarPestañaBI('tab-resumen');">
-            <span>📊 Reporte 1: Resumen & Balance</span>
+    <!-- 4. BARRA DE NAVEGACIÓN DE PESTAÑAS BI (Accessible WAI-ARIA) -->
+    <div class="rh-bi-tabs-bar" role="tablist" aria-label="Reportes y Analítica de Talento">
+        <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-resumen' %}active{% endif %}" id="btn-tab-resumen" role="tab" aria-selected="{% if active_tab == 'tab-resumen' %}true{% else %}false{% endif %}" aria-controls="tab-resumen" tabindex="0" onclick="activarPestañaBI('tab-resumen');">
+            <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            <span>Reporte 1: Resumen & Balance</span>
         </button>
-        <button type="button" class="rh-bi-tab-btn" id="btn-tab-auditoria" onclick="activarPestañaBI('tab-auditoria');">
-            <span>🎯 Reporte 2: Auditoría Asesoras & Bono</span>
+        <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-auditoria' %}active{% endif %}" id="btn-tab-auditoria" role="tab" aria-selected="{% if active_tab == 'tab-auditoria' %}true{% else %}false{% endif %}" aria-controls="tab-auditoria" tabindex="0" onclick="activarPestañaBI('tab-auditoria');">
+            <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+            <span>Reporte 2: Auditoría Asesoras & Bono</span>
         </button>
-        <button type="button" class="rh-bi-tab-btn" id="btn-tab-sabana" onclick="activarPestañaBI('tab-sabana');">
-            <span>📋 Reporte 3: Sábana Operativa</span>
+        <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-sabana' %}active{% endif %}" id="btn-tab-sabana" role="tab" aria-selected="{% if active_tab == 'tab-sabana' %}true{% else %}false{% endif %}" aria-controls="tab-sabana" tabindex="0" onclick="activarPestañaBI('tab-sabana');">
+            <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            <span>Reporte 3: Sábana Operativa</span>
         </button>
-        <button type="button" class="rh-bi-tab-btn" id="btn-tab-alertas" onclick="activarPestañaBI('tab-alertas');">
-            <span>🚨 Radar de Alertas & Cuellos de Botella</span>
+        <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-alertas' %}active{% endif %}" id="btn-tab-alertas" role="tab" aria-selected="{% if active_tab == 'tab-alertas' %}true{% else %}false{% endif %}" aria-controls="tab-alertas" tabindex="0" onclick="activarPestañaBI('tab-alertas');">
+            <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <span>Radar de Alertas & Cuellos de Botella</span>
             {% if total_atoradas_count > 0 %}
-            <span class="sap-badge sap-badge-error" style="font-size: 0.68rem; padding: 1px 6px;">{{ total_atoradas_count }}</span>
+            <span class="sap-badge sap-badge-error" style="font-size: 0.75rem; padding: 2px 7px;">{{ total_atoradas_count }}</span>
             {% endif %}
         </button>
-        <button type="button" class="rh-bi-tab-btn" id="btn-tab-agencias" onclick="activarPestañaBI('tab-agencias');">
-            <span>🏢 Matriz por Agencias</span>
+        <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-agencias' %}active{% endif %}" id="btn-tab-agencias" role="tab" aria-selected="{% if active_tab == 'tab-agencias' %}true{% else %}false{% endif %}" aria-controls="tab-agencias" tabindex="0" onclick="activarPestañaBI('tab-agencias');">
+            <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+            <span>Matriz por Agencias</span>
         </button>
     </div>
 
     <!-- ===================================================================== -->
     <!-- PANEL 1: REPORTE 1 — RESUMEN EJECUTIVO & BALANCE DE TALENTO           -->
     <!-- ===================================================================== -->
-    <div id="tab-resumen" class="rh-bi-panel active">
+    <div id="tab-resumen" class="rh-bi-panel {% if active_tab == 'tab-resumen' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-tab-resumen">
         <!-- Encabezado de Reporte y Botón Exportar -->
         <div class="rh-report-action-header">
             <div>
@@ -618,7 +713,7 @@
                     Balance matemático cuadrado de requisiciones, cumplimiento de SLA y desglose de plazas por agencia y puesto.
                 </div>
             </div>
-            <a href="{% url 'vista_reportes' %}?export=resumen_ejecutivo&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="rh-btn-excel-export">
+            <a href="{% url 'vista_reportes' %}?export=resumen_ejecutivo&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="rh-btn-excel-export">
                 <svg class="sap-icon" style="width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                 <span>Exportar Reporte 1 a Excel (.xlsx)</span>
             </a>
@@ -626,8 +721,8 @@
 
         <!-- Balance Cuadrado Matemáticamente -->
         <div class="rh-balance-box">
-            <div style="font-size: 0.825rem; font-weight: 700; color: var(--sap-text); text-transform: uppercase; letter-spacing: 0.04em;">
-                ⚖️ Balance Cuadrado de Requisiciones y Plazas
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--sap-text); text-transform: uppercase; letter-spacing: 0.04em;">
+                Balance Cuadrado de Requisiciones y Plazas
             </div>
             <div class="rh-balance-formula">
                 <div class="rh-balance-item highlight">
@@ -635,15 +730,15 @@
                     <div class="rh-balance-lbl">Plazas Solicitadas</div>
                 </div>
                 <div class="rh-balance-item">
-                    <div class="rh-balance-val" style="color: #107e3e;">{{ total_plazas_cubiertas }}</div>
+                    <div class="rh-balance-val" style="color: var(--sap-success-text);">{{ total_plazas_cubiertas }}</div>
                     <div class="rh-balance-lbl">Plazas Cubiertas</div>
                 </div>
                 <div class="rh-balance-item">
-                    <div class="rh-balance-val" style="color: #b25900;">{{ total_plazas_pendientes }}</div>
+                    <div class="rh-balance-val" style="color: var(--sap-warning-text);">{{ total_plazas_pendientes }}</div>
                     <div class="rh-balance-lbl">Plazas Pendientes</div>
                 </div>
                 <div class="rh-balance-item">
-                    <div class="rh-balance-val" style="color: #64748b;">{{ total_canceladas }}</div>
+                    <div class="rh-balance-val" style="color: var(--sap-muted);">{{ total_canceladas }}</div>
                     <div class="rh-balance-lbl">Canceladas</div>
                 </div>
                 <div class="rh-balance-item">
@@ -651,7 +746,7 @@
                     <div class="rh-balance-lbl">Time to Fill Promedio</div>
                 </div>
                 <div class="rh-balance-item">
-                    <div class="rh-balance-val" style="color: #0284c7;">{{ candidatos_listos_ingreso }}</div>
+                    <div class="rh-balance-val" style="color: #0369a1;">{{ candidatos_listos_ingreso }}</div>
                     <div class="rh-balance-lbl">Listos para Ingreso</div>
                 </div>
             </div>
@@ -710,14 +805,14 @@
                             <tr>
                                 <td>
                                     <strong>{{ row.agencia }}</strong>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ row.marca }}</div>
+                                    <div class="rh-table-subtext">{{ row.marca }}</div>
                                 </td>
                                 <td>{{ row.ciudad }}</td>
                                 <td><strong>{{ row.puesto }}</strong></td>
                                 <td style="text-align: center;" class="tabular-nums">{{ row.total_vacantes }}</td>
                                 <td style="text-align: center;" class="tabular-nums" style="font-weight: 600;">{{ row.activas }}</td>
                                 <td style="text-align: center;" class="tabular-nums">{{ row.solicitadas }}</td>
-                                <td style="text-align: center;" class="tabular-nums" style="color: #107e3e; font-weight: 600;">{{ row.cubiertas_plazas }}</td>
+                                <td style="text-align: center;" class="tabular-nums" style="color: var(--sap-success-text); font-weight: 600;">{{ row.cubiertas_plazas }}</td>
                                 <td style="text-align: center;" class="tabular-nums" style="font-weight: 700;">{{ row.pendientes }}</td>
                                 <td style="text-align: center;" class="tabular-nums">
                                     {% if row.vencidas > 0 %}
@@ -726,7 +821,7 @@
                                         <span class="sap-badge sap-badge-success">0</span>
                                     {% endif %}
                                 </td>
-                                <td style="text-align: center;" class="tabular-nums" style="color: #0284c7; font-weight: 600;">{{ row.listos_ingreso }}</td>
+                                <td style="text-align: center;" class="tabular-nums" style="color: #0369a1; font-weight: 600;">{{ row.listos_ingreso }}</td>
                                 <td style="text-align: center;" class="tabular-nums">
                                     <span class="sap-badge {% if row.cobertura_pct >= 80 %}sap-badge-success{% elif row.cobertura_pct >= 50 %}sap-badge-warning{% else %}sap-badge-neutral{% endif %}">
                                         {{ row.cobertura_pct }}%
@@ -748,7 +843,7 @@
     <!-- ===================================================================== -->
     <!-- PANEL 2: REPORTE 2 — AUDITORÍA DE ASESORAS, BONO & RENDIMIENTO        -->
     <!-- ===================================================================== -->
-    <div id="tab-auditoria" class="rh-bi-panel">
+    <div id="tab-auditoria" class="rh-bi-panel {% if active_tab == 'tab-auditoria' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-tab-auditoria">
         <!-- Encabezado de Reporte y Botón Exportar -->
         <div class="rh-report-action-header">
             <div>
@@ -760,7 +855,7 @@
                     Scorecard por asesora con semáforos de salud, cumplimiento estricto de bono en días meta y efectividad en filtros técnicos.
                 </div>
             </div>
-            <a href="{% url 'vista_reportes' %}?export=auditoria_bono&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="rh-btn-excel-export">
+            <a href="{% url 'vista_reportes' %}?export=auditoria_bono&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="rh-btn-excel-export">
                 <svg class="sap-icon" style="width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                 <span>Exportar Reporte 2 a Excel (.xlsx)</span>
             </a>
@@ -799,7 +894,7 @@
                             <tr>
                                 <td>
                                     <strong>{{ a.nombre }}</strong>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ a.email|default:"Sin email" }}</div>
+                                    <div class="rh-table-subtext">{{ a.email|default:"Sin email registrado" }}</div>
                                 </td>
                                 <td style="text-align: center;">
                                     <span class="rh-semaforo-pill {{ a.semaforo }}">
@@ -809,7 +904,7 @@
                                 </td>
                                 <td style="text-align: center;" class="tabular-nums">{{ a.total_asignadas }}</td>
                                 <td style="text-align: center;" class="tabular-nums" style="font-weight: 600;">{{ a.activas }}</td>
-                                <td style="text-align: center;" class="tabular-nums" style="color: #107e3e; font-weight: 600;">{{ a.cubiertas }}</td>
+                                <td style="text-align: center;" class="tabular-nums" style="color: var(--sap-success-text); font-weight: 600;">{{ a.cubiertas }}</td>
                                 <td style="text-align: center;" class="tabular-nums">
                                     {% if a.vencidas > 0 %}
                                         <span class="sap-badge sap-badge-error">{{ a.vencidas }}</span>
@@ -822,14 +917,14 @@
                                     <span class="sap-badge sap-badge-success" style="font-weight: 700;">{{ a.bono_cumplido }}</span>
                                 </td>
                                 <td style="text-align: center;" class="tabular-nums">
-                                    <strong style="color: {% if a.bono_pct >= 80 %}#107e3e{% elif a.bono_pct >= 50 %}#b25900{% else %}#bb0000{% endif %};">
+                                    <strong style="color: {% if a.bono_pct >= 80 %}var(--sap-success-text){% elif a.bono_pct >= 50 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">
                                         {{ a.bono_pct }}%
                                     </strong>
                                 </td>
                                 <td style="text-align: center;" class="tabular-nums">{{ a.enviados_jefe }}</td>
                                 <td style="text-align: center;" class="tabular-nums" style="font-weight: 600;">{{ a.contratados }}</td>
                                 <td style="text-align: center;" class="tabular-nums">{{ a.tasa_conversion }}%</td>
-                                <td style="font-size: 0.785rem; color: #475569;">{{ a.diagnostico }}</td>
+                                <td style="font-size: 0.775rem; color: #475569;">{{ a.diagnostico }}</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -874,19 +969,19 @@
                                     <a href="{% url 'puesto_detalle' vac.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
                                         {{ vac.puesto }}
                                     </a>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ vac.marca }} &bull; #{{ vac.id }}</div>
+                                    <div class="rh-table-subtext">{{ vac.marca }} &bull; #{{ vac.id }}</div>
                                 </td>
                                 <td>
                                     <div>{{ vac.agencia }}</div>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ vac.ciudad }}</div>
+                                    <div class="rh-table-subtext">{{ vac.ciudad }}</div>
                                 </td>
                                 <td>{{ vac.asesora }}</td>
                                 <td style="text-align: center;" class="tabular-nums">
                                     <span style="font-weight: 700;">{{ vac.dias_transcurridos }}</span> / {{ vac.dias_meta }}d
                                     {% if vac.dias_transcurridos > vac.dias_meta %}
-                                        <div style="font-size: 0.68rem; color: #bb0000; font-weight: 600;">Vencida</div>
+                                        <div style="font-size: 0.75rem; color: var(--sap-error-text); font-weight: 600;">Vencida</div>
                                     {% else %}
-                                        <div style="font-size: 0.68rem; color: #107e3e;">En tiempo</div>
+                                        <div style="font-size: 0.75rem; color: var(--sap-success-text);">En tiempo</div>
                                     {% endif %}
                                 </td>
                                 <td style="text-align: center;" class="tabular-nums">
@@ -927,7 +1022,7 @@
     <!-- ===================================================================== -->
     <!-- PANEL 3: REPORTE 3 — SÁBANA OPERATIVA & HISTÓRICO                     -->
     <!-- ===================================================================== -->
-    <div id="tab-sabana" class="rh-bi-panel">
+    <div id="tab-sabana" class="rh-bi-panel {% if active_tab == 'tab-sabana' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-tab-sabana">
         <!-- Encabezado de Reporte y Botón Exportar -->
         <div class="rh-report-action-header">
             <div>
@@ -940,11 +1035,11 @@
                 </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="{% url 'vista_reportes' %}?export=sabana_historica&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="rh-btn-excel-export">
+                <a href="{% url 'vista_reportes' %}?export=sabana_historica&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="rh-btn-excel-export">
                     <svg class="sap-icon" style="width: 17px; height: 17px;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                     <span>Exportar Reporte 3 (.xlsx)</span>
                 </a>
-                <a href="{% url 'vista_reportes' %}?export=csv_master&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="sap-btn sap-btn-secondary sap-btn-sm" style="height: 38px;">
+                <a href="{% url 'vista_reportes' %}?export=csv_master&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm" style="height: 38px;">
                     CSV Maestro
                 </a>
             </div>
@@ -981,11 +1076,11 @@
                                     <a href="{% url 'puesto_detalle' p.id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
                                         {{ p.titulo.nombre }}
                                     </a>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">ID #{{ p.id }}</div>
+                                    <div class="rh-table-subtext">ID #{{ p.id }}</div>
                                 </td>
                                 <td>
                                     <div>{{ p.agencia }}</div>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ p.marca.nombre }}</div>
+                                    <div class="rh-table-subtext">{{ p.marca.nombre }}</div>
                                 </td>
                                 <td>{{ p.get_ciudad_display }}</td>
                                 <td>{{ p.asesora_encargada.get_full_name|default:p.asesora_encargada.username|default:"Sin Asignar" }}</td>
@@ -996,9 +1091,9 @@
                                 <td>
                                     <span class="tabular-nums" style="font-weight: 600;">{{ p.dias_transcurridos }} / {{ p.dias_meta }}d</span>
                                     {% if p.dias_transcurridos > p.dias_meta %}
-                                        <span class="sap-badge sap-badge-error" style="font-size: 0.68rem; margin-left: 3px;">Vencida</span>
+                                        <span class="sap-badge sap-badge-error" style="font-size: 0.75rem; margin-left: 3px;">Vencida</span>
                                     {% else %}
-                                        <span class="sap-badge sap-badge-success" style="font-size: 0.68rem; margin-left: 3px;">En tiempo</span>
+                                        <span class="sap-badge sap-badge-success" style="font-size: 0.75rem; margin-left: 3px;">En tiempo</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -1023,7 +1118,7 @@
                     </table>
                 </div>
 
-                <!-- Paginación de Sábana -->
+                <!-- Paginación con preservación estricta de tab activa -->
                 {% if paginator.num_pages > 1 %}
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--sap-border-subtle);">
                     <div style="font-size: 0.8125rem; color: var(--sap-muted);">
@@ -1031,10 +1126,10 @@
                     </div>
                     <div style="display: flex; gap: 4px;">
                         {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="sap-btn sap-btn-secondary sap-btn-sm">&laquo; Anterior</a>
+                        <a href="?page={{ page_obj.previous_page_number }}&tab=tab-sabana&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm">&laquo; Anterior</a>
                         {% endif %}
                         {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="sap-btn sap-btn-secondary sap-btn-sm">Siguiente &raquo;</a>
+                        <a href="?page={{ page_obj.next_page_number }}&tab=tab-sabana&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm">Siguiente &raquo;</a>
                         {% endif %}
                     </div>
                 </div>
@@ -1088,15 +1183,15 @@
     <!-- ===================================================================== -->
     <!-- PANEL 4: RADAR DE ALERTAS & CUELLOS DE BOTELLA OPERATIVOS             -->
     <!-- ===================================================================== -->
-    <div id="tab-alertas" class="rh-bi-panel">
+    <div id="tab-alertas" class="rh-bi-panel {% if active_tab == 'tab-alertas' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-tab-alertas">
         <div class="rh-report-action-header">
             <div>
                 <h2 class="rh-report-action-title">
-                    <svg class="sap-icon" style="color: #bb0000; width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <svg class="sap-icon" style="color: var(--sap-error-text); width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                     Radar de Alertas Accionables & Análisis de Cuellos de Botella
                 </h2>
                 <div class="rh-report-action-desc">
-                    Identificación inmediata de vacantes atoradas, procesos estancados y tiempos de permanencia por etapa del embudo.
+                    Identificación de vacantes atoradas, procesos estancados y tiempos de permanencia por etapa del embudo.
                 </div>
             </div>
             <span class="sap-badge sap-badge-error" style="font-size: 0.825rem; padding: 5px 12px;">
@@ -1134,12 +1229,12 @@
                                     <a href="{% url 'puesto_detalle' item.puesto.id %}" style="font-weight: 700; color: var(--sap-text); text-decoration: none;">
                                         {{ item.puesto.titulo.nombre }}
                                     </a>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ item.puesto.marca.nombre }} &bull; #{{ item.puesto.id }}</div>
+                                    <div class="rh-table-subtext">{{ item.puesto.marca.nombre }} &bull; #{{ item.puesto.id }}</div>
                                 </td>
                                 <td>{{ item.puesto.agencia }}</td>
                                 <td><strong>{{ item.asesora }}</strong></td>
                                 <td style="text-align: center;" class="tabular-nums">
-                                    <span style="font-weight: 700; color: {% if item.tipo == 'VENCIDA' %}#bb0000{% else %}#b25900{% endif %};">
+                                    <span style="font-weight: 700; color: {% if item.tipo == 'VENCIDA' %}var(--sap-error-text){% else %}var(--sap-warning-text){% endif %};">
                                         {{ item.dias_transcurridos }} / {{ item.dias_meta }}d
                                     </span>
                                 </td>
@@ -1162,8 +1257,8 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 2rem; color: #107e3e; font-weight: 600;">
-                                    🎉 ¡Excelente! No hay vacantes atoradas ni vencidas en este momento.
+                                <td colspan="8" style="text-align: center; padding: 2rem; color: var(--sap-success-text); font-weight: 600;">
+                                    No hay vacantes atoradas ni vencidas en este momento.
                                 </td>
                             </tr>
                             {% endfor %}
@@ -1187,11 +1282,13 @@
                     <div class="table-responsive">
                         <table class="display sap-table" style="width:100%" id="tablaCandidatosEstancados">
                             <thead>
-                                <th>Candidato</th>
-                                <th>Puesto / Agencia</th>
-                                <th>Etapa Actual</th>
-                                <th style="text-align: center;">Días Detenido</th>
-                                <th style="text-align: right;">Acción</th>
+                                <tr>
+                                    <th>Candidato</th>
+                                    <th>Puesto / Agencia</th>
+                                    <th>Etapa Actual</th>
+                                    <th style="text-align: center;">Días Detenido</th>
+                                    <th style="text-align: right;">Acción</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {% for cand in candidatos_estancados_detalle %}
@@ -1200,15 +1297,15 @@
                                         <a href="{% url 'detalle_proceso' cand.proceso_id %}" style="font-weight: 600; color: var(--sap-text); text-decoration: none;">
                                             {{ cand.candidato_nombre }}
                                         </a>
-                                        <div style="font-size: 0.72rem; color: var(--sap-muted);">Asesora: {{ cand.asesora }}</div>
+                                        <div class="rh-table-subtext">Asesora: {{ cand.asesora }}</div>
                                     </td>
                                     <td>
                                         <div>{{ cand.puesto_nombre }}</div>
-                                        <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ cand.agencia }}</div>
+                                        <div class="rh-table-subtext">{{ cand.agencia }}</div>
                                     </td>
                                     <td><span class="sap-badge sap-badge-warning">{{ cand.etapa }}</span></td>
                                     <td style="text-align: center;" class="tabular-nums">
-                                        <strong style="color: #b91c1c;">{{ cand.dias_en_etapa }} días</strong>
+                                        <strong style="color: var(--sap-error-text);">{{ cand.dias_en_etapa }} días</strong>
                                     </td>
                                     <td style="text-align: right;">
                                         <a href="{% url 'detalle_proceso' cand.proceso_id %}" class="sap-btn sap-btn-secondary sap-btn-sm" style="padding: 2px 7px;">
@@ -1237,7 +1334,7 @@
                 </div>
                 <div class="sap-card-body">
                     <div class="table-responsive">
-                        <table class="display sap-table" style="width:100%">
+                        <table class="display sap-table" style="width:100%" id="tablaCuellosBotella">
                             <thead>
                                 <tr>
                                     <th>Etapa del Embudo</th>
@@ -1258,11 +1355,11 @@
                                     </td>
                                     <td style="font-size: 0.785rem; color: var(--sap-muted);">
                                         {% if cb.promedio_dias >= 7 %}
-                                            🚨 Cuello de botella severo.
+                                            Punto crítico de retención.
                                         {% elif cb.promedio_dias >= 4 %}
-                                            ⚠️ Flujo moderado. Monitorear.
+                                            Flujo moderado. Monitorear.
                                         {% else %}
-                                            ✅ Flujo ágil y en tiempo.
+                                            Flujo ágil y en tiempo.
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -1282,7 +1379,7 @@
     <!-- ===================================================================== -->
     <!-- PANEL 5: MATRIZ POR AGENCIAS & SUCURSALES                             -->
     <!-- ===================================================================== -->
-    <div id="tab-agencias" class="rh-bi-panel">
+    <div id="tab-agencias" class="rh-bi-panel {% if active_tab == 'tab-agencias' %}active{% endif %}" role="tabpanel" aria-labelledby="btn-tab-agencias">
         <div class="rh-report-action-header">
             <div>
                 <h2 class="rh-report-action-title">
@@ -1293,7 +1390,7 @@
                     Consolidado territorial de plazas cubiertas, pendientes y cumplimiento de SLA por sucursal automotriz.
                 </div>
             </div>
-            <a href="{% url 'vista_reportes' %}?export=csv_agencias&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}" class="sap-btn sap-btn-secondary sap-btn-sm" style="height: 38px;">
+            <a href="{% url 'vista_reportes' %}?export=csv_agencias&fecha_desde={{ filtros_aplicados.fecha_desde }}&fecha_hasta={{ filtros_aplicados.fecha_hasta }}&asesora={{ filtros_aplicados.asesora }}&puesto={{ filtros_aplicados.puesto }}&agencia={{ filtros_aplicados.agencia }}&marca={{ filtros_aplicados.marca }}&ciudad={{ filtros_aplicados.ciudad }}" class="sap-btn sap-btn-secondary sap-btn-sm" style="height: 38px;">
                 Descargar CSV Agencias
             </a>
         </div>
@@ -1321,7 +1418,7 @@
                             <tr>
                                 <td>
                                     <strong>{{ ag.agencia }}</strong>
-                                    <div style="font-size: 0.72rem; color: var(--sap-muted);">{{ ag.marca }}</div>
+                                    <div class="rh-table-subtext">{{ ag.marca }}</div>
                                 </td>
                                 <td>{{ ag.ciudad }}</td>
                                 <td style="text-align: center;" class="tabular-nums">{{ ag.total_vacantes }}</td>
@@ -1335,7 +1432,7 @@
                                 </td>
                                 <td style="text-align: center;" class="tabular-nums">{{ ag.cubiertas }}</td>
                                 <td style="text-align: center;" class="tabular-nums">{{ ag.plazas_solicitadas }}</td>
-                                <td style="text-align: center;" class="tabular-nums" style="color: #107e3e; font-weight: 600;">{{ ag.plazas_cubiertas }}</td>
+                                <td style="text-align: center;" class="tabular-nums" style="color: var(--sap-success-text); font-weight: 600;">{{ ag.plazas_cubiertas }}</td>
                                 <td style="text-align: center;" class="tabular-nums" style="font-weight: 700;">{{ ag.plazas_pendientes }}</td>
                                 <td style="text-align: center;" class="tabular-nums">
                                     <span class="sap-badge {% if ag.cumplimiento_sla >= 80 %}sap-badge-success{% elif ag.cumplimiento_sla >= 60 %}sap-badge-warning{% else %}sap-badge-error{% endif %}">
@@ -1357,7 +1454,7 @@
 
 </div>
 
-<!-- Scripts de Interacción y Renderizado de Gráficos -->
+<!-- Scripts de Interacción, DataTables y Renderizado de Gráficos -->
 <script>
 function activarPestañaBI(tabId) {
     document.querySelectorAll('.rh-bi-panel').forEach(function(panel) {
@@ -1365,6 +1462,7 @@ function activarPestañaBI(tabId) {
     });
     document.querySelectorAll('.rh-bi-tab-btn').forEach(function(btn) {
         btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
     });
     
     var panelTarget = document.getElementById(tabId);
@@ -1375,6 +1473,12 @@ function activarPestañaBI(tabId) {
     var btnTarget = document.getElementById('btn-' + tabId);
     if (btnTarget) {
         btnTarget.classList.add('active');
+        btnTarget.setAttribute('aria-selected', 'true');
+    }
+    
+    var formTabInput = document.getElementById('form-active-tab');
+    if (formTabInput) {
+        formTabInput.value = tabId;
     }
     
     // Almacenar tab activa en URL sin recargar
@@ -1383,6 +1487,33 @@ function activarPestañaBI(tabId) {
         url.searchParams.set('tab', tabId);
         window.history.replaceState({}, '', url);
     } catch(e) {}
+}
+
+function setPresetRango(tipo) {
+    var hoy = new Date();
+    var desdeInput = document.getElementById('fecha_desde');
+    var hastaInput = document.getElementById('fecha_hasta');
+    
+    function fmt(d) {
+        return d.toISOString().split('T')[0];
+    }
+    
+    if (tipo === 'mes') {
+        var inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        desdeInput.value = fmt(inicioMes);
+        hastaInput.value = fmt(hoy);
+    } else if (tipo === 'trimestre') {
+        var d90 = new Date(hoy.getTime() - (90 * 24 * 60 * 60 * 1000));
+        desdeInput.value = fmt(d90);
+        hastaInput.value = fmt(hoy);
+    } else if (tipo === 'anio') {
+        var inicioAnio = new Date(hoy.getFullYear(), 0, 1);
+        desdeInput.value = fmt(inicioAnio);
+        hastaInput.value = fmt(hoy);
+    } else if (tipo === 'todo') {
+        desdeInput.value = '';
+        hastaInput.value = '';
+    }
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -1397,34 +1528,36 @@ document.addEventListener("DOMContentLoaded", function() {
     try {
         var embudoLabels = {{ chart_embudo_labels_json|safe }};
         var embudoData = {{ chart_embudo_data_json|safe }};
-        var ctxEmbudo = document.getElementById('chartEmbudo').getContext('2d');
-        new Chart(ctxEmbudo, {
-            type: 'bar',
-            data: {
-                labels: embudoLabels,
-                datasets: [{
-                    label: 'Vacantes en Etapa',
-                    data: embudoData,
-                    backgroundColor: [
-                        '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'
-                    ],
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+        var ctxEmbudo = document.getElementById('chartEmbudo');
+        if (ctxEmbudo) {
+            new Chart(ctxEmbudo.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: embudoLabels,
+                    datasets: [{
+                        label: 'Vacantes en Etapa',
+                        data: embudoData,
+                        backgroundColor: [
+                            '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'
+                        ],
+                        borderRadius: 4
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, precision: 0 }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     } catch(e) {
         console.error("Error al inicializar chartEmbudo:", e);
     }
@@ -1434,44 +1567,90 @@ document.addEventListener("DOMContentLoaded", function() {
         var asesorasLabels = {{ chart_asesoras_labels_json|safe }};
         var asesorasActivas = {{ chart_asesoras_activas_json|safe }};
         var asesorasCubiertas = {{ chart_asesoras_cubiertas_json|safe }};
-        var ctxAsesoras = document.getElementById('chartAsesoras').getContext('2d');
-        new Chart(ctxAsesoras, {
-            type: 'bar',
-            data: {
-                labels: asesorasLabels,
-                datasets: [
-                    {
-                        label: 'Activas',
-                        data: asesorasActivas,
-                        backgroundColor: '#0070f2',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Cubiertas',
-                        data: asesorasCubiertas,
-                        backgroundColor: '#107e3e',
-                        borderRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top' }
+        var ctxAsesoras = document.getElementById('chartAsesoras');
+        if (ctxAsesoras) {
+            new Chart(ctxAsesoras.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: asesorasLabels,
+                    datasets: [
+                        {
+                            label: 'Activas',
+                            data: asesorasActivas,
+                            backgroundColor: '#0070f2',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Cubiertas',
+                            data: asesorasCubiertas,
+                            backgroundColor: '#107e3e',
+                            borderRadius: 4
+                        }
+                    ]
                 },
-                scales: {
-                    x: { stacked: true },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, precision: 0 }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     } catch(e) {
         console.error("Error al inicializar chartAsesoras:", e);
+    }
+
+    // 4. Inicialización de DataTables con ordenamiento y búsqueda en español
+    if (window.jQuery && typeof window.jQuery.fn.DataTable === 'function') {
+        var dtConfigSpanish = {
+            language: {
+                search: "Buscar en tabla:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                infoEmpty: "Sin registros disponibles",
+                infoFiltered: "(filtrado de _MAX_ registros en total)",
+                zeroRecords: "No se encontraron coincidencias",
+                paginate: {
+                    first: "Primero",
+                    previous: "Anterior",
+                    next: "Siguiente",
+                    last: "Último"
+                }
+            },
+            pageLength: 25,
+            responsive: true
+        };
+
+        if ($('#tablaDesglosePuestos').length && !$.fn.DataTable.isDataTable('#tablaDesglosePuestos')) {
+            $('#tablaDesglosePuestos').DataTable(dtConfigSpanish);
+        }
+        if ($('#tablaScorecardAsesoras').length && !$.fn.DataTable.isDataTable('#tablaScorecardAsesoras')) {
+            $('#tablaScorecardAsesoras').DataTable(dtConfigSpanish);
+        }
+        if ($('#tablaDetalleBono').length && !$.fn.DataTable.isDataTable('#tablaDetalleBono')) {
+            $('#tablaDetalleBono').DataTable(dtConfigSpanish);
+        }
+        if ($('#tablaVacantesAtoradas').length && !$.fn.DataTable.isDataTable('#tablaVacantesAtoradas')) {
+            $('#tablaVacantesAtoradas').DataTable(dtConfigSpanish);
+        }
+        if ($('#tablaAgenciasScorecard').length && !$.fn.DataTable.isDataTable('#tablaAgenciasScorecard')) {
+            $('#tablaAgenciasScorecard').DataTable(dtConfigSpanish);
+        }
+        if ($('#tablaCandidatosEstancados').length && !$.fn.DataTable.isDataTable('#tablaCandidatosEstancados')) {
+            $('#tablaCandidatosEstancados').DataTable(dtConfigSpanish);
+        }
+        if ($('#tablaCuellosBotella').length && !$.fn.DataTable.isDataTable('#tablaCuellosBotella')) {
+            $('#tablaCuellosBotella').DataTable(dtConfigSpanish);
+        }
     }
 });
 </script>
