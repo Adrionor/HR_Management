@@ -259,48 +259,313 @@
             color: #ffffff;
         }
 
-        /* Adaptabilidad Responsiva de ShellBar (WCAG 2.1 Reflow 1.4.10) */
-        @media (max-width: 1024px) {
-            .sap-shellbar {
-                padding: 0 0.75rem;
-                gap: 0.75rem;
-            }
+        /* --------------------------------------------------------------------------
+           1.1 Botón Hamburguesa y Navegación Móvil (SAP Horizon Drawer)
+           -------------------------------------------------------------------------- */
+        .sap-hamburger-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: var(--sap-radius-sm);
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .sap-hamburger-btn:hover,
+        .sap-hamburger-btn:focus-visible {
+            background-color: var(--sap-shell-hover);
+            border-color: rgba(255, 255, 255, 0.45);
+            outline: none;
+        }
+
+        .sap-hamburger-icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+        }
+
+        /* Drawer / Off-Canvas Móvil */
+        .sap-mobile-drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            z-index: 1200;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .sap-mobile-drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sap-mobile-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 310px;
+            max-width: 86vw;
+            background: #ffffff;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.22);
+            z-index: 1201;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .sap-mobile-drawer.active {
+            transform: translateX(0);
+        }
+
+        .sap-drawer-header {
+            background-color: var(--sap-shell-bg);
+            color: #ffffff;
+            padding: 1rem 1.15rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .sap-drawer-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .sap-drawer-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--sap-primary);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.825rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0, 112, 242, 0.35);
+        }
+
+        .sap-drawer-user-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .sap-drawer-user-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sap-drawer-user-role {
+            font-size: 0.72rem;
+            color: #9cb1c9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sap-drawer-close-btn {
+            background: transparent;
+            border: none;
+            color: #c9d8ea;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: var(--sap-radius-sm);
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .sap-drawer-close-btn:hover,
+        .sap-drawer-close-btn:focus-visible {
+            color: #ffffff;
+            background-color: var(--sap-shell-hover);
+            outline: none;
+        }
+
+        .sap-drawer-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.85rem 0.65rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .sap-drawer-nav-section-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            padding: 4px 10px 8px 10px;
+        }
+
+        .sap-drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--sap-radius-md);
+            color: var(--sap-text);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            min-height: 44px;
+            transition: all 0.15s ease;
+        }
+
+        .sap-drawer-item:hover {
+            background-color: #f1f5f9;
+            color: var(--sap-primary);
+        }
+
+        .sap-drawer-item.active {
+            background-color: #e8f3ff;
+            color: var(--sap-primary);
+            font-weight: 600;
+        }
+
+        .sap-drawer-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            color: #64748b;
+            transition: color 0.15s ease;
+        }
+
+        .sap-drawer-item:hover .sap-drawer-icon,
+        .sap-drawer-item.active .sap-drawer-icon {
+            color: var(--sap-primary);
+        }
+
+        .sap-drawer-footer {
+            padding: 0.75rem 0.65rem 0.85rem 0.65rem;
+            border-top: 1px solid var(--sap-border-subtle);
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .sap-drawer-footer-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: var(--sap-radius-md);
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.825rem;
+            font-weight: 500;
+            min-height: 42px;
+            transition: all 0.15s ease;
+        }
+
+        .sap-drawer-footer-item:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .sap-drawer-footer-item .sap-drawer-icon {
+            color: #64748b;
+        }
+
+        .sap-drawer-btn-logout {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: var(--sap-radius-md);
+            background: transparent;
+            border: none;
+            color: #b91c1c;
+            font-family: inherit;
+            font-size: 0.825rem;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 42px;
+            text-align: left;
+            transition: all 0.15s ease;
+        }
+
+        .sap-drawer-btn-logout:hover {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .sap-drawer-btn-logout .sap-drawer-icon {
+            color: #dc2626;
+        }
+
+        /* Adaptabilidad Responsiva de ShellBar (Breakpoints) */
+        @media (max-width: 1140px) {
             .sap-brand-subtitle {
                 display: none;
             }
-            .sap-shellbar-left {
-                gap: 0.75rem;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-            }
-            .sap-shellbar-left::-webkit-scrollbar {
-                display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .sap-shellbar {
+                padding: 0 0.875rem;
             }
             .sap-shellbar-nav {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-                white-space: nowrap;
-                flex-shrink: 1;
+                display: none !important;
             }
-            .sap-shellbar-nav::-webkit-scrollbar {
-                display: none;
+            .sap-user-chip {
+                display: none !important;
             }
-            .sap-nav-item {
-                flex-shrink: 0;
+            .sap-shell-link {
+                display: none !important;
             }
-            .sap-shellbar-right {
-                flex-shrink: 0;
+            .sap-shellbar-logout-form {
+                display: none !important;
+            }
+            .sap-hamburger-btn {
+                display: inline-flex !important;
             }
         }
 
         @media (max-width: 640px) {
-            .sap-user-chip span {
-                display: none;
-            }
             .sap-brand-title {
-                font-size: 0.85rem;
+                font-size: 0.875rem;
+            }
+            .sap-logo-link img {
+                height: 22px;
+            }
+            .sap-subbar {
+                padding: 0.5rem 0.875rem;
             }
         }
 
@@ -1302,12 +1567,101 @@
                 <span>{{ user.get_full_name|default:user.username }}</span>
             </div>
             <a href="{% url 'password_change' %}" class="sap-shell-link">Seguridad</a>
-            <form action="{% url 'logout' %}" method="post" style="display: inline; margin: 0;">
+            <form action="{% url 'logout' %}" method="post" class="sap-shellbar-logout-form" style="display: inline; margin: 0;">
                 {% csrf_token %}
                 <button type="submit" class="sap-btn-logout">Cerrar Sesión</button>
             </form>
+            <button type="button" id="btnShellMobileMenu" class="sap-hamburger-btn" aria-label="Abrir menú de navegación" aria-controls="mobileNavDrawer" aria-expanded="false">
+                <svg viewBox="0 0 24 24" class="sap-hamburger-icon" aria-hidden="true" focusable="false">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
         </div>
     </header>
+
+    <!-- Menú Lateral Móvil (Drawer Responsivo) -->
+    <div class="sap-mobile-drawer-overlay" id="mobileDrawerOverlay" aria-hidden="true"></div>
+    <aside class="sap-mobile-drawer" id="mobileNavDrawer" aria-label="Navegación principal" aria-hidden="true">
+        <div class="sap-drawer-header">
+            <div class="sap-drawer-user-info">
+                <div class="sap-drawer-avatar">
+                    {{ user.username|slice:":2" }}
+                </div>
+                <div class="sap-drawer-user-text">
+                    <span class="sap-drawer-user-name">{{ user.get_full_name|default:user.username }}</span>
+                    <span class="sap-drawer-user-role">
+                        {% if user.is_superuser %}
+                            Superusuario
+                        {% elif puede_administrar_rh or es_directora_ch %}
+                            Administración RH
+                        {% else %}
+                            Atracción de Talento
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <button type="button" id="btnMobileDrawerClose" class="sap-drawer-close-btn" aria-label="Cerrar menú">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <nav class="sap-drawer-nav">
+            <div class="sap-drawer-nav-section-title">MENÚ PRINCIPAL</div>
+            <a href="{% url 'recepcion' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>Recepción</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span>Bandeja de Trabajo</span>
+            </a>
+            <a href="{% url 'crear_vacante' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                <span>Registrar Vacante</span>
+            </a>
+            <a href="{% url 'mis_vacantes' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                <span>Mis Vacantes</span>
+            </a>
+            <a href="{% url 'mis_procesos' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Mis Candidatos</span>
+            </a>
+            <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Bolsa de Trabajo</span>
+            </a>
+            <a href="{% url 'vista_reportes' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Reportes</span>
+            </a>
+            {% if puede_administrar_rh or es_directora_ch or user.is_superuser %}
+            <a href="{% url 'panel_administracion' %}" class="sap-drawer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Catálogos</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sap-drawer-footer">
+            <a href="{% url 'password_change' %}" class="sap-drawer-footer-item">
+                <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>Seguridad y Contraseña</span>
+            </a>
+            <form action="{% url 'logout' %}" method="post" style="margin: 0; width: 100%;">
+                {% csrf_token %}
+                <button type="submit" class="sap-drawer-btn-logout">
+                    <svg class="sap-drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </form>
+        </div>
+    </aside>
 
     <!-- 2. Sub-Barra de Navegación Operativa (Ruta Breadcrumb + Botón Regresar) -->
     <div class="sap-subbar">
@@ -1402,6 +1756,91 @@
                         btnNotif.focus();
                     }
                 });
+            }
+
+            // Menú Hamburguesa Móvil (SAP Drawer)
+            var btnMobileMenu = document.getElementById('btnShellMobileMenu');
+            var mobileDrawer = document.getElementById('mobileNavDrawer');
+            var mobileOverlay = document.getElementById('mobileDrawerOverlay');
+            var btnMobileClose = document.getElementById('btnMobileDrawerClose');
+
+            function openMobileDrawer() {
+                if (!mobileDrawer || !mobileOverlay) return;
+                if (notifPopover && notifPopover.classList.contains('open')) {
+                    notifPopover.classList.remove('open');
+                    if (btnNotif) btnNotif.setAttribute('aria-expanded', 'false');
+                }
+                mobileOverlay.classList.add('active');
+                mobileDrawer.classList.add('active');
+                if (btnMobileMenu) btnMobileMenu.setAttribute('aria-expanded', 'true');
+                mobileDrawer.setAttribute('aria-hidden', 'false');
+                mobileOverlay.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                if (btnMobileClose) btnMobileClose.focus();
+            }
+
+            function closeMobileDrawer() {
+                if (!mobileDrawer || !mobileOverlay) return;
+                mobileOverlay.classList.remove('active');
+                mobileDrawer.classList.remove('active');
+                if (btnMobileMenu) {
+                    btnMobileMenu.setAttribute('aria-expanded', 'false');
+                    btnMobileMenu.focus();
+                }
+                mobileDrawer.setAttribute('aria-hidden', 'true');
+                mobileOverlay.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            if (btnMobileMenu) {
+                btnMobileMenu.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var isOpen = mobileDrawer && mobileDrawer.classList.contains('active');
+                    if (isOpen) {
+                        closeMobileDrawer();
+                    } else {
+                        openMobileDrawer();
+                    }
+                });
+            }
+
+            if (btnMobileClose) {
+                btnMobileClose.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeMobileDrawer();
+                });
+            }
+
+            if (mobileOverlay) {
+                mobileOverlay.addEventListener('click', function() {
+                    closeMobileDrawer();
+                });
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && mobileDrawer && mobileDrawer.classList.contains('active')) {
+                    closeMobileDrawer();
+                }
+            });
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 1024 && mobileDrawer && mobileDrawer.classList.contains('active')) {
+                    closeMobileDrawer();
+                }
+            });
+
+            // Resaltar elemento activo en la navegación según la ruta actual
+            try {
+                var currentPath = window.location.pathname;
+                var navLinks = document.querySelectorAll('.sap-nav-item, .sap-drawer-item');
+                navLinks.forEach(function(link) {
+                    var href = link.getAttribute('href');
+                    if (href && (href === currentPath || (href.length > 1 && currentPath.indexOf(href) === 0))) {
+                        link.classList.add('active');
+                    }
+                });
+            } catch (err) {
+                // Silencioso si falla la detección de ruta
             }
         });
     </script>
