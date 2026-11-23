@@ -1203,65 +1203,118 @@
 
 {% endblock %}
 
-{% block script %}
+{% block scripts %}
 <script>
+// 1. Manejo de Pestañas
+function cambiarPestana(tabId) {
+    document.querySelectorAll('.rh-admin-panel').forEach(function (p) {
+        p.classList.remove('active');
+    });
+    document.querySelectorAll('.rh-admin-tab-btn').forEach(function (b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+    });
+
+    var panel = document.getElementById(tabId);
+    var btn = document.getElementById('btn-' + tabId);
+    if (panel) panel.classList.add('active');
+    if (btn) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+    }
+
+    // Actualizar URL sin recargar
+    if (window.history && window.history.replaceState) {
+        var url = new URL(window.location);
+        url.searchParams.set('tab', tabId);
+        window.history.replaceState({}, '', url);
+    }
+}
+window.cambiarPestana = cambiarPestana;
+
+// 2. Buscador Instantáneo por Tabla
+function filtrarTabla(tablaId, texto) {
+    var q = (texto || '').toLowerCase().trim();
+    var tabla = document.getElementById(tablaId);
+    if (!tabla) return;
+    var filas = tabla.querySelectorAll('tbody tr');
+    filas.forEach(function (fila) {
+        if (fila.children.length === 1 && fila.children[0].getAttribute('colspan')) return;
+        var contenido = fila.textContent.toLowerCase();
+        fila.style.display = contenido.indexOf(q) !== -1 ? '' : 'none';
+    });
+}
+window.filtrarTabla = filtrarTabla;
+
+// 3. Modales
+function abrirModal(modalId) {
+    var m = document.getElementById(modalId);
+    if (m) m.classList.add('active');
+}
+window.abrirModal = abrirModal;
+
+function cerrarModal(modalId) {
+    var m = document.getElementById(modalId);
+    if (m) m.classList.remove('active');
+}
+window.cerrarModal = cerrarModal;
+
+function cerrarModalClickAfuera(evt, modalId) {
+    if (evt.target && evt.target.id === modalId) {
+        cerrarModal(modalId);
+    }
+}
+window.cerrarModalClickAfuera = cerrarModalClickAfuera;
+
+// Helpers específicos para abrir cada modal
+window.abrirModalResetClave = function (userId, userName) {
+    document.getElementById('reset_user_id').value = userId;
+    document.getElementById('reset_user_name').textContent = userName;
+    document.getElementById('modal_nueva_pass').value = '';
+    abrirModal('modalResetClave');
+};
+
+window.abrirModalEditarAgencia = function (id, nombre, marcaId, ciudadId) {
+    document.getElementById('edit_agencia_id').value = id;
+    document.getElementById('edit_agencia_nombre').value = nombre;
+    document.getElementById('edit_agencia_marca').value = marcaId || '';
+    document.getElementById('edit_agencia_ciudad').value = ciudadId || '';
+    abrirModal('modalEditarAgencia');
+};
+
+window.abrirModalEditarMarca = function (id, nombre) {
+    document.getElementById('edit_marca_id').value = id;
+    document.getElementById('edit_marca_nombre').value = nombre;
+    abrirModal('modalEditarMarca');
+};
+
+window.abrirModalEditarPuesto = function (id, nombre, diasMeta) {
+    document.getElementById('edit_puesto_id').value = id;
+    document.getElementById('edit_puesto_nombre').value = nombre;
+    document.getElementById('edit_puesto_dias_meta').value = diasMeta || 20;
+    abrirModal('modalEditarPuesto');
+};
+
+window.abrirModalEditarCiudad = function (id, nombre) {
+    document.getElementById('edit_ciudad_id').value = id;
+    document.getElementById('edit_ciudad_nombre').value = nombre;
+    abrirModal('modalEditarCiudad');
+};
+
+window.abrirModalEditarAviso = function (id, titulo, contenido) {
+    document.getElementById('edit_aviso_id').value = id;
+    document.getElementById('edit_aviso_titulo').value = titulo;
+    document.getElementById('edit_aviso_contenido').value = contenido;
+    abrirModal('modalEditarAviso');
+};
+
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Manejo de Pestañas
-    window.cambiarPestana = function (tabId) {
-        document.querySelectorAll('.rh-admin-panel').forEach(function (p) {
-            p.classList.remove('active');
-        });
-        document.querySelectorAll('.rh-admin-tab-btn').forEach(function (b) {
-            b.classList.remove('active');
-            b.setAttribute('aria-selected', 'false');
-        });
-
-        var panel = document.getElementById(tabId);
-        var btn = document.getElementById('btn-' + tabId);
-        if (panel) panel.classList.add('active');
-        if (btn) {
-            btn.classList.add('active');
-            btn.setAttribute('aria-selected', 'true');
-        }
-
-        // Actualizar URL sin recargar
-        if (window.history && window.history.replaceState) {
-            var url = new URL(window.location);
-            url.searchParams.set('tab', tabId);
-            window.history.replaceState({}, '', url);
-        }
-    };
-
-    // 2. Buscador Instantáneo por Tabla
-    window.filtrarTabla = function (tablaId, texto) {
-        var q = (texto || '').toLowerCase().trim();
-        var tabla = document.getElementById(tablaId);
-        if (!tabla) return;
-        var filas = tabla.querySelectorAll('tbody tr');
-        filas.forEach(function (fila) {
-            // Ignorar filas de 'vacío'
-            if (fila.children.length === 1 && fila.children[0].getAttribute('colspan')) return;
-            var contenido = fila.textContent.toLowerCase();
-            fila.style.display = contenido.indexOf(q) !== -1 ? '' : 'none';
-        });
-    };
-
-    // 3. Modales
-    window.abrirModal = function (modalId) {
-        var m = document.getElementById(modalId);
-        if (m) m.classList.add('active');
-    };
-
-    window.cerrarModal = function (modalId) {
-        var m = document.getElementById(modalId);
-        if (m) m.classList.remove('active');
-    };
-
-    window.cerrarModalClickAfuera = function (evt, modalId) {
-        if (evt.target && evt.target.id === modalId) {
-            cerrarModal(modalId);
-        }
-    };
+    // Si viene un tab en el query param de la URL, activarlo
+    var params = new URLSearchParams(window.location.search);
+    var tabParam = params.get('tab');
+    if (tabParam && document.getElementById(tabParam)) {
+        cambiarPestana(tabParam);
+    }
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
@@ -1270,48 +1323,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
-
-    // Helpers específicos para abrir cada modal
-    window.abrirModalResetClave = function (userId, userName) {
-        document.getElementById('reset_user_id').value = userId;
-        document.getElementById('reset_user_name').textContent = userName;
-        document.getElementById('modal_nueva_pass').value = '';
-        abrirModal('modalResetClave');
-    };
-
-    window.abrirModalEditarAgencia = function (id, nombre, marcaId, ciudadId) {
-        document.getElementById('edit_agencia_id').value = id;
-        document.getElementById('edit_agencia_nombre').value = nombre;
-        document.getElementById('edit_agencia_marca').value = marcaId || '';
-        document.getElementById('edit_agencia_ciudad').value = ciudadId || '';
-        abrirModal('modalEditarAgencia');
-    };
-
-    window.abrirModalEditarMarca = function (id, nombre) {
-        document.getElementById('edit_marca_id').value = id;
-        document.getElementById('edit_marca_nombre').value = nombre;
-        abrirModal('modalEditarMarca');
-    };
-
-    window.abrirModalEditarPuesto = function (id, nombre, diasMeta) {
-        document.getElementById('edit_puesto_id').value = id;
-        document.getElementById('edit_puesto_nombre').value = nombre;
-        document.getElementById('edit_puesto_dias_meta').value = diasMeta || 20;
-        abrirModal('modalEditarPuesto');
-    };
-
-    window.abrirModalEditarCiudad = function (id, nombre) {
-        document.getElementById('edit_ciudad_id').value = id;
-        document.getElementById('edit_ciudad_nombre').value = nombre;
-        abrirModal('modalEditarCiudad');
-    };
-
-    window.abrirModalEditarAviso = function (id, titulo, contenido) {
-        document.getElementById('edit_aviso_id').value = id;
-        document.getElementById('edit_aviso_titulo').value = titulo;
-        document.getElementById('edit_aviso_contenido').value = contenido;
-        abrirModal('modalEditarAviso');
-    };
 });
 </script>
 {% endblock %}
