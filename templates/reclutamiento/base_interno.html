@@ -296,7 +296,6 @@
         }
 
         @media (max-width: 640px) {
-            .sap-density-text,
             .sap-user-chip span {
                 display: none;
             }
@@ -1237,15 +1236,7 @@
         </div>
 
         <div class="sap-shellbar-right">
-            <!-- Herramienta 1: Densidad Compacta -->
-            <button type="button" id="btnToggleDensity" class="sap-shellbar-tool-btn" title="Alternar vista compacta de tablas (Espaciosa / Densa)" aria-label="Alternar vista compacta de tablas" aria-pressed="false">
-                <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" style="width: 15px; height: 15px;">
-                    <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
-                </svg>
-                <span class="sap-density-text">Densidad</span>
-            </button>
-
-            <!-- Herramienta 2: Campana de Notificaciones (+7 días sin avance) -->
+            <!-- Herramienta: Campana de Notificaciones (+7 días sin avance) -->
             <div class="sap-shellbar-dropdown" id="notifDropdownContainer">
                 <button type="button" id="btnShellNotif" class="sap-shellbar-tool-btn" aria-haspopup="true" aria-expanded="false" title="Alertas de seguimiento (+7 días en etapa)">
                     <svg class="sap-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
@@ -1379,40 +1370,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Interruptor de Densidad de Tablas
-            var btnDensity = document.getElementById('btnToggleDensity');
-            function applyDensity(isCompact) {
-                if (isCompact) {
-                    document.body.classList.add('compact-density');
-                    document.documentElement.classList.add('compact-density');
-                    if (btnDensity) {
-                        btnDensity.classList.add('active');
-                        btnDensity.setAttribute('aria-pressed', 'true');
-                    }
-                    try { localStorage.setItem('hr_table_density', 'compact'); } catch(e){}
-                } else {
-                    document.body.classList.remove('compact-density');
-                    document.documentElement.classList.remove('compact-density');
-                    if (btnDensity) {
-                        btnDensity.classList.remove('active');
-                        btnDensity.setAttribute('aria-pressed', 'false');
-                    }
-                    try { localStorage.setItem('hr_table_density', 'spacious'); } catch(e){}
-                }
-            }
-
-            var savedDensity = 'spacious';
-            try { savedDensity = localStorage.getItem('hr_table_density') || 'spacious'; } catch(e){}
-            applyDensity(savedDensity === 'compact');
-
-            if (btnDensity) {
-                btnDensity.addEventListener('click', function() {
-                    var currentCompact = document.body.classList.contains('compact-density');
-                    applyDensity(!currentCompact);
-                });
-            }
-
-            // 2. Campana de Notificaciones de Proceso (+7 días)
+            // Campana de Notificaciones de Proceso (+7 días)
             var btnNotif = document.getElementById('btnShellNotif');
             var notifPopover = document.getElementById('notifPopover');
             var notifContainer = document.getElementById('notifDropdownContainer');
