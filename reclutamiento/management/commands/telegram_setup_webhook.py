@@ -58,15 +58,16 @@ class Command(BaseCommand):
             return
 
         # 3. Registrar webhook
-        target_url = options['url']
+        target_url = (options.get('url') or '').strip()
         if not target_url:
             pa_host = None
             for h in getattr(settings, 'ALLOWED_HOSTS', []):
-                if 'mojberlin.pythonanywhere.com' in h:
-                    pa_host = h
+                h_str = str(h).strip()
+                if 'mojberlin' in h_str:
+                    pa_host = h_str.lstrip('.')
                     break
-                elif 'pythonanywhere.com' in h and not pa_host:
-                    pa_host = h
+                elif 'pythonanywhere.com' in h_str and not h_str.startswith('.'):
+                    pa_host = h_str
 
             if pa_host:
                 target_url = f"https://{pa_host}/api/telegram/webhook/"
