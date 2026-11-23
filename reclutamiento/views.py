@@ -167,6 +167,7 @@ def recepcion_view(request):
     contexto = {
         'avisos': avisos,
         'es_directora_ch': es_directora,
+        'puede_administrar_rh': es_directora,
     }
     return render(request, 'reclutamiento/recepcion.html', contexto)
 
@@ -231,6 +232,7 @@ def dashboard(request):
         'user_groups': user_groups,
         'avisos': avisos_recientes,
         'es_directora_ch': es_directora,
+        'puede_administrar_rh': es_directora,
         'asesoras_logins': asesoras_logins,
         # Variables mantenidas con valor cero para compatibilidad
         'postulaciones_sin_asignar': 0,

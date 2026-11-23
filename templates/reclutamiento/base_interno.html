@@ -1230,7 +1230,7 @@
                 <a href="{% url 'mis_procesos' %}" class="sap-nav-item">Mis Candidatos</a>
                 <a href="{% url 'bolsa_trabajo_consulta' %}" class="sap-nav-item">Bolsa de Trabajo</a>
                 <a href="{% url 'vista_reportes' %}" class="sap-nav-item">Reportes</a>
-                {% if puede_administrar_rh %}
+                {% if puede_administrar_rh or es_directora_ch or user.is_superuser %}
                 <a href="{% url 'panel_administracion' %}" class="sap-nav-item">Catálogos</a>
                 {% endif %}
             </nav>
