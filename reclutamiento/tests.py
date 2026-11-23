@@ -2020,6 +2020,12 @@ class TelegramBotExecutiveTests(TestCase):
         call_command('telegram_flash_semanal', force=True, stdout=out2)
         self.assertIn("Flash Semanal concluido", out2.getvalue())
 
+        # Configuración / consulta de Webhook
+        out3 = StringIO()
+        mock_api.return_value = {'ok': True, 'result': {'url': 'https://aguzmaninz.pythonanywhere.com/api/telegram/webhook/'}}
+        call_command('telegram_setup_webhook', info=True, stdout=out3)
+        self.assertIn("Consultando estado del webhook", out3.getvalue())
+
     def test_panel_administracion_acciones_telegram(self):
         """Verifica las acciones POST de Telegram en el panel de administración."""
         url = reverse('panel_administracion')
