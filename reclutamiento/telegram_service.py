@@ -268,16 +268,16 @@ class TelegramService:
             f"<i>Resumen Ejecutivo • {fecha_str}</i>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"<b>📊 ESTATUS GLOBAL DE VACANTES:</b>\n"
-            f"• Total Abiertas: <b>{kpis.get('total_activas', 0)}</b> plazas\n"
-            f"• 🟢 En Tiempo: <b>{kpis.get('en_tiempo_count', 0)}</b>\n"
-            f"• 🟡 En Riesgo (SLA próximo): <b>{kpis.get('por_vencer_count', 0)}</b>\n"
-            f"• 🔴 Vencidas SLA: <b>{kpis.get('vencidas_count', 0)}</b>\n\n"
+            f"• Total Abiertas: <b>{kpis.get('total_abiertas', 0)}</b> plazas\n"
+            f"• 🟢 En Tiempo: <b>{kpis.get('en_tiempo_total', 0)}</b>\n"
+            f"• 🟡 En Riesgo (SLA próximo): <b>{kpis.get('en_riesgo_total', 0)}</b>\n"
+            f"• 🔴 Vencidas SLA: <b>{kpis.get('vencidas_total', 0)}</b>\n\n"
             f"<b>⏱️ VELOCIDAD DE COBERTURA:</b>\n"
-            f"• Promedio Real: <b>{kpis.get('promedio_dias_cobertura', 0):.1f} días</b> (Meta: 20d)\n"
+            f"• Promedio Real: <b>{kpis.get('tiempo_promedio_cobertura', 0):.1f} días</b> (Meta: 20d)\n"
             f"• 🎉 Contrataciones este mes: <b>{contrataciones_mes}</b> ingresos\n\n"
             f"<b>⚠️ ALERTAS OPERATIVAS:</b>\n"
             f"• Candidatos estancados (+7d): <b>{estancados_count}</b> en proceso\n"
-            f"• Cumplimiento SLA: <b>{kpis.get('cumplimiento_sla', 0):.1f}%</b>\n"
+            f"• Vacantes sin candidatos: <b>{kpis.get('puestos_sin_candidatos', 0)}</b> plazas\n"
         )
         return msg
 
@@ -543,3 +543,4 @@ class TelegramService:
             if res.get('ok'):
                 enviados += 1
         return enviados
+

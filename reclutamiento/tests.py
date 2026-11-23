@@ -2025,7 +2025,7 @@ class TelegramBotExecutiveTests(TestCase):
         url = reverse('panel_administracion')
         self.client.login(username='patricia_arechiga', password='password123')
 
-        # 1. Generar token
+        # 1. Generar token vía AJAX / JSON
         resp_token = self.client.post(
             url,
             {'action': 'generar_token_telegram', 'user_id': self.directora.id},
@@ -2036,6 +2036,14 @@ class TelegramBotExecutiveTests(TestCase):
         self.assertEqual(data_token.get('status'), 'ok')
         self.assertTrue(bool(data_token.get('token')))
         self.assertIn('t.me', data_token.get('enlace'))
+
+        # 1.b Generar token vía envío estándar de formulario navegador (debe redirigir directamente a Telegram)
+        resp_redirect = self.client.post(
+            url,
+            {'action': 'generar_token_telegram', 'user_id': self.directora.id}
+        )
+        self.assertEqual(resp_redirect.status_code, 302)
+        self.assertIn('https://t.me/', resp_redirect.url)
 
         # Asignar chat_id simulado
         perfil = self.directora.perfilusuario

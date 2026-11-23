@@ -1573,12 +1573,25 @@ def panel_administracion_view(request):
             target_user = get_object_or_404(User, id=user_id)
             from .telegram_service import TelegramService
             token, deep_link = TelegramService.generar_token_vinculacion(target_user)
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({
+                    'status': 'ok',
+                    'token': token,
+                    'enlace': deep_link,
+                    'es_propio': (target_user == request.user),
+                    'target_name': target_user.get_full_name() or target_user.username,
+                    'bot_username': TelegramService.get_bot_username(),
+                    'bot_configurado': TelegramService.is_configured()
+                })
+
+            if target_user == request.user:
+                return redirect(deep_link)
+
             messages.success(
                 request,
                 f"Enlace de vinculación para {target_user.get_full_name() or target_user.username}: {deep_link}"
             )
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
-                return JsonResponse({'status': 'ok', 'token': token, 'enlace': deep_link})
 
         elif action == 'desvincular_telegram':
             active_tab = 'tab-equipo'
@@ -1958,8 +1971,14 @@ def panel_administracion_view(request):
     ciudades = list(Ciudad.objects.all().order_by('nombre'))
     avisos = list(Aviso.objects.all().select_related('creado_por').order_by('-fecha_creacion'))
 
+    from .telegram_service import TelegramService
+    telegram_bot_configurado = TelegramService.is_configured()
+    telegram_bot_username = TelegramService.get_bot_username()
+
     context = {
         'active_tab': active_tab,
+        'telegram_bot_configurado': telegram_bot_configurado,
+        'telegram_bot_username': telegram_bot_username,
         'usuarios_rh': usuarios_rh,
         'usuarios_rh_activos_count': sum(1 for u in usuarios_rh if u.is_active),
         'usuarios_rh_total_count': len(usuarios_rh),

@@ -495,18 +495,25 @@
         </div>
 
         <!-- Conexión Telegram para Dirección y Gerencias -->
-        <div class="sap-card" style="padding: 1rem 1.25rem; background: #ffffff; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: #e8f3ff; color: #0070f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+        <div class="sap-card" style="padding: 1.15rem 1.25rem; background: #ffffff; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 12px; max-width: 720px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #e8f3ff; color: #0070f2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg class="sap-icon" style="width: 22px; height: 22px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
                 </div>
                 <div>
-                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--sap-text);">Canal Ejecutivo de Telegram • Reportería & BI</h3>
-                    <p style="margin: 0.2rem 0 0 0; font-size: 0.8125rem; color: var(--sap-muted);">
-                        {% if request.user.perfilusuario.telegram_chat_id %}
-                            Tu cuenta está vinculada a Telegram <strong>(@{{ request.user.perfilusuario.telegram_username|default:"conectado" }})</strong>. Recibes el Pulse Matutino (8:30 AM), alertas SLA y consultas BI al instante.
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--sap-text);">Canal Ejecutivo de Telegram • Reportería & BI</h3>
+                        {% if telegram_bot_configurado %}
+                            <span class="sap-badge sap-badge-success" style="font-size: 0.7rem;"><span class="sap-badge-dot"></span>Bot Activo (@{{ telegram_bot_username }})</span>
                         {% else %}
-                            Recibe reportes automáticos matutinos, alertas de vacantes vencidas y descarga archivos Excel (.xlsx) oficiales directo en tu teléfono.
+                            <span class="sap-badge sap-badge-warning" style="font-size: 0.7rem;" title="Configura TELEGRAM_BOT_TOKEN en el archivo .env"><span class="sap-badge-dot"></span>Token pendiente en .env</span>
+                        {% endif %}
+                    </div>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.8125rem; color: var(--sap-muted); line-height: 1.4;">
+                        {% if request.user.perfilusuario.telegram_chat_id %}
+                            Tu cuenta directiva está conectada a Telegram <strong>(@{{ request.user.perfilusuario.telegram_username|default:"conectado" }})</strong>. Recibes el Pulse Matutino (8:30 AM), alertas críticas y consultas BI en tiempo real.
+                        {% else %}
+                            Recibe reportes matutinos automáticos, alertas de vacantes vencidas (SLA) y descarga archivos Excel (.xlsx) ejecutivos directamente en tu teléfono.
                         {% endif %}
                     </p>
                 </div>
@@ -518,11 +525,11 @@
                         <input type="hidden" name="action" value="enviar_prueba_telegram">
                         <input type="hidden" name="active_tab" value="tab-equipo">
                         <input type="hidden" name="user_id" value="{{ request.user.id }}">
-                        <button type="submit" class="sap-btn sap-btn-secondary sap-btn-sm" title="Enviar un mensaje de prueba a tu chat">
+                        <button type="submit" class="sap-btn sap-btn-secondary sap-btn-sm" title="Enviar un mensaje de prueba a tu chat de Telegram">
                             <span>🔔 Enviar Prueba</span>
                         </button>
                     </form>
-                    <form method="post" action="{% url 'panel_administracion' %}" style="display: inline;" onsubmit="return confirm('¿Deseas desvincular tu cuenta de Telegram?');">
+                    <form method="post" action="{% url 'panel_administracion' %}" style="display: inline;" onsubmit="return confirm('¿Deseas desvincular tu cuenta de Telegram? Dejarás de recibir los reportes matutinos y alertas.');">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="desvincular_telegram">
                         <input type="hidden" name="active_tab" value="tab-equipo">
@@ -532,12 +539,12 @@
                         </button>
                     </form>
                 {% else %}
-                    <form method="post" action="{% url 'panel_administracion' %}" style="display: inline;">
+                    <form method="post" action="{% url 'panel_administracion' %}" target="_blank" id="formConectarTelegram" style="display: inline;" onsubmit="abrirModal('modalTelegramInstrucciones');">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="generar_token_telegram">
                         <input type="hidden" name="active_tab" value="tab-equipo">
                         <input type="hidden" name="user_id" value="{{ request.user.id }}">
-                        <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="height: 34px;">
+                        <button type="submit" class="sap-btn sap-btn-primary sap-btn-sm" style="height: 36px; padding: 0 16px; font-weight: 600;">
                             <svg class="sap-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
                             <span>📲 Conectar mi Telegram</span>
                         </button>
@@ -613,15 +620,11 @@
                                             <span class="sap-badge-dot"></span>Conectado (@{{ u.perfilusuario.telegram_username|default:"ID" }})
                                         </span>
                                     {% else %}
-                                        <form method="post" action="{% url 'panel_administracion' %}" style="display: inline;">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="action" value="generar_token_telegram">
-                                            <input type="hidden" name="active_tab" value="tab-equipo">
-                                            <input type="hidden" name="user_id" value="{{ u.id }}">
-                                            <button type="submit" class="sap-btn sap-btn-secondary sap-btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">
-                                                <span>+ Vincular</span>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" style="font-size: 0.75rem; padding: 2px 8px;"
+                                            onclick="generarEnlaceTelegramModal('{{ u.id }}', '{{ u.get_full_name|default:u.username|escapejs }}', {% if u == request.user %}true{% else %}false{% endif %});"
+                                            title="Generar enlace de vinculación con Telegram">
+                                            <span>+ Vincular</span>
+                                        </button>
                                     {% endif %}
                                 {% else %}
                                     <span style="font-size: 0.75rem; color: var(--sap-muted);">Exclusivo Dirección</span>
@@ -1475,6 +1478,72 @@
     </div>
 </div>
 
+<!-- Modal 7: Instrucciones de Vinculación con Telegram -->
+<div class="rh-modal-overlay" id="modalTelegramInstrucciones" onclick="cerrarModalClickAfuera(event, 'modalTelegramInstrucciones');">
+    <div class="rh-modal-card" style="max-width: 480px;" role="dialog" aria-modal="true" aria-labelledby="modalTgInstTitle">
+        <div class="rh-modal-header">
+            <h3 class="rh-modal-title" id="modalTgInstTitle" style="display: flex; align-items: center; gap: 8px;">
+                <svg class="sap-icon" style="color: #0070f2; width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                <span>Conectando con Telegram...</span>
+            </h3>
+            <button type="button" class="rh-modal-close-btn" onclick="cerrarModal('modalTelegramInstrucciones');" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="rh-modal-body" style="font-size: 0.875rem; color: var(--sap-text);">
+            <div style="background: #f0f7ff; border: 1px solid #cce5ff; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+                <p style="margin: 0; font-weight: 600; color: #004085;">🚀 Se ha abierto Telegram en una nueva pestaña.</p>
+            </div>
+            <ol style="margin: 0.5rem 0 0 1.25rem; padding: 0; line-height: 1.6; color: var(--sap-muted);">
+                <li>Ve a la nueva pestaña abierta (o a tu aplicación de Telegram).</li>
+                <li>En el chat con el bot, pulsa el botón <strong>"INICIAR"</strong> o envía <code>/start</code>.</li>
+                <li>Recibirás el mensaje de confirmación y el menú ejecutivo de BI al instante.</li>
+            </ol>
+            {% if not telegram_bot_configurado %}
+                <div style="background: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px; padding: 10px; margin-top: 8px; font-size: 0.8rem; color: #856404;">
+                    ⚠️ <strong>Nota:</strong> Para recibir respuestas automáticas, recuerda configurar <code>TELEGRAM_BOT_TOKEN</code> en el archivo <code>.env</code> de tu servidor.
+                </div>
+            {% endif %}
+        </div>
+        <div class="rh-modal-footer" style="justify-content: space-between;">
+            <button type="button" class="sap-btn sap-btn-secondary" onclick="cerrarModal('modalTelegramInstrucciones');">Cerrar</button>
+            <button type="button" class="sap-btn sap-btn-primary" onclick="window.location.reload();">
+                <span>✅ Ya lo inicié (Verificar)</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 8: Compartir Enlace de Vinculación de Telegram -->
+<div class="rh-modal-overlay" id="modalCompartirEnlaceTelegram" onclick="cerrarModalClickAfuera(event, 'modalCompartirEnlaceTelegram');">
+    <div class="rh-modal-card" style="max-width: 500px;" role="dialog" aria-modal="true" aria-labelledby="modalTgShareTitle">
+        <div class="rh-modal-header">
+            <h3 class="rh-modal-title" id="modalTgShareTitle">Enlace de Vinculación Telegram</h3>
+            <button type="button" class="rh-modal-close-btn" onclick="cerrarModal('modalCompartirEnlaceTelegram');" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="rh-modal-body">
+            <p style="font-size: 0.85rem; color: var(--sap-muted); margin: 0;" id="txtVinculacionDestino">
+                Comparte este enlace personal con la integrante directiva para que lo abra en su Telegram:
+            </p>
+            <div class="rh-form-field">
+                <input type="text" id="inputEnlaceTelegram" class="sap-input" readonly style="font-family: monospace; font-size: 0.8125rem; background: #f8fafc;" onclick="this.select();">
+            </div>
+            <div id="msgCopiadoTelegram" style="display:none; font-size: 0.8rem; color: #107e3e; font-weight: 600;">
+                ✓ ¡Enlace copiado al portapapeles!
+            </div>
+        </div>
+        <div class="rh-modal-footer" style="justify-content: space-between;">
+            <a id="btnAbrirTelegramDirecto" href="#" target="_blank" class="sap-btn sap-btn-secondary sap-btn-sm" style="text-decoration: none;">
+                <span>Abrir en Telegram ↗</span>
+            </a>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="sap-btn sap-btn-secondary" onclick="cerrarModal('modalCompartirEnlaceTelegram');">Cerrar</button>
+                <button type="button" class="sap-btn sap-btn-primary" onclick="copiarEnlaceTelegramInput();">
+                    <span>📋 Copiar Enlace</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -1580,6 +1649,66 @@
         document.getElementById('edit_aviso_titulo').value = titulo;
         document.getElementById('edit_aviso_contenido').value = contenido;
         abrirModal('modalEditarAviso');
+    };
+
+    window.generarEnlaceTelegramModal = async function (userId, userName, esPropio) {
+        if (esPropio) {
+            var form = document.getElementById('formConectarTelegram');
+            if (form) {
+                form.submit();
+                abrirModal('modalTelegramInstrucciones');
+                return;
+            }
+        }
+
+        try {
+            var formData = new FormData();
+            formData.append('action', 'generar_token_telegram');
+            formData.append('user_id', userId);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            var res = await fetch("{% url 'panel_administracion' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            var data = await res.json();
+            if (data.status === 'ok' && data.enlace) {
+                document.getElementById('inputEnlaceTelegram').value = data.enlace;
+                document.getElementById('btnAbrirTelegramDirecto').href = data.enlace;
+                document.getElementById('txtVinculacionDestino').innerHTML =
+                    'Comparte este enlace personal con <strong>' + userName + '</strong> para que lo abra en su Telegram:';
+                var msgCop = document.getElementById('msgCopiadoTelegram');
+                if (msgCop) msgCop.style.display = 'none';
+                abrirModal('modalCompartirEnlaceTelegram');
+            } else {
+                alert('No se pudo generar el enlace. Verifica los permisos.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error de conexión al generar el enlace de Telegram.');
+        }
+    };
+
+    window.copiarEnlaceTelegramInput = function () {
+        var inp = document.getElementById('inputEnlaceTelegram');
+        if (!inp) return;
+        inp.select();
+        var msgCop = document.getElementById('msgCopiadoTelegram');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(inp.value).then(function () {
+                if (msgCop) msgCop.style.display = 'block';
+            }).catch(function () {
+                document.execCommand('copy');
+                if (msgCop) msgCop.style.display = 'block';
+            });
+        } else {
+            document.execCommand('copy');
+            if (msgCop) msgCop.style.display = 'block';
+        }
     };
 
     document.addEventListener('DOMContentLoaded', function () {
