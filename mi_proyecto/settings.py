@@ -275,3 +275,11 @@ JAZZMIN_SETTINGS = {
         "sidebar_nav_flat_style": False
     }
 }
+
+# ==============================================================================
+# INTEGRACIÓN TELEGRAM BOT (REPORTERÍA EJECUTIVA Y DIRECCIÓN)
+# ==============================================================================
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+TELEGRAM_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'PremierRHBot').strip().lstrip('@')
+TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '').strip()
+TELEGRAM_PROXY_URL = os.environ.get('TELEGRAM_PROXY_URL', '').strip()

@@ -4,16 +4,20 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Count, Q
 from django.urls import reverse, reverse_lazy
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseBadRequest
 from functools import wraps
 import csv
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .forms import SolicitudPuestoForm, RegistroCandidatoForm, PublicacionForm, PerfilDePuestoForm
 from .models import (
@@ -536,6 +540,12 @@ def crear_vacante_view(request):
                 id_objeto=nueva_vacante.id,
                 detalles=nueva_vacante.comentarios
             )
+
+            try:
+                from .telegram_service import TelegramService
+                TelegramService.notificar_requisicion_creada(nueva_vacante)
+            except Exception as e:
+                logger.warning(f"Error al enviar notificación Telegram de requisición: {e}")
 
             messages.success(
                 request,
@@ -1255,6 +1265,13 @@ def detalle_proceso_view(request, proceso_id):
                 detalles=" | ".join(detalles_log) if detalles_log else None
             )
 
+            if nuevo_estatus == Proceso.Estatus.CONTRATADO and estatus_anterior_raw != Proceso.Estatus.CONTRATADO:
+                try:
+                    from .telegram_service import TelegramService
+                    TelegramService.notificar_plaza_cubierta(proceso)
+                except Exception as e:
+                    logger.warning(f"Error al enviar notificación Telegram de contratación: {e}")
+
         elif action == 'marcar_no_contratable':
             motivo = request.POST.get('motivo_no_contratable', '').strip()
             if not motivo:
@@ -1549,6 +1566,56 @@ def panel_administracion_view(request):
                     detalles=f"Se restableció la contraseña de {target_user.username}."
                 )
                 messages.success(request, f"Contraseña de {target_user.get_full_name() or target_user.username} restablecida correctamente.")
+
+        elif action == 'generar_token_telegram':
+            active_tab = 'tab-equipo'
+            user_id = request.POST.get('user_id') or request.user.id
+            target_user = get_object_or_404(User, id=user_id)
+            from .telegram_service import TelegramService
+            token, deep_link = TelegramService.generar_token_vinculacion(target_user)
+            messages.success(
+                request,
+                f"Enlace de vinculación para {target_user.get_full_name() or target_user.username}: {deep_link}"
+            )
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({'status': 'ok', 'token': token, 'enlace': deep_link})
+
+        elif action == 'desvincular_telegram':
+            active_tab = 'tab-equipo'
+            user_id = request.POST.get('user_id') or request.user.id
+            target_user = get_object_or_404(User, id=user_id)
+            from .telegram_service import TelegramService
+            TelegramService.desvincular_usuario(target_user)
+            messages.success(
+                request,
+                f"Se desvinculó Telegram de {target_user.get_full_name() or target_user.username}."
+            )
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                return JsonResponse({'status': 'ok', 'mensaje': 'Desvinculado exitosamente'})
+
+        elif action == 'enviar_prueba_telegram':
+            active_tab = 'tab-equipo'
+            user_id = request.POST.get('user_id') or request.user.id
+            target_user = get_object_or_404(User, id=user_id)
+            chat_id = getattr(getattr(target_user, 'perfilusuario', None), 'telegram_chat_id', None)
+            from .telegram_service import TelegramService
+            if chat_id:
+                res = TelegramService.enviar_mensaje(
+                    chat_id,
+                    f"🔔 <b>¡Mensaje de Prueba Exitoso!</b>\n\nHola {target_user.first_name or target_user.username}, tu conexión con Premier Capital Humano está activa y funcionando correctamente."
+                )
+                if res.get('ok'):
+                    messages.success(request, f"Mensaje de prueba enviado al Telegram de {target_user.username}.")
+                    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                        return JsonResponse({'status': 'ok'})
+                else:
+                    messages.error(request, f"Error al enviar mensaje a Telegram: {res.get('description')}")
+                    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                        return JsonResponse({'status': 'error', 'description': res.get('description')}, status=400)
+            else:
+                messages.error(request, "El usuario no tiene una cuenta de Telegram vinculada.")
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', ''):
+                    return JsonResponse({'status': 'error', 'description': 'Sin chat_id'}, status=400)
 
         # ----------------------------------------------------
         # 2. AGENCIAS Y MARCAS
@@ -1909,3 +1976,177 @@ def panel_administracion_view(request):
     }
 
     return render(request, 'reclutamiento/panel_administracion.html', context)
+
+
+# ==============================================================================
+# INTEGRACIÓN TELEGRAM BOT (WEBHOOK DE REPORTERÍA Y BI EJECUTIVO)
+# ==============================================================================
+
+@csrf_exempt
+def telegram_webhook_view(request):
+    """
+    Endpoint Webhook que recibe y procesa interacciones entrantes de Telegram Bot.
+    Exclusivo para la Dirección y Gerencias de Premier Automotriz (Reportería y BI).
+    """
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    # 1. Validación de seguridad con Secret Token si está configurado
+    from django.conf import settings
+    secret_esperado = getattr(settings, 'TELEGRAM_WEBHOOK_SECRET', '') or ''
+    if secret_esperado:
+        secret_recibido = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        if secret_recibido != secret_esperado:
+            return HttpResponseForbidden("Firma de seguridad inválida.")
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception as e:
+        logger.warning(f"[TelegramWebhook] JSON inválido: {e}")
+        return HttpResponseBadRequest("Payload JSON inválido.")
+
+    from .telegram_service import TelegramService
+
+    # 2. Manejo de Callback Queries (Clics en Botones Inline)
+    if 'callback_query' in data:
+        cb = data['callback_query']
+        cb_id = cb.get('id')
+        cb_data = cb.get('data', '')
+        chat_id = cb.get('message', {}).get('chat', {}).get('id')
+
+        usuario = TelegramService.obtener_usuario_por_chat_id(chat_id)
+        if not usuario:
+            TelegramService.responder_callback(cb_id, "Cuenta no vinculada o no autorizada.", show_alert=True)
+            return JsonResponse({'status': 'unauthorized'})
+
+        TelegramService.responder_callback(cb_id)
+
+        if cb_data == 'cmd_resumen':
+            txt = TelegramService.generar_resumen_ejecutivo_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+        elif cb_data == 'cmd_agencias':
+            txt = TelegramService.generar_vacantes_agencias_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+        elif cb_data == 'cmd_sla':
+            txt = TelegramService.generar_alertas_sla_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+        elif cb_data == 'cmd_estancados':
+            txt = TelegramService.generar_estancados_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+        elif cb_data == 'cmd_contrataciones':
+            txt = TelegramService.generar_contrataciones_mes_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+        elif cb_data == 'cmd_excel':
+            TelegramService.enviar_mensaje(chat_id, "⏳ <i>Generando archivo Excel oficial...</i>")
+            buf, fname = TelegramService.generar_excel_buffer(usuario)
+            TelegramService.enviar_documento_excel(chat_id, buf, fname)
+
+        return JsonResponse({'status': 'ok'})
+
+    # 3. Manejo de Mensajes de Texto y Comandos
+    if 'message' in data:
+        msg = data['message']
+        chat_id = msg.get('chat', {}).get('id')
+        raw_text = (msg.get('text') or '').strip()
+        tg_username = msg.get('from', {}).get('username', '')
+
+        if not chat_id or not raw_text:
+            return JsonResponse({'status': 'ignored'})
+
+        # Caso especial: Vinculación con token (/start <token>)
+        if raw_text.startswith('/start'):
+            partes = raw_text.split()
+            if len(partes) > 1:
+                token = partes[1].strip()
+                ok, user, res_msg = TelegramService.vincular_usuario_por_token(token, chat_id, tg_username)
+                if ok:
+                    bienvenida = (
+                        f"🎉 <b>¡Bienvenido al Canal Ejecutivo de Capital Humano, {user.first_name or user.username}!</b>\n\n"
+                        f"Tu cuenta directiva ha sido vinculada exitosamente. Desde este chat puedes monitorear en tiempo real los indicadores clave de reclutamiento, estado de SLAs y descargar reportes oficiales en Excel.\n\n"
+                        f"<i>Selecciona una opción del menú:</i>"
+                    )
+                    TelegramService.enviar_mensaje(chat_id, bienvenida, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+                else:
+                    TelegramService.enviar_mensaje(chat_id, f"⚠️ <b>Aviso de Vinculación:</b>\n\n{res_msg}")
+                return JsonResponse({'status': 'ok'})
+            else:
+                # /start sin token: verificar si ya está vinculado
+                user = TelegramService.obtener_usuario_por_chat_id(chat_id)
+                if user:
+                    saludo = (
+                        f"🏢 <b>Hola de nuevo, {user.first_name or user.username}.</b>\n\n"
+                        f"Panel Ejecutivo de Capital Humano activo. ¿Qué reporte deseas consultar?"
+                    )
+                    TelegramService.enviar_mensaje(chat_id, saludo, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+                else:
+                    aviso_no_auth = (
+                        f"🔒 <b>Acceso Restringido • Premier Capital Humano</b>\n\n"
+                        f"Este asistente de reportería ejecutiva es de uso exclusivo para la Dirección y Gerencias de Premier Automotriz.\n\n"
+                        f"Para vincular tu cuenta:\n"
+                        f"1. Inicia sesión en el portal web con tu cuenta directiva.\n"
+                        f"2. Entra a <b>Catálogos</b> (Centro de Administración).\n"
+                        f"3. En la pestaña <b>Equipo RH</b>, presiona el botón <b>«Conectar Telegram»</b>."
+                    )
+                    TelegramService.enviar_mensaje(chat_id, aviso_no_auth)
+                return JsonResponse({'status': 'ok'})
+
+        # Verificación de usuario vinculado para cualquier otro comando
+        usuario = TelegramService.obtener_usuario_por_chat_id(chat_id)
+        if not usuario:
+            aviso_no_auth = (
+                f"🔒 <b>Acceso Restringido • Premier Capital Humano</b>\n\n"
+                f"No encontramos una cuenta directiva vinculada a este chat de Telegram.\n\n"
+                f"Por favor ingresa al portal web y pulsa <b>«Conectar Telegram»</b> para autorizar el acceso."
+            )
+            TelegramService.enviar_mensaje(chat_id, aviso_no_auth)
+            return JsonResponse({'status': 'unauthorized'})
+
+        cmd = raw_text.lower().split('@')[0]  # Normalizar comando (ej: /resumen@PremierRHBot -> /resumen)
+
+        if cmd in ('/resumen', 'resumen', '📊 resumen general'):
+            txt = TelegramService.generar_resumen_ejecutivo_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+        elif cmd in ('/agencias', 'agencias', '🏢 por agencia', '🏢 vacantes por agencia'):
+            txt = TelegramService.generar_vacantes_agencias_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+        elif cmd in ('/sla', 'sla', '⏱️ alertas sla', 'alertas'):
+            txt = TelegramService.generar_alertas_sla_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+        elif cmd in ('/estancados', 'estancados', '⚠️ estancados', '⚠️ procesos estancados'):
+            txt = TelegramService.generar_estancados_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+        elif cmd in ('/contrataciones', 'contrataciones', '🎉 contrataciones', '🎉 contrataciones del mes'):
+            txt = TelegramService.generar_contrataciones_mes_texto(usuario)
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+        elif cmd in ('/excel', 'excel', '📥 descargar excel'):
+            TelegramService.enviar_mensaje(chat_id, "⏳ <i>Generando archivo Excel oficial...</i>")
+            buf, fname = TelegramService.generar_excel_buffer(usuario)
+            TelegramService.enviar_documento_excel(chat_id, buf, fname)
+
+        elif cmd in ('/ayuda', 'ayuda', 'help', '/help'):
+            ayuda = (
+                f"ℹ️ <b>COMANDOS DISPONIBLES • PREMIER CAPITAL HUMANO</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"• /resumen — Resumen global de vacantes, SLAs y contrataciones.\n"
+                f"• /agencias — Conteo de plazas abiertas por agencia y marca.\n"
+                f"• /sla — Detalle de vacantes vencidas o en riesgo de vencimiento.\n"
+                f"• /estancados — Candidatos con más de 7 días sin avance.\n"
+                f"• /contrataciones — Colaboradores contratados en el mes.\n"
+                f"• /excel — Descarga el Resumen Ejecutivo en formato .xlsx.\n"
+                f"• /ayuda — Muestra esta guía de comandos.\n"
+            )
+            TelegramService.enviar_mensaje(chat_id, ayuda, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+        else:
+            desconocido = (
+                f"🤔 No reconozco el comando <code>{raw_text}</code>.\n\n"
+                f"Por favor selecciona una opción del menú interactivo o escribe /ayuda."
+            )
+            TelegramService.enviar_mensaje(chat_id, desconocido, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+
+    return JsonResponse({'status': 'ok'})

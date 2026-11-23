@@ -1,4 +1,9 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
+from django.core.management import call_command
+from unittest.mock import patch, MagicMock
+from io import BytesIO, StringIO
+import json
+import openpyxl
 from django.contrib.auth.models import User, Group
 from django.contrib.admin.sites import site
 from django.urls import reverse
@@ -1734,6 +1739,342 @@ class PanelAdministracionTests(TestCase):
         self.client.post(url, {'accion': 'toggle_aviso_activo', 'item_id': aviso.id})
         aviso.refresh_from_db()
         self.assertFalse(aviso.esta_activo)
+
+
+class TelegramBotExecutiveTests(TestCase):
+    """Pruebas unitarias para la integración del bot ejecutivo de Telegram (Reportería y BI)."""
+
+    def setUp(self):
+        self.client = Client()
+        # Grupos de seguridad
+        self.grupo_gerentes, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+
+        # Usuarios
+        self.directora, _ = User.objects.get_or_create(
+            username='patricia_arechiga',
+            defaults={
+                'first_name': 'Patricia',
+                'last_name': 'Aréchiga',
+                'email': 'patricia@premier.com'
+            }
+        )
+        self.directora.set_password('password123')
+        self.directora.save()
+        self.directora.groups.add(self.grupo_gerentes)
+
+        self.asesora, _ = User.objects.get_or_create(
+            username='asesora_test',
+            defaults={
+                'first_name': 'Laura',
+                'last_name': 'Gómez',
+                'email': 'laura@premier.com'
+            }
+        )
+        self.asesora.set_password('password123')
+        self.asesora.save()
+        self.asesora.groups.add(self.grupo_asesoras)
+
+        self.superuser, _ = User.objects.get_or_create(
+            username='admin_ch',
+            defaults={
+                'email': 'admin@premier.com',
+                'is_superuser': True,
+                'is_staff': True
+            }
+        )
+        self.superuser.set_password('password123')
+        self.superuser.save()
+
+        # Datos base de reclutamiento
+        self.marca, _ = Marca.objects.get_or_create(nombre='Toyota Premier', defaults={'activo': True})
+        self.ciudad, _ = Ciudad.objects.get_or_create(nombre='Culiacán', defaults={'activo': True})
+        self.agencia, _ = Agencia.objects.get_or_create(
+            nombre='Toyota Culiacán',
+            defaults={'marca': self.marca, 'ciudad': self.ciudad, 'activo': True}
+        )
+        self.puesto_cat, _ = CatalogoPuesto.objects.get_or_create(
+            nombre='Gerente de Ventas',
+            defaults={'dias_meta_default': 25, 'activo': True}
+        )
+
+        self.vacante = Puesto.objects.create(
+            titulo=self.puesto_cat,
+            marca=self.marca,
+            agencia=self.agencia.nombre,
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            cantidad_vacantes=1,
+            nombre_jefe_inmediato='Director Comercial',
+            puesto_jefe_inmediato='Director',
+            motivo_requisicion='CRE',
+            objetivo_puesto='Liderar ventas',
+            funciones_puesto='Gestión de equipo comercial',
+            indicador_puesto='Cumplimiento de cuota',
+            sueldo_base=35000.00
+        )
+
+        self.candidato = Candidato.objects.create(
+            nombres='Carlos',
+            apellidos='Mendoza Ríos',
+            email='carlos.mendoza@email.com',
+            telefono='6671234567'
+        )
+
+        self.proceso = Proceso.objects.create(
+            puesto=self.vacante,
+            candidato=self.candidato,
+            asesora_asignada=self.asesora,
+            estatus_proceso=Proceso.Estatus.ENT_CH
+        )
+
+    def test_generar_token_y_vincular_directora(self):
+        """Verifica generación de token seguro y vinculación de una cuenta con rol Gerente/Directora."""
+        from reclutamiento.telegram_service import TelegramService
+        token, deep_link = TelegramService.generar_token_vinculacion(self.directora)
+        self.assertTrue(bool(token))
+        self.assertEqual(len(token), 24)
+        self.assertIn("t.me", deep_link)
+        self.directora.perfilusuario.refresh_from_db()
+        self.assertEqual(self.directora.perfilusuario.telegram_token_enlace, token)
+
+        # Vinculación exitosa
+        ok, user, msg = TelegramService.vincular_usuario_por_token(token, 987654321, "patricia_tg")
+        self.assertTrue(ok)
+        self.assertEqual(user, self.directora)
+        self.assertIn("exitosamente", msg)
+
+        self.directora.perfilusuario.refresh_from_db()
+        self.assertEqual(self.directora.perfilusuario.telegram_chat_id, '987654321')
+        self.assertEqual(self.directora.perfilusuario.telegram_username, 'patricia_tg')
+        self.assertIsNone(self.directora.perfilusuario.telegram_token_enlace)
+
+        # Intentar vincular de nuevo con el mismo token debe fallar
+        ok2, user2, msg2 = TelegramService.vincular_usuario_por_token(token, 111111, "otro")
+        self.assertFalse(ok2)
+        self.assertIsNone(user2)
+
+    def test_asesora_rechazada_al_vincular_bot_ejecutivo(self):
+        """Verifica que un usuario con rol de Asesora no pueda vincularse al bot reservado para Dirección."""
+        from reclutamiento.telegram_service import TelegramService
+        token, _ = TelegramService.generar_token_vinculacion(self.asesora)
+        ok, user, msg = TelegramService.vincular_usuario_por_token(token, 555555, "asesora_tg")
+        self.assertFalse(ok)
+        self.assertIn("Acceso no autorizado", msg)
+        self.asesora.perfilusuario.refresh_from_db()
+        self.assertIsNone(self.asesora.perfilusuario.telegram_chat_id)
+
+    def test_generacion_textos_reporteria_y_excel(self):
+        """Verifica la generación correcta de reportes de texto y buffer de Excel."""
+        from reclutamiento.telegram_service import TelegramService
+
+        # 1. Resumen ejecutivo
+        resumen = TelegramService.generar_resumen_ejecutivo_texto(self.directora)
+        self.assertIn("Resumen Ejecutivo", resumen)
+        self.assertIn("ESTATUS GLOBAL DE VACANTES", resumen)
+
+        # 2. Desglose de agencias
+        agencias_txt = TelegramService.generar_vacantes_agencias_texto(self.directora)
+        self.assertIn("VACANTES ABIERTAS POR AGENCIA", agencias_txt)
+        self.assertIn("Toyota Culiacán", agencias_txt)
+
+        # 3. Monitoreo de SLA
+        sla_txt = TelegramService.generar_alertas_sla_texto(self.directora)
+        self.assertIn("MONITOREO DE TIEMPOS DE COBERTURA (SLA)", sla_txt)
+
+        # 4. Candidatos estancados
+        estancados_txt = TelegramService.generar_estancados_texto(self.directora)
+        self.assertIn("PROCESOS ESTANCADOS", estancados_txt)
+
+        # 5. Contrataciones
+        contrataciones_txt = TelegramService.generar_contrataciones_mes_texto(self.directora)
+        self.assertIn("CONTRATACIONES DE", contrataciones_txt)
+
+        # 6. Generación de Excel binario
+        buf, filename = TelegramService.generar_excel_buffer(self.directora)
+        self.assertTrue(filename.endswith('.xlsx'))
+        self.assertGreater(buf.getbuffer().nbytes, 1000)
+
+        # Validar que es un Excel legible por openpyxl
+        wb = openpyxl.load_workbook(buf)
+        self.assertIn("Resumen Ejecutivo", wb.sheetnames)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='clave_secreta_test')
+    def test_webhook_seguridad_y_metodos(self):
+        """Verifica que el webhook rechace peticiones no autorizadas o métodos no permitidos."""
+        url = reverse('telegram_webhook')
+
+        # GET no permitido (405)
+        resp_get = self.client.get(url)
+        self.assertEqual(resp_get.status_code, 405)
+
+        # POST sin firma secreta (403)
+        resp_no_secret = self.client.post(url, data=json.dumps({}), content_type='application/json')
+        self.assertEqual(resp_no_secret.status_code, 403)
+
+        # POST con firma secreta incorrecta (403)
+        resp_wrong_secret = self.client.post(
+            url,
+            data=json.dumps({}),
+            content_type='application/json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='clave_erronea'
+        )
+        self.assertEqual(resp_wrong_secret.status_code, 403)
+
+        # POST con firma correcta y JSON inválido (400)
+        resp_bad_json = self.client.post(
+            url,
+            data="Esto no es json",
+            content_type='application/json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='clave_secreta_test'
+        )
+        self.assertEqual(resp_bad_json.status_code, 400)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='clave_secreta_test')
+    @patch('reclutamiento.telegram_service.TelegramService.api_call')
+    def test_webhook_flujo_vinculacion_start(self, mock_api):
+        """Verifica la vinculación en 1-clic a través del comando /start <token>."""
+        mock_api.return_value = {'ok': True}
+        from reclutamiento.telegram_service import TelegramService
+        token, _ = TelegramService.generar_token_vinculacion(self.directora)
+
+        payload = {
+            'message': {
+                'chat': {'id': 123456789},
+                'from': {'username': 'patricia_tg'},
+                'text': f'/start {token}'
+            }
+        }
+        url = reverse('telegram_webhook')
+        resp = self.client.post(
+            url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='clave_secreta_test'
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        self.directora.perfilusuario.refresh_from_db()
+        self.assertEqual(self.directora.perfilusuario.telegram_chat_id, '123456789')
+        self.assertTrue(mock_api.called)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='clave_secreta_test')
+    @patch('reclutamiento.telegram_service.TelegramService.api_call')
+    def test_webhook_comandos_interactivos(self, mock_api):
+        """Verifica la respuesta a comandos interactivos como /resumen, /sla y /excel."""
+        mock_api.return_value = {'ok': True}
+        # Vincular a la directora
+        perfil = self.directora.perfilusuario
+        perfil.telegram_chat_id = '998877'
+        perfil.save()
+
+        url = reverse('telegram_webhook')
+        headers = {'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN': 'clave_secreta_test'}
+
+        # Comando /resumen
+        resp = self.client.post(
+            url,
+            data=json.dumps({'message': {'chat': {'id': 998877}, 'text': '/resumen'}}),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+        # Callback query cmd_excel
+        mock_api.reset_mock()
+        resp_cb = self.client.post(
+            url,
+            data=json.dumps({
+                'callback_query': {
+                    'id': 'cb_test_1',
+                    'data': 'cmd_excel',
+                    'message': {'chat': {'id': 998877}}
+                }
+            }),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp_cb.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+    @override_settings(TELEGRAM_BOT_TOKEN='123456789:ABCDefghIJKlmnoPQRstuvwxYZ')
+    @patch('reclutamiento.telegram_service.TelegramService.api_call')
+    def test_management_commands_pulse_y_flash(self, mock_api):
+        """Verifica que los cron jobs de Pulse Matutino y Flash Semanal se ejecuten sin excepciones."""
+        mock_api.return_value = {'ok': True}
+        perfil = self.directora.perfilusuario
+        perfil.telegram_chat_id = '123456'
+        perfil.recibir_pulse_matutino = True
+        perfil.save()
+
+        # Ejecución forzada de Pulse Matutino
+        out = StringIO()
+        call_command('telegram_pulse_matutino', force=True, stdout=out)
+        self.assertIn("Pulse Matutino concluido", out.getvalue())
+
+        # Ejecución forzada de Flash Semanal
+        out2 = StringIO()
+        call_command('telegram_flash_semanal', force=True, stdout=out2)
+        self.assertIn("Flash Semanal concluido", out2.getvalue())
+
+    def test_panel_administracion_acciones_telegram(self):
+        """Verifica las acciones POST de Telegram en el panel de administración."""
+        url = reverse('panel_administracion')
+        self.client.login(username='patricia_arechiga', password='password123')
+
+        # 1. Generar token
+        resp_token = self.client.post(
+            url,
+            {'action': 'generar_token_telegram', 'user_id': self.directora.id},
+            HTTP_ACCEPT='application/json'
+        )
+        self.assertEqual(resp_token.status_code, 200)
+        data_token = resp_token.json()
+        self.assertEqual(data_token.get('status'), 'ok')
+        self.assertTrue(bool(data_token.get('token')))
+        self.assertIn('t.me', data_token.get('enlace'))
+
+        # Asignar chat_id simulado
+        perfil = self.directora.perfilusuario
+        perfil.telegram_chat_id = '334455'
+        perfil.save()
+
+        # 2. Desvincular cuenta
+        resp_desvincular = self.client.post(
+            url,
+            {'action': 'desvincular_telegram', 'user_id': self.directora.id},
+            HTTP_ACCEPT='application/json'
+        )
+        self.assertEqual(resp_desvincular.status_code, 200)
+        data_desv = resp_desvincular.json()
+        self.assertEqual(data_desv.get('status'), 'ok')
+        perfil.refresh_from_db()
+        self.assertIsNone(perfil.telegram_chat_id)
+
+    @override_settings(TELEGRAM_BOT_TOKEN='123456789:ABCDefghIJKlmnoPQRstuvwxYZ')
+    @patch('reclutamiento.telegram_service.TelegramService.api_call')
+    def test_notificaciones_eventos_tiempo_real(self, mock_api):
+        """Verifica que las alertas de eventos críticos (requisición creada y plaza cubierta) se envíen."""
+        mock_api.return_value = {'ok': True}
+        from reclutamiento.telegram_service import TelegramService
+
+        perfil = self.directora.perfilusuario
+        perfil.telegram_chat_id = '999888'
+        perfil.recibir_alertas_criticas = True
+        perfil.save()
+
+        # Alerta requisición creada
+        TelegramService.notificar_requisicion_creada(self.vacante)
+        self.assertTrue(mock_api.called)
+
+        # Alerta plaza cubierta
+        mock_api.reset_mock()
+        TelegramService.notificar_plaza_cubierta(self.proceso)
+        self.assertTrue(mock_api.called)
+
 
 
 

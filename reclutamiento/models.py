@@ -50,6 +50,35 @@ class PerfilUsuario(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE)
     marcas = models.ManyToManyField(Marca, blank=True)
 
+    # Integración Telegram para Dirección y Gerencias
+    telegram_chat_id = models.CharField(
+        max_length=64, blank=True, null=True, unique=True,
+        verbose_name="Telegram Chat ID",
+        help_text="Identificador único del chat de Telegram para recibir reportes"
+    )
+    telegram_username = models.CharField(
+        max_length=64, blank=True, null=True,
+        verbose_name="Usuario de Telegram",
+        help_text="Alias @usuario en Telegram"
+    )
+    telegram_token_enlace = models.CharField(
+        max_length=64, blank=True, null=True, unique=True,
+        verbose_name="Token de Vinculación",
+        help_text="Token temporal seguro para conectar Telegram en 1 clic"
+    )
+    notificaciones_telegram = models.BooleanField(
+        default=True,
+        verbose_name="Notificaciones Telegram Activas"
+    )
+    recibir_pulse_matutino = models.BooleanField(
+        default=True,
+        verbose_name="Recibir Pulse Matutino Diario"
+    )
+    recibir_alertas_criticas = models.BooleanField(
+        default=True,
+        verbose_name="Recibir Alertas Inmediatas (Contrataciones y SLAs)"
+    )
+
     def __str__(self):
         return self.usuario.username
 

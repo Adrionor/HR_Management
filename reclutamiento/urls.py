@@ -41,6 +41,7 @@ urlpatterns = [
     # Reportes y Auditoría
     path('reportes/', views.reportes_view, name='vista_reportes'),
     path('configuracion/', views.panel_administracion_view, name='panel_administracion'),
+    path('api/telegram/webhook/', views.telegram_webhook_view, name='telegram_webhook'),
     path('puesto/<int:puesto_id>/historial/', views.historial_puesto_view, name='historial_puesto'),
     path('historial-general/', views.historial_general_view, name='vista_historial_general'),
     path('candidato/<int:candidato_id>/historial/', views.historial_candidato_view, name='historial_candidato'),
