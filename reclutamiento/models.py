@@ -10,6 +10,38 @@ from .storage import CVStorage, RequisicionStorage
 
 class Marca(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+    activo = models.BooleanField(default=True, verbose_name="¿Activa?")
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Marca"
+        verbose_name_plural = "Marcas"
+
+    def __str__(self):
+        return self.nombre
+
+class Ciudad(models.Model):
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Ciudad")
+    activo = models.BooleanField(default=True, verbose_name="¿Activa?")
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Ciudad"
+        verbose_name_plural = "Ciudades"
+
+    def __str__(self):
+        return self.nombre
+
+class Agencia(models.Model):
+    nombre = models.CharField(max_length=150, unique=True, verbose_name="Nombre de la Agencia")
+    marca = models.ForeignKey(Marca, on_delete=models.SET_NULL, null=True, blank=True, related_name='agencias', verbose_name="Marca")
+    ciudad = models.ForeignKey(Ciudad, on_delete=models.SET_NULL, null=True, blank=True, related_name='agencias', verbose_name="Ciudad")
+    activo = models.BooleanField(default=True, verbose_name="¿Activa?")
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Agencia"
+        verbose_name_plural = "Agencias"
 
     def __str__(self):
         return self.nombre
@@ -23,6 +55,12 @@ class PerfilUsuario(models.Model):
 
 class CatalogoPuesto(models.Model):
     nombre = models.CharField(max_length=200, unique=True, verbose_name="Nombre del Puesto")
+    activo = models.BooleanField(default=True, verbose_name="¿Activo?")
+    dias_meta_default = models.PositiveIntegerField(
+        default=20,
+        verbose_name="Días Meta Sugeridos",
+        help_text="Tiempo meta sugerido en días para sugerir automáticamente al elegir el puesto"
+    )
     dias_meta = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -37,6 +75,13 @@ class CatalogoPuesto(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def save(self, *args, **kwargs):
+        if not self.dias_meta:
+            self.dias_meta = self.dias_meta_default
+        elif not self.dias_meta_default and self.dias_meta:
+            self.dias_meta_default = self.dias_meta
+        super().save(*args, **kwargs)
 
 @receiver(post_save, sender=User)
 def ensure_user_profile(sender, instance, **kwargs):
@@ -771,6 +816,14 @@ class Aviso(models.Model):
         verbose_name = "Aviso General"
         verbose_name_plural = "Avisos Generales"
         ordering = ['-fecha_creacion']
+
+    @property
+    def activo(self):
+        return self.esta_activo
+
+    @activo.setter
+    def activo(self, value):
+        self.esta_activo = bool(value)
 
     def __str__(self):
         return self.titulo

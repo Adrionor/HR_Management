@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.db import transaction
@@ -16,13 +16,16 @@ import csv
 import json
 
 from .forms import SolicitudPuestoForm, RegistroCandidatoForm, PublicacionForm, PerfilDePuestoForm
-from .models import Candidato, Puesto, Proceso, RegistroActividad, Publicacion, PerfilDePuesto, Aviso, Marca, CatalogoPuesto
+from .models import (
+    Candidato, Puesto, Proceso, RegistroActividad, Publicacion,
+    PerfilDePuesto, Aviso, Marca, CatalogoPuesto, Agencia, Ciudad
+)
 from .permissions import (
     es_gerente_ch, es_asesora, es_personal_rh,
     puede_ver_operaciones, es_management, puede_ver_confidenciales, puede_ver_reportes,
     puede_acceder_proceso, puede_consultar_proceso, puede_crear_vacante, puede_ver_biblioteca,
     puede_modificar_proceso, puede_consultar_vacante, puede_modificar_vacante, puede_reiniciar_sla, puede_descargar_cv,
-    puede_revertir_no_contratable
+    puede_revertir_no_contratable, puede_administrar_rh
 )
 
 # Decorador para borrar cache
@@ -512,8 +515,10 @@ def crear_vacante_view(request):
             nueva_vacante.estatus_autorizacion = Puesto.EstatusAutorizacion.AUTORIZADO
             nueva_vacante.esta_abierto = True
 
-            if (not nueva_vacante.dias_meta or nueva_vacante.dias_meta == 20) and nueva_vacante.titulo and getattr(nueva_vacante.titulo, 'dias_meta', None):
-                nueva_vacante.dias_meta = nueva_vacante.titulo.dias_meta
+            if (not nueva_vacante.dias_meta or nueva_vacante.dias_meta == 20) and nueva_vacante.titulo:
+                meta_sugerida = getattr(nueva_vacante.titulo, 'dias_meta_default', None) or getattr(nueva_vacante.titulo, 'dias_meta', None)
+                if meta_sugerida:
+                    nueva_vacante.dias_meta = meta_sugerida
 
             nueva_vacante.save()
 
@@ -1431,3 +1436,474 @@ def verificar_unicidad_view(request):
         response["rfc_unico"] = not Candidato.objects.filter(rfc=rfc).exists()
 
     return JsonResponse(response)
+
+
+# ===================================================================
+# CENTRO DE ADMINISTRACIÓN Y CATÁLOGOS (SAP FIORI)
+# ===================================================================
+
+@login_required
+@user_passes_test(puede_administrar_rh, login_url=reverse_lazy('acceso_denegado'))
+def panel_administracion_view(request):
+    """
+    Centro de Administración y Catálogos Fiori para Directora de RH,
+    Gerentes de Capital Humano y Superusuarios.
+    Permite administrar sin entrar al /admin/ de Django:
+    - Equipo RH (Asesoras y Gerentes): alta, activar/desactivar, restablecer contraseña.
+    - Agencias y Marcas: alta, edición y visibilidad en listas.
+    - Catálogo de Puestos y Tiempos Meta: alta, edición de días meta sugeridos y visibilidad.
+    - Ciudades / Plazas: alta, edición y visibilidad.
+    - Comunicados del Dashboard (Avisos): creación, edición y activación.
+    """
+    active_tab = request.POST.get('active_tab') or request.GET.get('tab') or 'tab-equipo'
+
+    if request.method == 'POST':
+        action = request.POST.get('action') or request.POST.get('accion')
+
+        # ----------------------------------------------------
+        # 1. GESTIÓN DE EQUIPO RH
+        # ----------------------------------------------------
+        if action == 'crear_usuario':
+            active_tab = 'tab-equipo'
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            username = request.POST.get('username', '').strip()
+            email = request.POST.get('email', '').strip()
+            rol = (request.POST.get('rol') or 'ASESORA').strip().upper()
+            password = request.POST.get('password', '').strip()
+
+            if not all([first_name, last_name, username, email, password]):
+                messages.error(request, "Todos los campos son obligatorios para dar de alta una integrante.")
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, f"El nombre de usuario '{username}' ya está registrado.")
+            elif User.objects.filter(email=email).exists():
+                messages.error(request, f"El correo '{email}' ya se encuentra en uso.")
+            elif len(password) < 6:
+                messages.error(request, "La contraseña inicial debe contener al menos 6 caracteres.")
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    is_active=True
+                )
+                nombre_grupo = 'Gerentes de Capital Humano' if rol in ('GERENTE', 'GERENTES') else 'Asesoras'
+                grupo, _ = Group.objects.get_or_create(name=nombre_grupo)
+                user.groups.add(grupo)
+
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Alta de Usuario RH",
+                    tipo_objeto="User",
+                    id_objeto=user.id,
+                    detalles=f"Se dio de alta a {user.get_full_name()} ({user.username}) con rol {nombre_grupo}."
+                )
+                messages.success(request, f"Integrante {user.get_full_name()} ({user.username}) registrada exitosamente.")
+
+        elif action == 'toggle_usuario_activo':
+            active_tab = 'tab-equipo'
+            user_id = request.POST.get('user_id') or request.POST.get('item_id')
+            target_user = get_object_or_404(User, id=user_id)
+
+            if target_user == request.user:
+                messages.error(request, "Regla de seguridad: No puedes desactivar tu propia cuenta.")
+            elif target_user.is_superuser and not request.user.is_superuser:
+                messages.error(request, "Regla de seguridad: No tienes permisos para modificar el estado de un Superusuario.")
+            else:
+                target_user.is_active = not target_user.is_active
+                target_user.save(update_fields=['is_active'])
+                estado_txt = "activada" if target_user.is_active else "desactivada"
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Cambio de Estado de Usuario",
+                    tipo_objeto="User",
+                    id_objeto=target_user.id,
+                    detalles=f"Acceso de {target_user.username} {estado_txt}."
+                )
+                messages.success(request, f"Cuenta de {target_user.get_full_name() or target_user.username} {estado_txt} correctamente.")
+
+        elif action == 'reset_password_usuario':
+            active_tab = 'tab-equipo'
+            user_id = request.POST.get('user_id') or request.POST.get('item_id')
+            nueva_password = (request.POST.get('nueva_password') or request.POST.get('password') or '').strip()
+            target_user = get_object_or_404(User, id=user_id)
+
+            if target_user == request.user:
+                messages.error(request, "Regla de seguridad: Para modificar tu propia contraseña, hazlo desde tu perfil.")
+            elif target_user.is_superuser and not request.user.is_superuser:
+                messages.error(request, "Regla de seguridad: No tienes permisos para cambiar la contraseña de un Superusuario.")
+            elif len(nueva_password) < 6:
+                messages.error(request, "La nueva contraseña debe contener al menos 6 caracteres.")
+            else:
+                target_user.set_password(nueva_password)
+                target_user.save()
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Restablecimiento de Contraseña",
+                    tipo_objeto="User",
+                    id_objeto=target_user.id,
+                    detalles=f"Se restableció la contraseña de {target_user.username}."
+                )
+                messages.success(request, f"Contraseña de {target_user.get_full_name() or target_user.username} restablecida correctamente.")
+
+        # ----------------------------------------------------
+        # 2. AGENCIAS Y MARCAS
+        # ----------------------------------------------------
+        elif action == 'crear_agencia':
+            active_tab = 'tab-agencias'
+            nombre = request.POST.get('nombre', '').strip()
+            marca_id = request.POST.get('marca_id') or request.POST.get('marca') or None
+            ciudad_id = request.POST.get('ciudad_id') or request.POST.get('ciudad') or None
+
+            if not nombre:
+                messages.error(request, "El nombre de la agencia es obligatorio.")
+            elif Agencia.objects.filter(nombre__iexact=nombre).exists():
+                messages.error(request, f"La agencia '{nombre}' ya existe en el catálogo.")
+            else:
+                agencia = Agencia.objects.create(
+                    nombre=nombre,
+                    marca_id=marca_id,
+                    ciudad_id=ciudad_id,
+                    activo=True
+                )
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Creación de Agencia",
+                    tipo_objeto="Agencia",
+                    id_objeto=agencia.id,
+                    detalles=f"Agencia '{agencia.nombre}' registrada."
+                )
+                messages.success(request, f"Agencia '{agencia.nombre}' agregada exitosamente.")
+
+        elif action == 'editar_agencia':
+            active_tab = 'tab-agencias'
+            agencia_id = request.POST.get('agencia_id') or request.POST.get('item_id')
+            agencia = get_object_or_404(Agencia, id=agencia_id)
+            nombre = request.POST.get('nombre', '').strip()
+            marca_id = request.POST.get('marca_id') or request.POST.get('marca') or None
+            ciudad_id = request.POST.get('ciudad_id') or request.POST.get('ciudad') or None
+
+            if not nombre:
+                messages.error(request, "El nombre de la agencia no puede quedar vacío.")
+            elif Agencia.objects.filter(nombre__iexact=nombre).exclude(id=agencia.id).exists():
+                messages.error(request, f"Ya existe otra agencia con el nombre '{nombre}'.")
+            else:
+                agencia.nombre = nombre
+                agencia.marca_id = marca_id
+                agencia.ciudad_id = ciudad_id
+                agencia.save()
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Edición de Agencia",
+                    tipo_objeto="Agencia",
+                    id_objeto=agencia.id,
+                    detalles=f"Se actualizó la agencia '{agencia.nombre}'."
+                )
+                messages.success(request, f"Agencia '{agencia.nombre}' actualizada correctamente.")
+
+        elif action == 'toggle_agencia_activo':
+            active_tab = 'tab-agencias'
+            agencia_id = request.POST.get('agencia_id') or request.POST.get('item_id')
+            agencia = get_object_or_404(Agencia, id=agencia_id)
+            agencia.activo = not agencia.activo
+            agencia.save(update_fields=['activo'])
+            vis_txt = "visible en listas desplegables" if agencia.activo else "oculta de listas desplegables"
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion="Cambio Visibilidad Agencia",
+                tipo_objeto="Agencia",
+                id_objeto=agencia.id,
+                detalles=f"Agencia '{agencia.nombre}' marcada como {vis_txt}."
+            )
+            messages.success(request, f"Agencia '{agencia.nombre}' ahora está {vis_txt}.")
+
+        elif action == 'crear_marca':
+            active_tab = 'tab-agencias'
+            nombre = request.POST.get('nombre', '').strip()
+            if not nombre:
+                messages.error(request, "El nombre de la marca es obligatorio.")
+            elif Marca.objects.filter(nombre__iexact=nombre).exists():
+                messages.error(request, f"La marca '{nombre}' ya existe.")
+            else:
+                marca = Marca.objects.create(nombre=nombre, activo=True)
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Creación de Marca",
+                    tipo_objeto="Marca",
+                    id_objeto=marca.id,
+                    detalles=f"Marca '{marca.nombre}' registrada."
+                )
+                messages.success(request, f"Marca '{marca.nombre}' agregada exitosamente.")
+
+        elif action == 'editar_marca':
+            active_tab = 'tab-agencias'
+            marca_id = request.POST.get('marca_id') or request.POST.get('item_id')
+            marca = get_object_or_404(Marca, id=marca_id)
+            nombre = request.POST.get('nombre', '').strip()
+            if not nombre:
+                messages.error(request, "El nombre de la marca no puede estar vacío.")
+            elif Marca.objects.filter(nombre__iexact=nombre).exclude(id=marca.id).exists():
+                messages.error(request, f"Ya existe otra marca llamada '{nombre}'.")
+            else:
+                marca.nombre = nombre
+                marca.save(update_fields=['nombre'])
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Edición de Marca",
+                    tipo_objeto="Marca",
+                    id_objeto=marca.id,
+                    detalles=f"Marca renombrada a '{marca.nombre}'."
+                )
+                messages.success(request, f"Marca '{marca.nombre}' actualizada correctamente.")
+
+        elif action == 'toggle_marca_activo':
+            active_tab = 'tab-agencias'
+            marca_id = request.POST.get('marca_id')
+            marca = get_object_or_404(Marca, id=marca_id)
+            marca.activo = not marca.activo
+            marca.save(update_fields=['activo'])
+            vis_txt = "visible en listas" if marca.activo else "oculta de listas"
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion="Cambio Visibilidad Marca",
+                tipo_objeto="Marca",
+                id_objeto=marca.id,
+                detalles=f"Marca '{marca.nombre}' marcada como {vis_txt}."
+            )
+            messages.success(request, f"Marca '{marca.nombre}' ahora está {vis_txt}.")
+
+        # ----------------------------------------------------
+        # 3. PUESTOS Y TIEMPOS META
+        # ----------------------------------------------------
+        elif action == 'crear_puesto':
+            active_tab = 'tab-puestos'
+            nombre = request.POST.get('nombre', '').strip()
+            dias_meta_raw = request.POST.get('dias_meta_default', '20').strip()
+            try:
+                dias_meta_val = max(1, int(dias_meta_raw))
+            except (ValueError, TypeError):
+                dias_meta_val = 20
+
+            if not nombre:
+                messages.error(request, "El nombre del puesto es obligatorio.")
+            elif CatalogoPuesto.objects.filter(nombre__iexact=nombre).exists():
+                messages.error(request, f"El puesto '{nombre}' ya existe en el catálogo.")
+            else:
+                puesto = CatalogoPuesto.objects.create(
+                    nombre=nombre,
+                    dias_meta_default=dias_meta_val,
+                    dias_meta=dias_meta_val,
+                    activo=True
+                )
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Creación de Puesto en Catálogo",
+                    tipo_objeto="CatalogoPuesto",
+                    id_objeto=puesto.id,
+                    detalles=f"Puesto '{puesto.nombre}' creado con meta sugerida de {dias_meta_val} días."
+                )
+                messages.success(request, f"Puesto '{puesto.nombre}' agregado exitosamente.")
+
+        elif action == 'editar_puesto':
+            active_tab = 'tab-puestos'
+            puesto_id = request.POST.get('puesto_id')
+            puesto = get_object_or_404(CatalogoPuesto, id=puesto_id)
+            nombre = request.POST.get('nombre', '').strip()
+            dias_meta_raw = request.POST.get('dias_meta_default', '20').strip()
+            try:
+                dias_meta_val = max(1, int(dias_meta_raw))
+            except (ValueError, TypeError):
+                dias_meta_val = 20
+
+            if not nombre:
+                messages.error(request, "El nombre del puesto no puede estar vacío.")
+            elif CatalogoPuesto.objects.filter(nombre__iexact=nombre).exclude(id=puesto.id).exists():
+                messages.error(request, f"Ya existe otro puesto con el nombre '{nombre}'.")
+            else:
+                puesto.nombre = nombre
+                puesto.dias_meta_default = dias_meta_val
+                puesto.dias_meta = dias_meta_val
+                puesto.save(update_fields=['nombre', 'dias_meta_default', 'dias_meta'])
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Edición de Puesto en Catálogo",
+                    tipo_objeto="CatalogoPuesto",
+                    id_objeto=puesto.id,
+                    detalles=f"Puesto actualizado a '{puesto.nombre}' (Meta: {dias_meta_val}d)."
+                )
+                messages.success(request, f"Puesto '{puesto.nombre}' actualizado correctamente.")
+
+        elif action == 'toggle_puesto_activo':
+            active_tab = 'tab-puestos'
+            puesto_id = request.POST.get('puesto_id') or request.POST.get('item_id')
+            puesto = get_object_or_404(CatalogoPuesto, id=puesto_id)
+            puesto.activo = not puesto.activo
+            puesto.save(update_fields=['activo'])
+            vis_txt = "visible en listas" if puesto.activo else "oculto de listas"
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion="Cambio Visibilidad Puesto",
+                tipo_objeto="CatalogoPuesto",
+                id_objeto=puesto.id,
+                detalles=f"Puesto '{puesto.nombre}' marcado como {vis_txt}."
+            )
+            messages.success(request, f"Puesto '{puesto.nombre}' ahora está {vis_txt}.")
+
+        # ----------------------------------------------------
+        # 4. CIUDADES / PLAZAS
+        # ----------------------------------------------------
+        elif action == 'crear_ciudad':
+            active_tab = 'tab-ciudades'
+            nombre = request.POST.get('nombre', '').strip()
+            if not nombre:
+                messages.error(request, "El nombre de la ciudad es obligatorio.")
+            elif Ciudad.objects.filter(nombre__iexact=nombre).exists():
+                messages.error(request, f"La ciudad '{nombre}' ya existe en el catálogo.")
+            else:
+                ciudad = Ciudad.objects.create(nombre=nombre, activo=True)
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Creación de Ciudad",
+                    tipo_objeto="Ciudad",
+                    id_objeto=ciudad.id,
+                    detalles=f"Ciudad '{ciudad.nombre}' registrada."
+                )
+                messages.success(request, f"Ciudad '{ciudad.nombre}' agregada exitosamente.")
+
+        elif action == 'editar_ciudad':
+            active_tab = 'tab-ciudades'
+            ciudad_id = request.POST.get('ciudad_id') or request.POST.get('item_id')
+            ciudad = get_object_or_404(Ciudad, id=ciudad_id)
+            nombre = request.POST.get('nombre', '').strip()
+            if not nombre:
+                messages.error(request, "El nombre de la ciudad no puede estar vacío.")
+            elif Ciudad.objects.filter(nombre__iexact=nombre).exclude(id=ciudad.id).exists():
+                messages.error(request, f"Ya existe otra ciudad llamada '{nombre}'.")
+            else:
+                ciudad.nombre = nombre
+                ciudad.save(update_fields=['nombre'])
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Edición de Ciudad",
+                    tipo_objeto="Ciudad",
+                    id_objeto=ciudad.id,
+                    detalles=f"Ciudad renombrada a '{ciudad.nombre}'."
+                )
+                messages.success(request, f"Ciudad '{ciudad.nombre}' actualizada correctamente.")
+
+        elif action == 'toggle_ciudad_activo':
+            active_tab = 'tab-ciudades'
+            ciudad_id = request.POST.get('ciudad_id') or request.POST.get('item_id')
+            ciudad = get_object_or_404(Ciudad, id=ciudad_id)
+            ciudad.activo = not ciudad.activo
+            ciudad.save(update_fields=['activo'])
+            vis_txt = "visible en listas" if ciudad.activo else "oculta de listas"
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion="Cambio Visibilidad Ciudad",
+                tipo_objeto="Ciudad",
+                id_objeto=ciudad.id,
+                detalles=f"Ciudad '{ciudad.nombre}' marcada como {vis_txt}."
+            )
+            messages.success(request, f"Ciudad '{ciudad.nombre}' ahora está {vis_txt}.")
+
+        # ----------------------------------------------------
+        # 5. COMUNICADOS DEL DASHBOARD (AVISOS)
+        # ----------------------------------------------------
+        elif action == 'crear_aviso':
+            active_tab = 'tab-avisos'
+            titulo = request.POST.get('titulo', '').strip()
+            contenido = (request.POST.get('contenido') or request.POST.get('mensaje') or '').strip()
+            if not titulo or not contenido:
+                messages.error(request, "El título y contenido del comunicado son obligatorios.")
+            else:
+                aviso = Aviso.objects.create(
+                    titulo=titulo,
+                    contenido=contenido,
+                    esta_activo=True,
+                    creado_por=request.user
+                )
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Creación de Comunicado",
+                    tipo_objeto="Aviso",
+                    id_objeto=aviso.id,
+                    detalles=f"Aviso '{aviso.titulo}' publicado."
+                )
+                messages.success(request, f"Comunicado '{aviso.titulo}' publicado exitosamente.")
+
+        elif action == 'editar_aviso':
+            active_tab = 'tab-avisos'
+            aviso_id = request.POST.get('aviso_id') or request.POST.get('item_id')
+            aviso = get_object_or_404(Aviso, id=aviso_id)
+            titulo = request.POST.get('titulo', '').strip()
+            contenido = (request.POST.get('contenido') or request.POST.get('mensaje') or '').strip()
+            if not titulo or not contenido:
+                messages.error(request, "El título y contenido no pueden quedar vacíos.")
+            else:
+                aviso.titulo = titulo
+                aviso.contenido = contenido
+                aviso.save(update_fields=['titulo', 'contenido'])
+                RegistroActividad.objects.create(
+                    usuario=request.user,
+                    accion="Edición de Comunicado",
+                    tipo_objeto="Aviso",
+                    id_objeto=aviso.id,
+                    detalles=f"Aviso '{aviso.titulo}' modificado."
+                )
+                messages.success(request, f"Comunicado '{aviso.titulo}' actualizado correctamente.")
+
+        elif action == 'toggle_aviso_activo':
+            active_tab = 'tab-avisos'
+            aviso_id = request.POST.get('aviso_id') or request.POST.get('item_id')
+            aviso = get_object_or_404(Aviso, id=aviso_id)
+            aviso.esta_activo = not aviso.esta_activo
+            aviso.save(update_fields=['esta_activo'])
+            vis_txt = "activo en la recepción" if aviso.esta_activo else "pausado/inactivo"
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion="Cambio Estado Comunicado",
+                tipo_objeto="Aviso",
+                id_objeto=aviso.id,
+                detalles=f"Aviso '{aviso.titulo}' marcado como {vis_txt}."
+            )
+            messages.success(request, f"Comunicado '{aviso.titulo}' ahora está {vis_txt}.")
+
+        return redirect(f"{reverse('panel_administracion')}?tab={active_tab}")
+
+    # --- GET: Carga de Datos y Catálogos ---
+    usuarios_rh = list(User.objects.filter(
+        Q(groups__name__in=['Asesoras', 'Gerentes de Capital Humano']) | Q(is_superuser=True)
+    ).distinct().order_by('first_name', 'last_name', 'username'))
+
+    for u in usuarios_rh:
+        u.es_gerente_o_dir = es_gerente_ch(u) or u.is_superuser
+        u.rol_display = "Gerente / Directora RH" if u.es_gerente_o_dir else "Asesora"
+        u.puede_modificarse_por_actual = not (u == request.user or (u.is_superuser and not request.user.is_superuser))
+
+    agencias = list(Agencia.objects.all().select_related('marca', 'ciudad').order_by('nombre'))
+    marcas = list(Marca.objects.all().order_by('nombre'))
+    puestos = list(CatalogoPuesto.objects.all().order_by('nombre'))
+    ciudades = list(Ciudad.objects.all().order_by('nombre'))
+    avisos = list(Aviso.objects.all().select_related('creado_por').order_by('-fecha_creacion'))
+
+    context = {
+        'active_tab': active_tab,
+        'usuarios_rh': usuarios_rh,
+        'usuarios_rh_activos_count': sum(1 for u in usuarios_rh if u.is_active),
+        'usuarios_rh_total_count': len(usuarios_rh),
+        'agencias': agencias,
+        'agencias_activas_count': sum(1 for a in agencias if a.activo),
+        'marcas': marcas,
+        'marcas_activas_count': sum(1 for m in marcas if m.activo),
+        'puestos': puestos,
+        'puestos_activos_count': sum(1 for p in puestos if p.activo),
+        'ciudades': ciudades,
+        'ciudades_activas_count': sum(1 for c in ciudades if c.activo),
+        'avisos': avisos,
+        'avisos_activos_count': sum(1 for av in avisos if av.esta_activo),
+    }
+
+    return render(request, 'reclutamiento/panel_administracion.html', context)

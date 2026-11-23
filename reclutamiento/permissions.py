@@ -12,6 +12,15 @@ def es_gerente_ch(user):
     return user.is_superuser or user.groups.filter(name='Gerentes de Capital Humano').exists()
 
 
+def puede_administrar_rh(user):
+    """
+    Permiso centralizado para el Centro de Administración y Catálogos.
+    Retorna True si el usuario pertenece a Gerentes de Capital Humano
+    (incluyendo Directora/Gerentes de RH) o es is_superuser.
+    """
+    return es_gerente_ch(user)
+
+
 def es_asesora(user):
     """Verifica si el usuario pertenece al grupo Asesoras o es Superuser."""
     if not user or not user.is_authenticated:

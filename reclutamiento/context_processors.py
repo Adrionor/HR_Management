@@ -12,11 +12,16 @@ def demo_flags(request):
     if not hasattr(request, 'user') or not request.user.is_authenticated:
         context['notificaciones_alertas'] = []
         context['notificaciones_count'] = 0
+        context['es_directora_ch'] = False
+        context['puede_administrar_rh'] = False
         return context
 
     try:
         from reclutamiento.models import ProcesoSeleccion
-        from reclutamiento.permissions import es_directora_o_gerente_ch
+        from reclutamiento.permissions import es_gerente_ch, puede_administrar_rh
+
+        context['es_directora_ch'] = bool(request.user.is_superuser or es_gerente_ch(request.user))
+        context['puede_administrar_rh'] = bool(request.user.is_superuser or puede_administrar_rh(request.user))
 
         fecha_limite = timezone.now() - timedelta(days=7)
         terminales = [
@@ -32,7 +37,7 @@ def demo_flags(request):
             estatus_proceso__in=terminales
         ).select_related('candidato', 'puesto__titulo', 'puesto__responsable')
 
-        if not (request.user.is_superuser or es_directora_o_gerente_ch(request.user)):
+        if not (request.user.is_superuser or es_gerente_ch(request.user)):
             qs = qs.filter(puesto__responsable=request.user)
 
         context['notificaciones_count'] = qs.count()

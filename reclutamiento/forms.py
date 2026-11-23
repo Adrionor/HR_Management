@@ -3,7 +3,7 @@ import os
 from django import forms
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-from .models import Puesto, Candidato, Publicacion, PerfilDePuesto, Marca
+from .models import Puesto, Candidato, Publicacion, PerfilDePuesto, Marca, Agencia, Ciudad, CatalogoPuesto
 from .permissions import es_gerente_ch
 from django.core.exceptions import ValidationError
 try:
@@ -16,15 +16,23 @@ from django.utils import timezone
 
 
 class AgenciaChoiceField(forms.ModelChoiceField):
-    """Campo de selección para Agencia que carga las Marcas de la BD y acepta nombres en texto."""
+    """Campo de selección para Agencia que carga las Agencias activas del catálogo y mantiene compatibilidad histórica."""
     def to_python(self, value):
         if value in self.empty_values:
             return None
         try:
             return super().to_python(value)
         except forms.ValidationError:
-            marca, _ = Marca.objects.get_or_create(nombre=str(value).strip())
-            return marca
+            val_str = str(value).strip()
+            if val_str.isdigit():
+                agencia = Agencia.objects.filter(id=int(val_str)).first()
+                if agencia:
+                    return agencia
+            agencia = Agencia.objects.filter(nombre__iexact=val_str).first()
+            if not agencia:
+                marca_match = Marca.objects.filter(nombre__iexact=val_str).first()
+                agencia, _ = Agencia.objects.get_or_create(nombre=val_str, defaults={'marca': marca_match, 'activo': True})
+            return agencia
 
 
 class SolicitudPuestoForm(forms.ModelForm):
@@ -35,8 +43,8 @@ class SolicitudPuestoForm(forms.ModelForm):
         label="Fecha de Solicitud (Requisición Física)"
     )
     agencia = AgenciaChoiceField(
-        queryset=Marca.objects.all().order_by('nombre'),
-        empty_label="-- Selecciona una Agencia / Marca --",
+        queryset=Agencia.objects.filter(activo=True).order_by('nombre'),
+        empty_label="-- Selecciona una Agencia --",
         label="Agencia o Sucursal",
         widget=forms.Select(attrs={'class': 'sap-select'})
     )
@@ -45,6 +53,13 @@ class SolicitudPuestoForm(forms.ModelForm):
         self.usuario = usuario
         self.es_directora = bool(usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
         super().__init__(*args, **kwargs)
+
+        # Filtrar puestos activos manteniendo el actual si se edita
+        if 'titulo' in self.fields:
+            puesto_actual_id = self.instance.titulo_id if self.instance and self.instance.pk else None
+            self.fields['titulo'].queryset = CatalogoPuesto.objects.filter(
+                Q(activo=True) | Q(id=puesto_actual_id)
+            ).order_by('nombre')
 
         if self.es_directora:
             User = get_user_model()
@@ -70,31 +85,50 @@ class SolicitudPuestoForm(forms.ModelForm):
                 self.initial['asesora_encargada'] = usuario.id
 
         if self.instance and self.instance.pk:
-            if self.instance.marca:
-                self.initial['agencia'] = self.instance.marca.id
-            elif self.instance.agencia:
-                marca_match = Marca.objects.filter(nombre__iexact=self.instance.agencia).first()
-                if marca_match:
-                    self.initial['agencia'] = marca_match.id
+            # Asegurar que la agencia histórica aparezca en las opciones aunque esté inactiva
+            if self.instance.agencia:
+                self.fields['agencia'].queryset = Agencia.objects.filter(
+                    Q(activo=True) | Q(nombre__iexact=self.instance.agencia)
+                ).order_by('nombre')
+                agencia_match = Agencia.objects.filter(nombre__iexact=self.instance.agencia).first()
+                if agencia_match:
+                    self.initial['agencia'] = agencia_match.id
+            elif self.instance.marca:
+                agencia_match = Agencia.objects.filter(nombre__iexact=self.instance.marca.nombre).first()
+                if agencia_match:
+                    self.initial['agencia'] = agencia_match.id
 
     def clean(self):
         cleaned_data = super().clean()
         agencia_val = cleaned_data.get('agencia')
-        if isinstance(agencia_val, Marca):
+        if isinstance(agencia_val, Agencia):
+            self._selected_agencia = agencia_val
+            cleaned_data['agencia'] = agencia_val.nombre
+        elif isinstance(agencia_val, Marca):
             self._selected_marca = agencia_val
             cleaned_data['agencia'] = agencia_val.nombre
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        marca_obj = getattr(self, '_selected_marca', None) or self.cleaned_data.get('agencia')
-        if isinstance(marca_obj, Marca):
-            instance.marca = marca_obj
-            instance.agencia = marca_obj.nombre
-        elif not instance.marca and instance.agencia:
-            marca_match = Marca.objects.filter(nombre__iexact=instance.agencia).first()
-            if marca_match:
-                instance.marca = marca_match
+        agencia_obj = getattr(self, '_selected_agencia', None)
+        if agencia_obj and isinstance(agencia_obj, Agencia):
+            instance.agencia = agencia_obj.nombre
+            if agencia_obj.marca:
+                instance.marca = agencia_obj.marca
+        else:
+            marca_obj = getattr(self, '_selected_marca', None) or self.cleaned_data.get('agencia')
+            if isinstance(marca_obj, Marca):
+                instance.marca = marca_obj
+                instance.agencia = marca_obj.nombre
+            elif not instance.marca and instance.agencia:
+                agencia_match = Agencia.objects.filter(nombre__iexact=instance.agencia).first()
+                if agencia_match and agencia_match.marca:
+                    instance.marca = agencia_match.marca
+                else:
+                    marca_match = Marca.objects.filter(nombre__iexact=instance.agencia).first()
+                    if marca_match:
+                        instance.marca = marca_match
 
         if self.es_directora and 'asesora_encargada' in self.cleaned_data:
             seleccionada = self.cleaned_data.get('asesora_encargada')

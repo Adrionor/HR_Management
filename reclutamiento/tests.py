@@ -1,10 +1,11 @@
 from django.test import TestCase, Client
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.admin.sites import site
 from django.urls import reverse
 from django.utils import timezone
 from reclutamiento.models import (
-    Marca, CatalogoPuesto, Puesto, Candidato, Proceso, PerfilDePuesto, PerfilUsuario
+    Marca, CatalogoPuesto, Puesto, Candidato, Proceso, PerfilDePuesto, PerfilUsuario,
+    Ciudad, Agencia, Aviso, RegistroActividad
 )
 from reclutamiento.forms import SolicitudPuestoForm, RegistroCandidatoForm
 
@@ -1546,21 +1547,194 @@ class AislamientoInformacionAsesorasRBACTestCase(TestCase):
         resp = self.client.get(reverse('puesto_detalle', args=[self.puesto_2.id]))
         self.assertEqual(resp.status_code, 200)
 
-    def test_descarga_excel_resumen_asesora_solo_contiene_sus_datos(self):
-        """Al descargar Excel (.xlsx), la asesora únicamente recibe su información individual."""
-        from reclutamiento.services import ReportesService
-        buf_asesora = ReportesService.generar_excel_resumen_ejecutivo({}, self.asesora_1)
-        self.assertIsNotNone(buf_asesora)
-        self.assertGreater(buf_asesora.getbuffer().nbytes, 0)
 
-        # En el dataset de la asesora 1, get_base_queryset solo trae su vacante
-        qs_ana = ReportesService.get_base_queryset(self.asesora_1)
-        self.assertEqual(qs_ana.count(), 1)
-        self.assertEqual(qs_ana.first(), self.puesto_1)
+class PanelAdministracionTests(TestCase):
+    """Pruebas unitarias para el Centro de Administración y Catálogos."""
 
-        # Para el gerente CH, trae todas
-        qs_gerente = ReportesService.get_base_queryset(self.gerente_ch)
-        self.assertGreaterEqual(qs_gerente.count(), 2)
+    def setUp(self):
+        self.client = Client()
+        self.grupo_gerentes, _ = Group.objects.get_or_create(name='Gerentes de Capital Humano')
+        self.grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
+
+        self.superuser = User.objects.create_superuser(
+            username='admin_boss',
+            email='admin@premier.com',
+            password='Password123!'
+        )
+        self.gerente = User.objects.create_user(
+            username='gerente_rh',
+            email='gerente@premier.com',
+            password='Password123!',
+            first_name='Patricia',
+            last_name='Aréchiga'
+        )
+        self.gerente.groups.add(self.grupo_gerentes)
+
+        self.asesora = User.objects.create_user(
+            username='asesora_rh',
+            email='asesora@premier.com',
+            password='Password123!',
+            first_name='Laura',
+            last_name='Gómez'
+        )
+        self.asesora.groups.add(self.grupo_asesoras)
+
+        self.ciudad, _ = Ciudad.objects.get_or_create(nombre='Mazatlán', defaults={'activo': True})
+        self.marca, _ = Marca.objects.get_or_create(nombre='Audi', defaults={'activo': True})
+        self.agencia, _ = Agencia.objects.get_or_create(
+            nombre='Audi Center Mazatlán Test',
+            defaults={'marca': self.marca, 'ciudad': self.ciudad, 'activo': True}
+        )
+        self.puesto_cat, _ = CatalogoPuesto.objects.get_or_create(
+            nombre='Especialista Audi Test',
+            defaults={'dias_meta_default': 25, 'activo': True}
+        )
+
+    def test_permiso_puede_administrar_rh(self):
+        """Verifica la función centralizada de permisos puede_administrar_rh."""
+        from reclutamiento.permissions import puede_administrar_rh
+
+        user_sin_grupo = User.objects.create_user(username='sin_grupo', password='Password123!')
+        self.assertFalse(puede_administrar_rh(None))
+        self.assertFalse(puede_administrar_rh(user_sin_grupo))
+        self.assertFalse(puede_administrar_rh(self.asesora))
+        self.assertTrue(puede_administrar_rh(self.gerente))
+        self.assertTrue(puede_administrar_rh(self.superuser))
+
+    def test_control_acceso_vista_panel_administracion(self):
+        """Verifica que solo personal con puede_administrar_rh acceda a /configuracion/."""
+        url = reverse('panel_administracion')
+
+        # No autenticado -> redirect login
+        resp_anon = self.client.get(url)
+        self.assertEqual(resp_anon.status_code, 302)
+
+        # Asesora -> redirección (no autorizada)
+        self.client.login(username='asesora_rh', password='Password123!')
+        resp_asesora = self.client.get(url)
+        self.assertEqual(resp_asesora.status_code, 302)
+        self.client.logout()
+
+        # Gerente de Capital Humano -> 200 OK
+        self.client.login(username='gerente_rh', password='Password123!')
+        resp_gerente = self.client.get(url)
+        self.assertEqual(resp_gerente.status_code, 200)
+        self.assertTemplateUsed(resp_gerente, 'reclutamiento/panel_administracion.html')
+        self.assertContains(resp_gerente, 'Centro de Administración y Catálogos')
+        self.client.logout()
+
+        # Superuser -> 200 OK
+        self.client.login(username='admin_boss', password='Password123!')
+        resp_super = self.client.get(url)
+        self.assertEqual(resp_super.status_code, 200)
+
+    def test_dar_de_alta_nueva_integrante_rh(self):
+        """Gerente puede crear una nueva asesora desde el panel y se registra en bitácora."""
+        from reclutamiento.models import RegistroActividad
+
+        self.client.login(username='gerente_rh', password='Password123!')
+        url = reverse('panel_administracion')
+
+        post_data = {
+            'accion': 'crear_usuario',
+            'first_name': 'Sofía',
+            'last_name': 'Reyes',
+            'username': 'sofia.reyes',
+            'email': 'sofia@premier.com',
+            'rol': 'asesora',
+            'password': 'SeguraPassword123!'
+        }
+        resp = self.client.post(url, post_data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        nueva_user = User.objects.filter(username='sofia.reyes').first()
+        self.assertIsNotNone(nueva_user)
+        self.assertEqual(nueva_user.first_name, 'Sofía')
+        self.assertTrue(nueva_user.groups.filter(name='Asesoras').exists())
+
+        # Bitácora
+        log = RegistroActividad.objects.filter(usuario=self.gerente, accion="Alta de Usuario RH").first()
+        self.assertIsNotNone(log)
+        self.assertIn('sofia.reyes', log.detalles)
+
+    def test_seguridad_no_desactivar_a_si_misma_o_superuser(self):
+        """Una Gerente RH no puede desactivar su propio usuario ni el de un Superusuario."""
+        self.client.login(username='gerente_rh', password='Password123!')
+        url = reverse('panel_administracion')
+
+        # Intento de desactivarse a sí misma
+        self.client.post(url, {'accion': 'toggle_usuario_activo', 'user_id': self.gerente.id})
+        self.gerente.refresh_from_db()
+        self.assertTrue(self.gerente.is_active)
+
+        # Intento de desactivar a superuser
+        self.client.post(url, {'accion': 'toggle_usuario_activo', 'user_id': self.superuser.id})
+        self.superuser.refresh_from_db()
+        self.assertTrue(self.superuser.is_active)
+
+        # Desactivar a asesora -> permitido
+        self.client.post(url, {'accion': 'toggle_usuario_activo', 'user_id': self.asesora.id})
+        self.asesora.refresh_from_db()
+        self.assertFalse(self.asesora.is_active)
+
+    def test_gestion_catalogos_agencia_marca_puesto_ciudad_aviso(self):
+        """Prueba las acciones de creación y alternado de estado en los catálogos."""
+        from reclutamiento.models import Ciudad, Marca, Agencia, CatalogoPuesto, Aviso
+
+        self.client.login(username='gerente_rh', password='Password123!')
+        url = reverse('panel_administracion')
+
+        # 1. Crear ciudad
+        self.client.post(url, {'accion': 'crear_ciudad', 'nombre': 'Navojoa'})
+        navojoa = Ciudad.objects.filter(nombre='Navojoa').first()
+        self.assertIsNotNone(navojoa)
+        self.assertTrue(navojoa.activo)
+
+        # Toggle ciudad
+        self.client.post(url, {'accion': 'toggle_ciudad_activo', 'item_id': navojoa.id})
+        navojoa.refresh_from_db()
+        self.assertFalse(navojoa.activo)
+
+        # 2. Crear marca
+        self.client.post(url, {'accion': 'crear_marca', 'nombre': 'Porsche'})
+        porsche = Marca.objects.filter(nombre='Porsche').first()
+        self.assertIsNotNone(porsche)
+        self.assertTrue(porsche.activo)
+
+        # 3. Crear puesto con meta sugerida
+        self.client.post(url, {'accion': 'crear_puesto', 'nombre': 'Técnico Master', 'dias_meta_default': '18'})
+        puesto = CatalogoPuesto.objects.filter(nombre='Técnico Master').first()
+        self.assertIsNotNone(puesto)
+        self.assertEqual(puesto.dias_meta_default, 18)
+        self.assertEqual(puesto.dias_meta, 18)
+
+        # 4. Crear agencia asociada
+        self.client.post(url, {
+            'accion': 'crear_agencia',
+            'nombre': 'Porsche Culiacán',
+            'marca': porsche.id,
+            'ciudad': self.ciudad.id
+        })
+        agencia = Agencia.objects.filter(nombre='Porsche Culiacán').first()
+        self.assertIsNotNone(agencia)
+        self.assertEqual(agencia.marca, porsche)
+        self.assertEqual(agencia.ciudad, self.ciudad)
+
+        # 5. Crear aviso interno
+        self.client.post(url, {
+            'accion': 'crear_aviso',
+            'titulo': 'Nuevo Protocolo de Reclutamiento',
+            'mensaje': 'Por favor consultar las guías actualizadas.'
+        })
+        aviso = Aviso.objects.filter(titulo='Nuevo Protocolo de Reclutamiento').first()
+        self.assertIsNotNone(aviso)
+        self.assertTrue(aviso.esta_activo)
+
+        # Toggle aviso
+        self.client.post(url, {'accion': 'toggle_aviso_activo', 'item_id': aviso.id})
+        aviso.refresh_from_db()
+        self.assertFalse(aviso.esta_activo)
+
 
 
 

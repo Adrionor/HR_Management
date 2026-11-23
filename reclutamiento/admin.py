@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.utils.html import format_html
 from .models import (
     Marca,
+    Ciudad,
+    Agencia,
     PerfilUsuario,
     CatalogoPuesto,
     Puesto,
@@ -39,16 +41,31 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(CatalogoPuesto)
 class CatalogoPuestoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'dias_meta')
+    list_display = ('nombre', 'dias_meta_default', 'dias_meta', 'activo')
     search_fields = ('nombre',)
-    list_filter = ('dias_meta',)
+    list_filter = ('activo', 'dias_meta_default')
     ordering = ('nombre',)
 
 
 @admin.register(Marca)
 class MarcaAdmin(admin.ModelAdmin):
-    list_display = ('nombre',)
+    list_display = ('nombre', 'activo')
     search_fields = ('nombre',)
+    list_filter = ('activo',)
+
+
+@admin.register(Ciudad)
+class CiudadAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'activo')
+    search_fields = ('nombre',)
+    list_filter = ('activo',)
+
+
+@admin.register(Agencia)
+class AgenciaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'marca', 'ciudad', 'activo')
+    search_fields = ('nombre', 'marca__nombre', 'ciudad__nombre')
+    list_filter = ('activo', 'marca', 'ciudad')
 
 
 # --------------------------------------------------------------------------
