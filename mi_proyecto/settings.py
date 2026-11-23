@@ -30,7 +30,8 @@ if env_file.exists():
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
                 key, val = line.split('=', 1)
-                os.environ.setdefault(key.strip(), val.strip())
+                clean_val = val.strip().strip('"').strip("'")
+                os.environ[key.strip()] = clean_val
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
@@ -279,7 +280,7 @@ JAZZMIN_SETTINGS = {
 # ==============================================================================
 # INTEGRACIÓN TELEGRAM BOT (REPORTERÍA EJECUTIVA Y DIRECCIÓN)
 # ==============================================================================
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
-TELEGRAM_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'PremierRHBot').strip().lstrip('@')
-TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '').strip()
-TELEGRAM_PROXY_URL = os.environ.get('TELEGRAM_PROXY_URL', '').strip()
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip().strip('"').strip("'")
+TELEGRAM_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'Talento_premier_bot').strip().strip('"').strip("'").lstrip('@')
+TELEGRAM_WEBHOOK_SECRET = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '').strip().strip('"').strip("'")
+TELEGRAM_PROXY_URL = os.environ.get('TELEGRAM_PROXY_URL', '').strip().strip('"').strip("'")

@@ -23,15 +23,18 @@ class TelegramService:
 
     @classmethod
     def get_token(cls):
-        return getattr(settings, 'TELEGRAM_BOT_TOKEN', '') or ''
+        token = getattr(settings, 'TELEGRAM_BOT_TOKEN', '') or ''
+        return str(token).strip().strip('"').strip("'")
 
     @classmethod
     def get_bot_username(cls):
-        return getattr(settings, 'TELEGRAM_BOT_USERNAME', 'PremierRHBot') or 'PremierRHBot'
+        bot = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'Talento_premier_bot') or 'Talento_premier_bot'
+        return str(bot).strip().strip('"').strip("'").lstrip('@')
 
     @classmethod
     def get_webhook_secret(cls):
-        return getattr(settings, 'TELEGRAM_WEBHOOK_SECRET', '') or ''
+        secret = getattr(settings, 'TELEGRAM_WEBHOOK_SECRET', '') or ''
+        return str(secret).strip().strip('"').strip("'")
 
     @classmethod
     def is_configured(cls):
