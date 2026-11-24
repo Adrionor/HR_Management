@@ -509,7 +509,210 @@ class TelegramService:
         return msg
 
     # -------------------------------------------------------------------------
-    # 3.1 FICHAS EJECUTIVAS FILTRADAS POR DIMENSIÓN (CIUDAD / ASESORA / AGENCIA)
+    # 3.1 VISTAS EJECUTIVAS ESTRATÉGICAS (EQUIPO, PLAZAS Y FOCOS ROJOS)
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def generar_scorecard_global_asesoras_texto(cls, usuario=None):
+        """
+        Scorecard integral de productividad del equipo de Atracción de Talento.
+        Muestra de un vistazo la carga activa, semáforos de SLA y contrataciones de cada asesora.
+        """
+        from .services import ReportesService
+        from .models import Proceso
+        from django.db.models import Sum
+
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO'
+        ).select_related('asesora_encargada')
+
+        if not qs.exists():
+            return "👥 <b>SCORECARD DE ASESORAS • PREMIER CH</b>\n\n🟢 Actualmente no hay vacantes activas asignadas."
+
+        # Conteo de contrataciones del mes por asesora
+        ahora = timezone.now()
+        mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        contrataciones_qs = Proceso.objects.filter(
+            estatus_proceso=Proceso.Estatus.CONTRATADO,
+            fecha_inicio_etapa__gte=mes_inicio,
+            asesora_asignada__isnull=False
+        ).values('asesora_asignada__id').annotate(total=Sum('puesto__cantidad_vacantes'))
+
+        contrataciones_map = {}
+        for c in contrataciones_qs:
+            contrataciones_map[c['asesora_asignada__id']] = c['total'] or 1
+
+        # Agrupar vacantes por asesora
+        asesoras_map = {}
+        for p in qs:
+            if p.asesora_encargada:
+                u_id = p.asesora_encargada.id
+                nombre = p.asesora_encargada.get_full_name() or p.asesora_encargada.username
+            else:
+                u_id = 0
+                nombre = "Sin Asignar"
+
+            if u_id not in asesoras_map:
+                asesoras_map[u_id] = {
+                    'nombre': nombre,
+                    'total': 0,
+                    'en_tiempo': 0,
+                    'en_riesgo': 0,
+                    'vencidas': 0,
+                    'dias_suma': 0,
+                    'contratadas': contrataciones_map.get(u_id, 0)
+                }
+
+            entry = asesoras_map[u_id]
+            entry['total'] += p.cantidad_vacantes
+            dias = p.dias_transcurridos
+            meta = p.dias_meta or 20
+            diff = meta - dias
+            entry['dias_suma'] += (dias * p.cantidad_vacantes)
+
+            if diff < 0:
+                entry['vencidas'] += p.cantidad_vacantes
+            elif diff <= 4:
+                entry['en_riesgo'] += p.cantidad_vacantes
+            else:
+                entry['en_tiempo'] += p.cantidad_vacantes
+
+        msg = (
+            f"👥 <b>SCORECARD DE ASESORAS • PREMIER CH</b>\n"
+            f"<i>Equipo de Atracción de Talento ({len(asesoras_map)} activas)</i>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+
+        for u_id, data in sorted(asesoras_map.items(), key=lambda x: x[1]['total'], reverse=True):
+            prom_dias = (data['dias_suma'] / data['total']) if data['total'] > 0 else 0
+            msg += (
+                f"• <b>{data['nombre']}</b>\n"
+                f"  <b>{data['total']} vacantes</b> │ 🟢 {data['en_tiempo']} │ 🟡 {data['en_riesgo']} │ 🔴 {data['vencidas']}\n"
+                f"  ⚡ {prom_dias:.1f}d prom. │ 🎉 {data['contratadas']} contrataciones\n\n"
+            )
+
+        msg += "<i>👇 Toca una asesora para auditar sus vacantes y atrasos a detalle:</i>"
+        return msg
+
+    @classmethod
+    def generar_panorama_ciudades_texto(cls, usuario=None):
+        """Panorama ejecutivo consolidado por ciudades y plazas."""
+        from .services import ReportesService
+        from .models import Puesto
+
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO'
+        )
+
+        if not qs.exists():
+            return "📍 <b>PANORAMA POR CIUDADES</b>\n\n🟢 0 vacantes abiertas en el grupo."
+
+        dict_ciudades = dict(Puesto.CIUDADES_CHOICES)
+        ciudades_map = {}
+        total_global = 0
+
+        for p in qs:
+            cd_nombre = dict_ciudades.get(p.ciudad, p.ciudad) or 'Otras Plazas'
+            if cd_nombre not in ciudades_map:
+                ciudades_map[cd_nombre] = {'total': 0, 'vencidas': 0, 'agencias': set()}
+            ciudades_map[cd_nombre]['total'] += p.cantidad_vacantes
+            total_global += p.cantidad_vacantes
+            if p.agencia:
+                ciudades_map[cd_nombre]['agencias'].add(p.agencia)
+            if p.dias_transcurridos > (p.dias_meta or 20):
+                ciudades_map[cd_nombre]['vencidas'] += p.cantidad_vacantes
+
+        msg = (
+            f"📍 <b>PANORAMA POR CIUDADES Y PLAZAS</b>\n"
+            f"<b>{total_global} vacantes activas</b> en {len(ciudades_map)} plazas\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+        for cd, data in sorted(ciudades_map.items(), key=lambda x: x[1]['total'], reverse=True):
+            alerta = f" │ 🔴 <b>{data['vencidas']} vencidas</b>" if data['vencidas'] > 0 else " │ 🟢 en tiempo"
+            num_ag = len(data['agencias'])
+            msg += f"• <b>{cd}:</b> <b>{data['total']} vacantes</b> ({num_ag} agencias){alerta}\n"
+
+        msg += "\n<i>👇 Toca una plaza para ver sus agencias y puestos:</i>"
+        return msg
+
+    @classmethod
+    def generar_focos_rojos_texto(cls, usuario=None):
+        """Reporte unificado de focos rojos: vacantes vencidas SLA y candidatos estancados."""
+        from .services import ReportesService
+        from .models import Proceso
+
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO'
+        ).select_related('titulo', 'marca', 'asesora_encargada')
+
+        vencidas = []
+        for p in qs:
+            dias = p.dias_transcurridos
+            meta = p.dias_meta or 20
+            diff = meta - dias
+            if diff < 0:
+                vencidas.append({
+                    'titulo': p.titulo.nombre if p.titulo else 'Puesto',
+                    'agencia': p.agencia or 'General',
+                    'dias': dias,
+                    'meta': meta,
+                    'exceso': abs(diff),
+                    'asesora': p.asesora_encargada.first_name if p.asesora_encargada else 'Sin asignar'
+                })
+
+        vencidas.sort(key=lambda x: x['exceso'], reverse=True)
+
+        ahora = timezone.now()
+        limite_7d = ahora - timedelta(days=7)
+        terminales = [
+            Proceso.Estatus.CONTRATADO,
+            Proceso.Estatus.DESCARTADO_CH,
+            Proceso.Estatus.NO_PRUEBAS,
+            Proceso.Estatus.ABANDONO,
+        ]
+        estancados = Proceso.objects.filter(
+            fecha_inicio_etapa__lte=limite_7d
+        ).exclude(estatus_proceso__in=terminales).select_related(
+            'candidato', 'puesto', 'puesto__titulo', 'asesora_asignada'
+        ).order_by('fecha_inicio_etapa')
+
+        msg = (
+            f"🔴 <b>FOCOS ROJOS • CAPITAL HUMANO</b>\n"
+            f"<i>{len(vencidas)} vacantes vencidas │ {estancados.count()} candidatos detenidos</i>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+
+        if vencidas:
+            msg += "🚨 <b>VACANTES VENCIDAS MÁS URGENTES:</b>\n"
+            for v in vencidas[:8]:
+                msg += f"• <b>{v['titulo']}</b> • {v['agencia']} │ <b>+{v['exceso']}d</b> ({v['dias']}/{v['meta']}d) • 👤 {v['asesora']}\n"
+            if len(vencidas) > 8:
+                msg += f"<i>...y {len(vencidas) - 8} más.</i>\n"
+            msg += "\n"
+        else:
+            msg += "🟢 <b>¡Excelente! 0 vacantes vencidas en el grupo.</b>\n\n"
+
+        estancados_lista = list(estancados[:6])
+        if estancados_lista:
+            msg += "⏳ <b>CANDIDATOS DETENIDOS EN EL EMBUDO (+7d):</b>\n"
+            for st in estancados_lista:
+                dias = (ahora - st.fecha_inicio_etapa).days
+                cand = st.candidato.nombre_completo if st.candidato else "Candidato"
+                puesto = st.puesto.titulo.nombre if (st.puesto and st.puesto.titulo) else "Puesto"
+                ag = st.puesto.agencia if st.puesto else "General"
+                etapa = st.get_estatus_proceso_display()
+                as_nom = st.asesora_asignada.first_name if st.asesora_asignada else "Sin asignar"
+                msg += f"• <b>{cand}</b> (<b>{dias}d</b>) • {etapa} │ {puesto} ({ag}) • 👤 {as_nom}\n"
+            msg += "\n"
+
+        msg += "<i>👇 Consulta el origen de los atrasos por Asesora o Ciudad:</i>"
+        return msg
+
+    # -------------------------------------------------------------------------
+    # 3.2 FICHAS EJECUTIVAS FILTRADAS POR DIMENSIÓN (CIUDAD / ASESORA / AGENCIA)
     # -------------------------------------------------------------------------
 
     @classmethod
@@ -780,23 +983,36 @@ class TelegramService:
 
     @classmethod
     def obtener_teclado_ejecutivo(cls):
-        """Teclado inline interactivo principal con accesos directos y filtros."""
+        """Teclado inline interactivo principal para directivos (Acceso inmediato a los 4 pilares)."""
         return {
             'inline_keyboard': [
                 [
-                    {'text': '📊 Resumen General', 'callback_data': 'cmd_resumen'},
-                    {'text': '⏱️ Alertas SLA', 'callback_data': 'cmd_sla'}
+                    {'text': '👥 Scorecard Asesoras', 'callback_data': 'cmd_scorecard_global'},
+                    {'text': '📍 Ciudades / Plazas', 'callback_data': 'cmd_ciudades_panorama'}
                 ],
                 [
-                    {'text': '🏢 Por Agencia y Ciudad', 'callback_data': 'cmd_agencias'},
-                    {'text': '🔍 Filtrar por...', 'callback_data': 'flt_menu'}
-                ],
-                [
-                    {'text': '⚠️ Estancados', 'callback_data': 'cmd_estancados'},
+                    {'text': '🔴 Focos Rojos (SLA)', 'callback_data': 'cmd_focos_rojos'},
                     {'text': '🎉 Contrataciones', 'callback_data': 'cmd_contrataciones'}
                 ],
                 [
-                    {'text': '📥 Descargar Excel Global', 'callback_data': 'cmd_excel'}
+                    {'text': '🏢 Por Agencia', 'callback_data': 'cmd_agencias'},
+                    {'text': '📥 Descargar Excel', 'callback_data': 'cmd_excel'}
+                ]
+            ]
+        }
+
+    @classmethod
+    def obtener_teclado_focos_rojos(cls):
+        """Teclado de acción rápida para la vista de Focos Rojos."""
+        return {
+            'inline_keyboard': [
+                [
+                    {'text': '👥 Ver por Asesora', 'callback_data': 'cmd_scorecard_global'},
+                    {'text': '📍 Ver por Ciudad', 'callback_data': 'cmd_ciudades_panorama'}
+                ],
+                [
+                    {'text': '📥 Descargar Excel', 'callback_data': 'cmd_excel'},
+                    {'text': '🏠 Menú Principal', 'callback_data': 'menu_principal'}
                 ]
             ]
         }
@@ -807,11 +1023,12 @@ class TelegramService:
         return {
             'inline_keyboard': [
                 [
-                    {'text': '📍 Por Ciudad', 'callback_data': 'flt_tipo:ciudad'},
-                    {'text': '👤 Por Asesora', 'callback_data': 'flt_tipo:asesora'}
+                    {'text': '👥 Scorecard Asesoras', 'callback_data': 'cmd_scorecard_global'},
+                    {'text': '📍 Ciudades / Plazas', 'callback_data': 'cmd_ciudades_panorama'}
                 ],
                 [
-                    {'text': '🏢 Por Agencia', 'callback_data': 'flt_tipo:agencia'}
+                    {'text': '🏢 Por Agencia', 'callback_data': 'cmd_agencias'},
+                    {'text': '🔴 Focos Rojos', 'callback_data': 'cmd_focos_rojos'}
                 ],
                 [
                     {'text': '⬅️ Menú Principal', 'callback_data': 'menu_principal'}
@@ -846,8 +1063,8 @@ class TelegramService:
             buttons.append(row)
 
         buttons.append([
-            {'text': '⬅️ Volver a Filtros', 'callback_data': 'flt_menu'},
-            {'text': '🏠 Menú', 'callback_data': 'menu_principal'}
+            {'text': '📥 Descargar Excel Plazas', 'callback_data': 'cmd_excel'},
+            {'text': '🏠 Menú Principal', 'callback_data': 'menu_principal'}
         ])
         return {'inline_keyboard': buttons}
 
@@ -881,8 +1098,8 @@ class TelegramService:
             buttons.append(row)
 
         buttons.append([
-            {'text': '⬅️ Volver a Filtros', 'callback_data': 'flt_menu'},
-            {'text': '🏠 Menú', 'callback_data': 'menu_principal'}
+            {'text': '📥 Descargar Excel Equipo', 'callback_data': 'cmd_excel'},
+            {'text': '🏠 Menú Principal', 'callback_data': 'menu_principal'}
         ])
         return {'inline_keyboard': buttons}
 
@@ -911,21 +1128,27 @@ class TelegramService:
             buttons.append(row)
 
         buttons.append([
-            {'text': '⬅️ Volver a Filtros', 'callback_data': 'flt_menu'},
-            {'text': '🏠 Menú', 'callback_data': 'menu_principal'}
+            {'text': '📥 Descargar Excel Agencias', 'callback_data': 'cmd_excel'},
+            {'text': '🏠 Menú Principal', 'callback_data': 'menu_principal'}
         ])
         return {'inline_keyboard': buttons}
 
     @classmethod
     def obtener_teclado_detalle_filtro(cls, tipo, valor):
-        """Botones de acción al consultar el detalle de una dimensión."""
+        """Botones de acción intuitivos al consultar el detalle de una dimensión."""
+        back_btn = {'text': '👥 Volver al Scorecard', 'callback_data': 'cmd_scorecard_global'}
+        if tipo == 'ciudad':
+            back_btn = {'text': '📍 Ver Otras Ciudades', 'callback_data': 'cmd_ciudades_panorama'}
+        elif tipo == 'agencia':
+            back_btn = {'text': '🏢 Ver Otras Agencias', 'callback_data': 'cmd_agencias'}
+
         return {
             'inline_keyboard': [
                 [
-                    {'text': f"📥 Descargar Excel de {tipo.capitalize()}", 'callback_data': f"cmd_excel_filtro:{tipo}:{valor}"}
+                    {'text': f"📥 Descargar Excel ({tipo.capitalize()})", 'callback_data': f"cmd_excel_filtro:{tipo}:{valor}"}
                 ],
                 [
-                    {'text': '🔄 Cambiar Filtro', 'callback_data': f"flt_tipo:{tipo}"},
+                    back_btn,
                     {'text': '🏠 Menú Principal', 'callback_data': 'menu_principal'}
                 ]
             ]
