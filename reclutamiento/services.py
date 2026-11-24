@@ -222,6 +222,17 @@ class ReportesService:
         # Cuadre matemático: Solicitadas - Cubiertas - Canceladas
         total_plazas_pendientes = max(0, total_plazas_solicitadas - total_plazas_cubiertas - total_plazas_canceladas)
         
+        # Plazas pendientes por estatus de SLA en vacantes activas
+        plazas_activas_pendientes = sum(p.plazas_pendientes for p in vacantes_activas)
+        plazas_vencidas_pendientes = sum(p.plazas_pendientes for p in vencidas)
+        plazas_por_vencer_pendientes = sum(p.plazas_pendientes for p in por_vencer)
+        plazas_en_tiempo_pendientes = sum(p.plazas_pendientes for p in en_tiempo)
+        
+        # Auditoría de bono y reinicios
+        vacantes_cumplio_bono = sum(1 for p in puestos if p.cumplio_meta_bono)
+        vacantes_con_reinicios = sum(1 for p in puestos if p.numero_reinicios > 0)
+        total_reinicios = sum(p.numero_reinicios for p in puestos)
+        
         cumplimiento_sla = round(
             ((len(en_tiempo) + len(por_vencer)) / total_activas * 100), 1
         ) if total_activas > 0 else 0.0
@@ -266,6 +277,13 @@ class ReportesService:
             'total_plazas_cubiertas': total_plazas_cubiertas,
             'total_plazas_canceladas': total_plazas_canceladas,
             'total_plazas_pendientes': total_plazas_pendientes,
+            'plazas_activas_pendientes': plazas_activas_pendientes,
+            'plazas_vencidas_pendientes': plazas_vencidas_pendientes,
+            'plazas_por_vencer_pendientes': plazas_por_vencer_pendientes,
+            'plazas_en_tiempo_pendientes': plazas_en_tiempo_pendientes,
+            'vacantes_cumplio_bono': vacantes_cumplio_bono,
+            'vacantes_con_reinicios': vacantes_con_reinicios,
+            'total_reinicios': total_reinicios,
             'cumplimiento_sla': cumplimiento_sla,
             'promedio_dias_cobertura': promedio_dias_cobertura,
             'candidatos_listos_ingreso': candidatos_listos_ingreso,
@@ -288,6 +306,13 @@ class ReportesService:
             'total_plazas_cubiertas': 0,
             'total_plazas_canceladas': 0,
             'total_plazas_pendientes': 0,
+            'plazas_activas_pendientes': 0,
+            'plazas_vencidas_pendientes': 0,
+            'plazas_por_vencer_pendientes': 0,
+            'plazas_en_tiempo_pendientes': 0,
+            'vacantes_cumplio_bono': 0,
+            'vacantes_con_reinicios': 0,
+            'total_reinicios': 0,
             'cumplimiento_sla': 0.0,
             'promedio_dias_cobertura': 0,
             'candidatos_listos_ingreso': 0,
@@ -451,8 +476,11 @@ class ReportesService:
                     'cubiertas': 0,
                     'vencidas': 0,
                     'reiniciadas': 0,
+                    'total_reinicios': 0,
+                    'bono_cumplido': 0,
                     'plazas_solicitadas': 0,
                     'plazas_cubiertas': 0,
+                    'plazas_pendientes': 0,
                     'integridad_aprobados': 0,
                     'integridad_reprobados': 0,
                     'pyxoom_aprobados': 0,
@@ -472,9 +500,14 @@ class ReportesService:
             
             if p.numero_reinicios > 0:
                 entry['reiniciadas'] += 1
+            entry['total_reinicios'] += p.numero_reinicios
+            
+            if p.cumplio_meta_bono:
+                entry['bono_cumplido'] += 1
                 
             if p.esta_abierto:
                 entry['activas'] += 1
+                entry['plazas_pendientes'] += p.plazas_pendientes
                 if p.estatus_sla == 'VENCIDA' or p.dias_transcurridos > p.dias_meta:
                     entry['vencidas'] += 1
             else:
@@ -541,12 +574,14 @@ class ReportesService:
                 'total_asignadas': data['total_asignadas'],
                 'activas': data['activas'],
                 'cubiertas': data['cubiertas'],
-                'bono_cumplido': 0,
-                'bono_pct': 0.0,
+                'bono_cumplido': data['bono_cumplido'],
+                'bono_pct': round((data['bono_cumplido'] / data['total_asignadas'] * 100), 1) if data['total_asignadas'] > 0 else 0.0,
                 'vencidas': data['vencidas'],
                 'reiniciadas': data['reiniciadas'],
+                'total_reinicios': data['total_reinicios'],
                 'plazas_solicitadas': data['plazas_solicitadas'],
                 'plazas_cubiertas': data['plazas_cubiertas'],
+                'plazas_pendientes': max(0, data['plazas_solicitadas'] - data['plazas_cubiertas']),
                 'integridad_aprobados': data['integridad_aprobados'],
                 'integridad_reprobados': data['integridad_reprobados'],
                 'pyxoom_aprobados': data['pyxoom_aprobados'],
@@ -1023,6 +1058,10 @@ class ReportesService:
         fecha_hasta_str = filtros.get('fecha_hasta', '').strip()
         
         qs_base = ReportesService.get_base_queryset(usuario)
+        # Aplicar filtros dimensionales (asesora, ciudad, agencia, marca, puesto)
+        filtros_dimensiones = {k: v for k, v in filtros.items() if k not in ('fecha_desde', 'fecha_hasta')}
+        if filtros_dimensiones:
+            qs_base = ReportesService.apply_filters(qs_base, filtros_dimensiones, usuario=usuario)
         
         # Puestos acumulados (hasta fecha_hasta si se especifica)
         qs_acum = qs_base

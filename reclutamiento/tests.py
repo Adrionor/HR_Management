@@ -2125,6 +2125,200 @@ class TelegramBotExecutiveTests(TestCase):
         self.assertTrue(fname_flt.endswith('.xlsx'))
         self.assertGreater(buf_flt.getbuffer().nbytes, 1000)
 
+    def test_metricas_coinciden_exactamente_con_reportes_service(self):
+        """
+        Valida que el cálculo de contrataciones (Count('id')) y plazas pendientes
+        en Telegram coincide exactamente con ReportesService (única fuente de verdad).
+        """
+        from reclutamiento.services import ReportesService
+        from reclutamiento.telegram_service import TelegramService
+
+        # Crear vacante con 4 plazas solicitadas
+        puesto_extra = Puesto.objects.create(
+            titulo=self.puesto_cat,
+            marca=self.marca,
+            agencia=self.agencia.nombre,
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            cantidad_vacantes=4,
+            asesora_encargada=self.asesora,
+            dias_meta=20
+        )
+
+        # Crear 1 candidato contratado previamente para que plazas_cubiertas sea 1
+        cand_previo = Candidato.objects.create(nombres='Previo', apellidos='Uno', email='previo@test.com')
+        Proceso.objects.create(
+            puesto=puesto_extra,
+            candidato=cand_previo,
+            asesora_asignada=self.asesora,
+            estatus_proceso=Proceso.Estatus.CONTRATADO
+        )
+        self.assertEqual(puesto_extra.plazas_cubiertas, 1)
+        self.assertEqual(puesto_extra.plazas_pendientes, 3)
+
+        # Crear 2 contrataciones para la asesora
+        candidato1 = Candidato.objects.create(nombres='Ana', apellidos='López', email='ana@test.com')
+        candidato2 = Candidato.objects.create(nombres='Beto', apellidos='Reyes', email='beto@test.com')
+
+        Proceso.objects.create(
+            puesto=puesto_extra,
+            candidato=candidato1,
+            asesora_asignada=self.asesora,
+            estatus_proceso=Proceso.Estatus.CONTRATADO
+        )
+        Proceso.objects.create(
+            puesto=puesto_extra,
+            candidato=candidato2,
+            asesora_asignada=self.asesora,
+            estatus_proceso=Proceso.Estatus.CONTRATADO
+        )
+
+        puestos = list(ReportesService.get_base_queryset(self.directora))
+        kpis = ReportesService.compute_kpis(puestos)
+        sc = ReportesService.compute_asesoras_scorecard(puestos)
+
+        # 1. Validar plazas pendientes
+        resumen_txt = TelegramService.generar_resumen_ejecutivo_texto(self.directora)
+        self.assertIn(f"<b>{kpis['plazas_activas_pendientes']}</b> plazas pendientes", resumen_txt)
+
+        # 2. Validar conteo de contrataciones en scorecard (cuenta registros de Proceso, nunca suma cantidad_vacantes)
+        asesora_entry = next((a for a in sc if a['asesora_id'] == self.asesora.id), None)
+        self.assertIsNotNone(asesora_entry)
+        self.assertEqual(asesora_entry['contratados'], 3)
+
+        sc_txt = TelegramService.generar_scorecard_global_asesoras_texto(self.directora)
+        self.assertIn("<b>3</b> contrataciones concretadas", sc_txt)
+
+    def test_teclados_callback_data_longitud_maxima_64_bytes(self):
+        """
+        Valida rigurosamente que NINGÚN callback_data generado por los teclados de navegación
+        supere los 64 bytes permitidos por la API de Telegram (codificación UTF-8).
+        """
+        from reclutamiento.telegram_service import TelegramService
+
+        teclados_a_probar = [
+            TelegramService.obtener_teclado_principal(),
+            TelegramService.obtener_teclado_filtros(),
+            TelegramService.obtener_teclado_focos_rojos(),
+            TelegramService.obtener_teclado_lista_asesoras(self.directora),
+            TelegramService.obtener_teclado_lista_agencias(self.directora),
+            TelegramService.obtener_teclado_lista_ciudades(self.directora),
+            TelegramService.obtener_teclado_detalle('as', self.asesora.id),
+            TelegramService.obtener_teclado_detalle('ag', self.agencia.id),
+            TelegramService.obtener_teclado_detalle('cd', 'CUL'),
+            TelegramService.obtener_teclado_tipos_excel(),
+            TelegramService.obtener_teclado_periodos_excel('resumen'),
+            TelegramService.obtener_teclado_periodos_excel('bono'),
+            TelegramService.obtener_teclado_periodos_excel('sabana'),
+        ]
+
+        for teclado in teclados_a_probar:
+            self.assertIn('inline_keyboard', teclado)
+            for fila in teclado['inline_keyboard']:
+                for boton in fila:
+                    cb = boton.get('callback_data', '')
+                    tamano_bytes = len(cb.encode('utf-8'))
+                    self.assertGreater(tamano_bytes, 0, f"Botón '{boton.get('text')}' tiene callback_data vacío")
+                    self.assertLessEqual(
+                        tamano_bytes, 64,
+                        f"callback_data '{cb}' ({tamano_bytes} bytes) excede el límite de 64 bytes de Telegram"
+                    )
+
+    def test_escape_seguro_caracteres_especiales_html(self):
+        """
+        Valida que nombres con &, < o > en agencias, puestos, candidatos y asesoras
+        se escapen adecuadamente para no corromper parse_mode='HTML' de Telegram.
+        """
+        from reclutamiento.telegram_service import TelegramService, _esc
+
+        # Test unitario directo del helper _esc
+        self.assertEqual(_esc("Toyota & Lexus <Norte>"), "Toyota &amp; Lexus &lt;Norte&gt;")
+        self.assertEqual(_esc(None), "")
+
+        # Puesto con caracteres especiales
+        puesto_especial = Puesto.objects.create(
+            titulo=self.puesto_cat,
+            marca=self.marca,
+            agencia="Hojalatería & Pintura <Matriz>",
+            ciudad='CUL',
+            area='HYP',
+            estatus_autorizacion=Puesto.EstatusAutorizacion.AUTORIZADO,
+            esta_abierto=True,
+            cantidad_vacantes=1,
+            asesora_encargada=self.asesora,
+            dias_meta=10
+        )
+        cand_especial = Candidato.objects.create(
+            nombres="José & María",
+            apellidos="García <Junior>",
+            email="jose.maria@test.com"
+        )
+        Proceso.objects.create(
+            puesto=puesto_especial,
+            candidato=cand_especial,
+            asesora_asignada=self.asesora,
+            estatus_proceso=Proceso.Estatus.ENT_CH
+        )
+
+        ficha_txt = TelegramService.generar_ficha_agencia_texto("Hojalatería & Pintura <Matriz>", self.directora)
+        self.assertIn("HOJALATERÍA &amp; PINTURA &lt;MATRIZ&gt;", ficha_txt)
+        self.assertNotIn("<Matriz>", ficha_txt)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='clave_secreta_test')
+    @patch('reclutamiento.telegram_service.TelegramService.api_call')
+    def test_webhook_enrutamiento_nuevos_prefijos_y_flujo_2_pasos(self, mock_api):
+        """
+        Valida el enrutamiento completo de los nuevos prefijos nav:, flist:, f:, xls_t:, xls:p: y xls:res:todo:
+        confirmando que el webhook siempre responde con answerCallbackQuery y actualiza in-place.
+        """
+        mock_api.return_value = {'ok': True}
+        perfil = self.directora.perfilusuario
+        perfil.telegram_chat_id = '998877'
+        perfil.save()
+
+        url = reverse('telegram_webhook')
+        headers = {'HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN': 'clave_secreta_test'}
+
+        prefijos_a_probar = [
+            'nav:resumen',
+            'nav:focos',
+            'nav:filtros',
+            'nav:excels',
+            'flist:as',
+            'flist:ag',
+            'flist:cd',
+            f'f:as:{self.asesora.id}',
+            'f:cd:CUL',
+            f'f:ag:{self.agencia.id}',
+            'xls_t:resumen',
+            'xls_t:bono',
+            'xls:p:resumen:mes_actual',
+            'xls:p:bono:semana',
+            f'xls:res:todo:as:{self.asesora.id}',
+        ]
+
+        for prefijo in prefijos_a_probar:
+            mock_api.reset_mock()
+            resp = self.client.post(
+                url,
+                data=json.dumps({
+                    'callback_query': {
+                        'id': f'cb_{prefijo}',
+                        'data': prefijo,
+                        'message': {'chat': {'id': 998877}, 'message_id': 100}
+                    }
+                }),
+                content_type='application/json',
+                **headers
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(mock_api.called, f"Fallo al invocar API de Telegram para prefijo {prefijo}")
+            # Validar que answerCallbackQuery fue llamado
+            llamadas = [call[0][0] for call in mock_api.call_args_list]
+            self.assertIn('answerCallbackQuery', llamadas, f"answerCallbackQuery no fue invocado para {prefijo}")
+
     @override_settings(TELEGRAM_BOT_TOKEN='123456789:ABCDefghIJKlmnoPQRstuvwxYZ')
     @patch('reclutamiento.telegram_service.TelegramService.api_call')
     def test_management_commands_pulse_y_flash(self, mock_api):

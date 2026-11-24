@@ -2045,25 +2045,34 @@ def telegram_webhook_view(request):
         def responder_in_place(txt, teclado=None):
             return TelegramService.editar_mensaje(chat_id, message_id, txt, reply_markup=teclado)
 
-        if cb_data in ('cmd_resumen', 'menu_principal'):
+        if cb_data in ('nav:resumen', 'nav:menu', 'cmd_resumen', 'menu_principal'):
             txt = TelegramService.generar_resumen_ejecutivo_texto(usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_ejecutivo())
+            responder_in_place(txt, TelegramService.obtener_teclado_principal())
 
-        elif cb_data == 'cmd_scorecard_global':
-            txt = TelegramService.generar_scorecard_global_asesoras_texto(usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_asesoras(usuario))
-
-        elif cb_data == 'cmd_ciudades_panorama':
-            txt = TelegramService.generar_panorama_ciudades_texto(usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_ciudades(usuario))
-
-        elif cb_data in ('cmd_focos_rojos', 'cmd_sla'):
+        elif cb_data in ('nav:focos', 'cmd_focos_rojos', 'cmd_sla'):
             txt = TelegramService.generar_focos_rojos_texto(usuario)
             responder_in_place(txt, TelegramService.obtener_teclado_focos_rojos())
 
-        elif cb_data == 'cmd_agencias':
+        elif cb_data == 'nav:filtros':
+            txt = "🔎 <b>CONSULTAR POR...</b>\n\nSelecciona la dimensión estratégica que deseas analizar:"
+            responder_in_place(txt, TelegramService.obtener_teclado_filtros())
+
+        elif cb_data in ('nav:excels', 'cmd_excel'):
+            txt = "📥 <b>DESCARGA DE REPORTES OFICIALES (EXCEL)</b>\n\nSelecciona el reporte oficial que deseas generar:"
+            responder_in_place(txt, TelegramService.obtener_teclado_tipos_excel())
+
+        # Listas de selección de filtros
+        elif cb_data in ('flist:as', 'cmd_scorecard_global'):
+            txt = TelegramService.generar_scorecard_global_asesoras_texto(usuario)
+            responder_in_place(txt, TelegramService.obtener_teclado_lista_asesoras(usuario))
+
+        elif cb_data in ('flist:ag', 'cmd_agencias'):
             txt = TelegramService.generar_vacantes_agencias_texto(usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_agencias(usuario))
+            responder_in_place(txt, TelegramService.obtener_teclado_lista_agencias(usuario))
+
+        elif cb_data in ('flist:cd', 'cmd_ciudades_panorama'):
+            txt = TelegramService.generar_panorama_ciudades_texto(usuario)
+            responder_in_place(txt, TelegramService.obtener_teclado_lista_ciudades(usuario))
 
         elif cb_data == 'cmd_estancados':
             txt = TelegramService.generar_estancados_texto(usuario)
@@ -2071,40 +2080,67 @@ def telegram_webhook_view(request):
 
         elif cb_data == 'cmd_contrataciones':
             txt = TelegramService.generar_contrataciones_mes_texto(usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_ejecutivo())
+            responder_in_place(txt, TelegramService.obtener_teclado_principal())
 
-        elif cb_data.startswith('flt_as:'):
-            as_id = cb_data.split(':', 1)[1]
+        # Detalle de dimensiones por ID (f:as:<id>, f:ag:<id>, f:cd:<code>)
+        elif cb_data.startswith('f:as:') or cb_data.startswith('flt_as:'):
+            as_id = cb_data.split(':', 2)[-1]
             txt = TelegramService.generar_scorecard_asesora_texto(as_id, usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_detalle_filtro('asesora', as_id))
+            responder_in_place(txt, TelegramService.obtener_teclado_detalle('as', as_id))
 
-        elif cb_data.startswith('flt_cd:'):
-            cd_code = cb_data.split(':', 1)[1]
+        elif cb_data.startswith('f:cd:') or cb_data.startswith('flt_cd:'):
+            cd_code = cb_data.split(':', 2)[-1]
             txt = TelegramService.generar_ficha_ciudad_texto(cd_code, usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_detalle_filtro('ciudad', cd_code))
+            responder_in_place(txt, TelegramService.obtener_teclado_detalle('cd', cd_code))
 
-        elif cb_data.startswith('flt_ag:'):
-            ag_name = cb_data.split(':', 1)[1]
-            txt = TelegramService.generar_ficha_agencia_texto(ag_name, usuario)
-            responder_in_place(txt, TelegramService.obtener_teclado_detalle_filtro('agencia', ag_name))
+        elif cb_data.startswith('f:ag:') or cb_data.startswith('flt_ag:'):
+            ag_id = cb_data.split(':', 2)[-1]
+            txt = TelegramService.generar_ficha_agencia_texto(ag_id, usuario)
+            responder_in_place(txt, TelegramService.obtener_teclado_detalle('ag', ag_id))
 
-        elif cb_data.startswith('cmd_excel_filtro:'):
+        # Flujo de Descarga de Excels: Paso B (Selección de periodo)
+        elif cb_data.startswith('xls_t:'):
+            tipo = cb_data.split(':', 1)[1]
+            nombres = {
+                'resumen': 'Resumen Ejecutivo por Periodo',
+                'bono': 'Auditoría de Productividad y Bono',
+                'sabana': 'Sábana Histórica Filtrable'
+            }
+            nom = nombres.get(tipo, 'Reporte Oficial')
+            txt = f"📥 <b>{nom.upper()}</b>\n\nSelecciona el periodo temporal que deseas exportar:"
+            responder_in_place(txt, TelegramService.obtener_teclado_periodos_excel(tipo))
+
+        # Flujo de Descarga de Excels: Generación por periodo
+        elif cb_data.startswith('xls:p:'):
             partes = cb_data.split(':')
-            tipo = partes[1] if len(partes) > 1 else 'general'
-            valor = partes[2] if len(partes) > 2 else ''
-            TelegramService.enviar_mensaje(chat_id, f"⏳ <i>Generando archivo Excel filtrado por {tipo}...</i>")
-            buf, fname = TelegramService.generar_excel_filtrado_buffer(tipo, valor, usuario)
+            tipo = partes[2] if len(partes) > 2 else 'resumen'
+            periodo = partes[3] if len(partes) > 3 else 'todo'
+            TelegramService.enviar_mensaje(chat_id, f"⏳ <i>Generando archivo Excel ({tipo} • {periodo})...</i>")
+            buf, fname = TelegramService.generar_excel_buffer(usuario, tipo=tipo, periodo=periodo)
             TelegramService.enviar_documento_excel(
                 chat_id,
                 buf,
                 fname,
-                caption=f"📊 <b>Reporte Filtrado ({tipo.capitalize()}: {valor})</b> • Premier Capital Humano"
+                caption=f"📊 <b>Reporte Oficial ({tipo.capitalize()} • {periodo})</b> • Premier Capital Humano"
             )
 
-        elif cb_data == 'cmd_excel':
-            TelegramService.enviar_mensaje(chat_id, "⏳ <i>Generando archivo Excel oficial...</i>")
-            buf, fname = TelegramService.generar_excel_buffer(usuario)
-            TelegramService.enviar_documento_excel(chat_id, buf, fname)
+        # Descarga de Excel filtrado desde la vista de detalle (xls:res:todo:<dim>:<id>)
+        elif cb_data.startswith('xls:res:todo:') or cb_data.startswith('cmd_excel_filtro:'):
+            partes = cb_data.split(':')
+            if cb_data.startswith('xls:res:todo:'):
+                dim = partes[3] if len(partes) > 3 else 'as'
+                val_id = partes[4] if len(partes) > 4 else ''
+            else:
+                dim = partes[1] if len(partes) > 1 else 'general'
+                val_id = partes[2] if len(partes) > 2 else ''
+            TelegramService.enviar_mensaje(chat_id, f"⏳ <i>Generando archivo Excel filtrado ({dim.upper()})...</i>")
+            buf, fname = TelegramService.generar_excel_filtrado_buffer(dim, val_id, usuario)
+            TelegramService.enviar_documento_excel(
+                chat_id,
+                buf,
+                fname,
+                caption=f"📊 <b>Reporte Filtrado ({dim.upper()}: {val_id})</b> • Premier Capital Humano"
+            )
 
         return JsonResponse({'status': 'ok'})
 
@@ -2130,7 +2166,7 @@ def telegram_webhook_view(request):
                         f"Tu cuenta directiva ha sido vinculada exitosamente. Desde este chat puedes monitorear en tiempo real los indicadores clave de reclutamiento, estado de SLAs y descargar reportes oficiales en Excel.\n\n"
                         f"<i>Selecciona una opción del menú:</i>"
                     )
-                    TelegramService.enviar_mensaje(chat_id, bienvenida, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+                    TelegramService.enviar_mensaje(chat_id, bienvenida, reply_markup=TelegramService.obtener_teclado_principal())
                 else:
                     TelegramService.enviar_mensaje(chat_id, f"⚠️ <b>Aviso de Vinculación:</b>\n\n{res_msg}")
                 return JsonResponse({'status': 'ok'})
@@ -2142,7 +2178,7 @@ def telegram_webhook_view(request):
                         f"🏢 <b>Hola de nuevo, {user.first_name or user.username}.</b>\n\n"
                         f"Panel Ejecutivo de Capital Humano activo. ¿Qué reporte deseas consultar?"
                     )
-                    TelegramService.enviar_mensaje(chat_id, saludo, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+                    TelegramService.enviar_mensaje(chat_id, saludo, reply_markup=TelegramService.obtener_teclado_principal())
                 else:
                     aviso_no_auth = (
                         f"🔒 <b>Acceso Restringido • Premier Capital Humano</b>\n\n"
@@ -2173,7 +2209,7 @@ def telegram_webhook_view(request):
         # 1. Menú principal y Resumen
         if cmd in ('resumen', 'start', 'inicio', 'menu', 'menú', 'hola', 'dashboard', 'pulse'):
             txt = TelegramService.generar_resumen_ejecutivo_texto(usuario)
-            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_principal())
 
         # 2. Scorecard de Asesoras (Global o Individual)
         elif any(cmd.startswith(w) for w in ('scorecard', 'asesora', 'asesoras', 'equipo', 'reclutadora', 'reclutadoras')):
@@ -2181,10 +2217,10 @@ def telegram_webhook_view(request):
             if len(partes) > 1 and len(partes[1].strip()) >= 2:
                 q_as = partes[1].strip()
                 txt = TelegramService.generar_scorecard_asesora_texto(q_as, usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle_filtro('asesora', q_as))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle('as', q_as))
             else:
                 txt = TelegramService.generar_scorecard_global_asesoras_texto(usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_asesoras(usuario))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_lista_asesoras(usuario))
 
         # 3. Ciudades y Plazas (Panorama o Detalle)
         elif any(cmd.startswith(w) for w in ('ciudad', 'ciudades', 'plaza', 'plazas')):
@@ -2192,67 +2228,72 @@ def telegram_webhook_view(request):
             if len(partes) > 1 and len(partes[1].strip()) >= 2:
                 q_cd = partes[1].strip()
                 txt = TelegramService.generar_ficha_ciudad_texto(q_cd, usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle_filtro('ciudad', q_cd))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle('cd', q_cd))
             else:
                 txt = TelegramService.generar_panorama_ciudades_texto(usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ciudades(usuario))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_lista_ciudades(usuario))
 
         # 4. Focos Rojos y Alertas SLA / Estancados
         elif any(w in cmd for w in ('foco', 'focos', 'sla', 'alerta', 'alertas', 'vencida', 'vencidas', 'estancado', 'estancados', 'urgente', 'retraso')):
             txt = TelegramService.generar_focos_rojos_texto(usuario)
             TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_focos_rojos())
 
-        # 5. Contrataciones del Mes
+        # 5. Filtros / Consultar por
+        elif any(w in cmd for w in ('filtro', 'filtros', 'consultar', 'buscar')):
+            txt = "🔎 <b>CONSULTAR POR...</b>\n\nSelecciona la dimensión estratégica que deseas analizar:"
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_filtros())
+
+        # 6. Contrataciones del Mes
         elif any(w in cmd for w in ('contratada', 'contratadas', 'contratado', 'contratados', 'contratacion', 'contrataciones', 'ingreso', 'ingresos')):
             txt = TelegramService.generar_contrataciones_mes_texto(usuario)
-            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_principal())
 
-        # 6. Agencias y Concesionarias
+        # 7. Agencias y Concesionarias
         elif any(cmd.startswith(w) for w in ('agencia', 'agencias', 'concesionaria', 'concesionarias')):
             partes = cmd_raw.split(maxsplit=1)
             if len(partes) > 1 and len(partes[1].strip()) >= 2:
                 q_ag = partes[1].strip()
                 txt = TelegramService.generar_ficha_agencia_texto(q_ag, usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle_filtro('agencia', q_ag))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle('ag', q_ag))
             else:
                 txt = TelegramService.generar_vacantes_agencias_texto(usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_agencias(usuario))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_lista_agencias(usuario))
 
-        # 7. Descarga de Excel
-        elif any(w in cmd for w in ('excel', 'xlsx', 'descargar excel', 'reporte excel')):
-            TelegramService.enviar_mensaje(chat_id, "⏳ <i>Generando archivo Excel oficial...</i>")
-            buf, fname = TelegramService.generar_excel_buffer(usuario)
-            TelegramService.enviar_documento_excel(chat_id, buf, fname)
+        # 8. Descarga de Excel (Asistente 2 Pasos)
+        elif any(w in cmd for w in ('excel', 'xlsx', 'descargar excel', 'reporte excel', 'reportes')):
+            txt = "📥 <b>DESCARGA DE REPORTES OFICIALES (EXCEL)</b>\n\nSelecciona el reporte oficial que deseas generar:"
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_tipos_excel())
 
-        # 8. Búsqueda inteligente por Ciudad conocida (ej. "Culiacan", "Mazatlan", "Tijuana", "Mexicali", "Cabos")
+        # 9. Búsqueda inteligente por Ciudad conocida
         elif any(cd_match in cmd for cd_match in ('culiacan', 'culiacán', 'mazatlan', 'mazatlán', 'tijuana', 'mexicali', 'los cabos', 'cabos', 'la paz', 'hermosillo', 'guasave', 'mochis', 'cajeme', 'monterrey', 'cdmx')):
             txt = TelegramService.generar_ficha_ciudad_texto(cmd, usuario)
-            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle_filtro('ciudad', cmd))
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle('cd', cmd))
 
-        # 9. Búsqueda inteligente por Marca o Concesionaria conocida
+        # 10. Búsqueda inteligente por Marca o Concesionaria conocida
         elif any(brand_match in cmd for brand_match in ('toyota', 'honda', 'kia', 'chevrolet', 'hyundai', 'premier', 'buick', 'gmc', 'cadillac', 'ford', 'nissan')):
             txt = TelegramService.generar_ficha_agencia_texto(cmd, usuario)
-            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle_filtro('agencia', cmd))
+            TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle('ag', cmd))
 
-        # 10. Ayuda y Guía Ejecutiva
+        # 11. Ayuda y Guía Ejecutiva
         elif cmd in ('ayuda', 'help', '/help'):
             ayuda = (
                 f"ℹ️ <b>ASISTENTE EJECUTIVO • PREMIER CAPITAL HUMANO</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"<b>📊 PILARES ESTRATÉGICOS:</b>\n"
                 f"• /resumen — Pulse general de vacantes, velocidad y metas.\n"
+                f"• /focos — Vacantes vencidas y candidatos detenidos en embudo.\n"
+                f"• /filtros — Consulta interactiva por Asesora, Agencia o Ciudad.\n"
+                f"• /excel — Descarga de reportes ejecutivos en formato .xlsx.\n"
                 f"• /scorecard — Desempeño y carga activa del equipo de asesoras.\n"
                 f"• /ciudades — Panorama geográfico de plazas y concesionarias.\n"
-                f"• /focos — Vacantes vencidas y candidatos detenidos en embudo.\n"
-                f"• /contrataciones — Colaboradores contratados en el mes.\n"
-                f"• /excel — Descarga el Resumen Ejecutivo en formato .xlsx.\n\n"
-                f"<b>🔍 CONSULTAS DIRECTAS (Búsqueda Natural):</b>\n"
+                f"• /contrataciones — Colaboradores contratados en el mes.\n\n"
+                f"<b>🔍 CONSULTAS DIRECTAS:</b>\n"
                 f"Puedes escribir directamente cualquier ciudad, asesora o marca:\n"
                 f"• <i>«culiacan»</i> o <i>«tijuana»</i> → Ficha ejecutiva de la plaza.\n"
                 f"• <i>«asesora maria»</i> → Scorecard individual de la reclutadora.\n"
                 f"• <i>«toyota»</i> o <i>«kia»</i> → Ficha de la concesionaria.\n"
             )
-            TelegramService.enviar_mensaje(chat_id, ayuda, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+            TelegramService.enviar_mensaje(chat_id, ayuda, reply_markup=TelegramService.obtener_teclado_principal())
 
         else:
             # Intento de búsqueda por nombre de asesora antes de dar desconocido
@@ -2264,12 +2305,12 @@ def telegram_webhook_view(request):
 
             if asesora_posible:
                 txt = TelegramService.generar_scorecard_asesora_texto(asesora_posible.id, usuario)
-                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle_filtro('asesora', asesora_posible.id))
+                TelegramService.enviar_mensaje(chat_id, txt, reply_markup=TelegramService.obtener_teclado_detalle('as', asesora_posible.id))
             else:
                 desconocido = (
                     f"🤔 No reconozco <code>{raw_text}</code>.\n\n"
                     f"Escribe una ciudad (ej. <i>culiacan</i>), una marca (ej. <i>toyota</i>), el nombre de una asesora o selecciona una opción del menú:"
                 )
-                TelegramService.enviar_mensaje(chat_id, desconocido, reply_markup=TelegramService.obtener_teclado_ejecutivo())
+                TelegramService.enviar_mensaje(chat_id, desconocido, reply_markup=TelegramService.obtener_teclado_principal())
 
     return JsonResponse({'status': 'ok'})
