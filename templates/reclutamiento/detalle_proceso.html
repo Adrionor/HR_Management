@@ -146,9 +146,9 @@
         <p class="sap-page-subtitle">
             Vacante: <strong>{{ proceso.puesto.titulo.nombre }}</strong> &bull; 
             Etapa actual: <span class="sap-badge sap-badge-info">{{ proceso.get_estatus_proceso_display }}</span>
-            {% if proceso.esta_estancado or proceso.dias_en_etapa_actual >= 30 %}
+            {% if proceso.esta_estancado %}
                 <span class="sap-badge sap-badge-error" style="background: #fee2e2; color: #991b1b; border-color: #fca5a5; margin-left: 4px;">
-                    <span class="sap-badge-dot"></span>Detenido +30 días ({{ proceso.dias_en_etapa_actual }}d)
+                    <span class="sap-badge-dot"></span>Sin cambio de etapa durante {{ proceso.dias_en_etapa_actual }} días
                 </span>
             {% else %}
                 <span style="font-size: 0.8rem; color: var(--sap-muted); margin-left: 4px;">
@@ -159,8 +159,8 @@
     </div>
 </div>
 
-<!-- Banner de Alerta si el candidato está detenido +30 días -->
-{% if proceso.esta_estancado or proceso.dias_en_etapa_actual >= 30 %}
+<!-- Alerta de seguimiento para procesos activos -->
+{% if proceso.esta_estancado %}
 <div class="sap-card" style="border: 1px solid #feddb0; background: #fffbf5; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
         <svg class="sap-icon" style="color: #8a3c00; width: 22px; height: 22px; flex-shrink: 0;" viewBox="0 0 24 24">
@@ -168,10 +168,11 @@
         </svg>
         <div>
             <div style="font-weight: 700; color: #8a3c00; font-size: 0.875rem;">
-                ATENCIÓN OPERATIVA: Candidato Detenido +30 días
+                ATENCIÓN OPERATIVA: 30 días o más sin cambio de etapa
             </div>
             <div style="font-size: 0.8125rem; color: #713f12; margin-top: 2px;">
-                Este candidato lleva {{ proceso.dias_en_etapa_actual }} días en la etapa actual sin avance registrado. Actualiza su etapa o descártalo para mantener al día tus indicadores.
+                Este proceso lleva {{ proceso.dias_en_etapa_actual }} días en la etapa actual sin cambio registrado.
+                {% if puede_modificar %}Revisa el seguimiento y registra lo ocurrido. Cambia la etapa solo si corresponde a lo sucedido.{% else %}Consulta el seguimiento con la persona responsable.{% endif %}
             </div>
         </div>
     </div>
@@ -485,46 +486,28 @@
         </details>
     </div>
 
-    <!-- Columna Derecha: Acción Directa (Avanzar Etapa) y Bitácora -->
+    <!-- Columna Derecha: Seguimiento, cambios de etapa y bitácora -->
     <div>
-        <!-- Formulario Principal: Avanzar Etapa -->
-        <div class="sap-card" id="panelAvanzar">
+        {% if not puede_modificar %}
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 0.85rem; border-radius: var(--sap-radius-sm); margin-bottom: 1rem; font-size: 0.8125rem; display: flex; align-items: center; gap: 8px;">
+            <svg class="sap-icon" viewBox="0 0 24 24" style="color: #d97706; width: 20px; height: 20px; flex-shrink: 0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <span><strong>Modo consulta (solo lectura):</strong> Solo la persona asignada o Gerencia de Capital Humano pueden registrar seguimiento o cambiar la etapa.</span>
+        </div>
+        {% endif %}
+
+        <div class="sap-card" id="panelSeguimiento">
             <div class="sap-card-header">
                 <div>
-                    <h2 class="sap-card-title">Avanzar Etapa de Selección</h2>
+                    <h2 class="sap-card-title">Seguimiento y evaluaciones</h2>
                     <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
-                        Control operativo de RH &bull; Actualiza la etapa y los resultados del candidato
+                        Guarda notas y resultados sin cambiar la etapa ni reiniciar su antigüedad.
                     </div>
                 </div>
             </div>
             <div class="sap-card-body">
-                {% if not puede_modificar %}
-                <div style="background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 0.85rem; border-radius: var(--sap-radius-sm); margin-bottom: 1rem; font-size: 0.8125rem; display: flex; align-items: center; gap: 8px;">
-                    <svg class="sap-icon" viewBox="0 0 24 24" style="color: #d97706; width: 20px; height: 20px; flex-shrink: 0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                    <span><strong>Modo Consulta (Solo Lectura):</strong> Este candidato está asignado a otra asesora. Solo la persona asignada o la Gerencia de Capital Humano pueden modificar la etapa, notas y evaluaciones.</span>
-                </div>
-                {% endif %}
-                <form method="post" id="formAvanzarEtapa">
+                <form method="post" id="formGuardarSeguimiento">
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="actualizar_estatus">
-                    
-                    <div class="sap-form-group">
-                        <label class="sap-label" for="estatus_proceso">Nueva Etapa del Proceso:</label>
-                        <select name="estatus_proceso" id="estatus_proceso" class="sap-select" {% if not puede_modificar %}disabled{% endif %}>
-                            {% for value, text in estatus_choices %}
-                            <option value="{{ value }}" {% if proceso.estatus_proceso == value %}selected{% endif %}>
-                                {{ text }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    {% if es_gerente_ch %}
-                    <div class="sap-form-group">
-                        <label class="sap-label" for="motivo_correccion">Motivo de corrección o reapertura</label>
-                        <textarea name="motivo_correccion" id="motivo_correccion" class="sap-textarea" rows="2" placeholder="Obligatorio al corregir etapas o reabrir un proceso."></textarea>
-                    </div>
-                    {% endif %}
+                    <input type="hidden" name="action" value="guardar_seguimiento">
 
                     <!-- Panel de Resultados de Evaluaciones (Integridad y Pyxoom) -->
                     <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); padding: 0.85rem; margin-bottom: 1rem;">
@@ -558,14 +541,6 @@
                         </div>
                     </div>
 
-                    <!-- Motivo de Descarte o Abandono (Obligatorio en etapas terminales) -->
-                    <div class="sap-form-group" id="grupo_motivo_descarte">
-                        <label class="sap-label" for="motivo_descarte">
-                            Motivo de Descarte / Abandono <span id="label_descarte_obligatorio" style="color: #b91c1c; font-weight: 700; display: none;">(Obligatorio)</span>:
-                        </label>
-                        <textarea name="motivo_descarte" id="motivo_descarte" class="sap-textarea" rows="2" placeholder="Obligatorio al descartar o marcar abandono..." {% if not puede_modificar %}disabled{% endif %}>{{ proceso.motivo_descarte }}</textarea>
-                    </div>
-
                     <div class="sap-form-group">
                         <label class="sap-label" for="retroalimentacion">Observaciones / Notas de Seguimiento:</label>
                         <textarea name="retroalimentacion" id="retroalimentacion" class="sap-textarea" rows="3" placeholder="Escribe el resultado de la entrevista, confirmación de jefe o notas para la siguiente etapa..." {% if not puede_modificar %}disabled{% endif %}>{{ proceso.retroalimentacion }}</textarea>
@@ -574,11 +549,73 @@
                     {% if puede_modificar %}
                     <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%; padding: 8px 12px; font-size: 0.875rem;">
                         <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                        <span>Guardar y avanzar etapa</span>
+                        <span>Guardar seguimiento</span>
                     </button>
                     {% else %}
                     <div style="text-align: center; color: var(--sap-muted); font-size: 0.8125rem; padding: 8px; background: #f1f5f9; border-radius: 4px;">
-                        Edición restringida a la asesora asignada o Gerencia de CH
+                        Seguimiento y evaluaciones en modo de solo lectura
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="sap-card" id="panelAvanzar" style="margin-top: 1.25rem;">
+            <div class="sap-card-header">
+                <div>
+                    <h2 class="sap-card-title">Cambiar etapa</h2>
+                    <div style="font-size: 0.75rem; color: var(--sap-muted); margin-top: 2px;">
+                        Esta acción modifica el estado del proceso. Guarda el seguimiento por separado.
+                    </div>
+                </div>
+            </div>
+            <div class="sap-card-body">
+                <form method="post" id="formAvanzarEtapa">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="actualizar_estatus">
+
+                    {% if estatus_choices %}
+                    <div class="sap-form-group">
+                        <label class="sap-label" for="estatus_proceso">Nueva etapa del proceso:</label>
+                        <select name="estatus_proceso" id="estatus_proceso" class="sap-select" required {% if not puede_modificar %}disabled{% endif %}>
+                            <option value="" selected disabled>Selecciona la nueva etapa</option>
+                            {% for value, text in estatus_choices %}
+                            <option value="{{ value }}">{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p style="font-size: 0.8125rem; color: var(--sap-muted); margin: 0 0 1rem;">
+                        Descartar, registrar un resultado no aprobado o marcar abandono cierra el proceso y requiere un motivo.
+                        Las correcciones o reaperturas están reservadas a Gerencia de CH y requieren justificación.
+                    </p>
+
+                    {% if es_gerente_ch %}
+                    <div class="sap-form-group">
+                        <label class="sap-label" for="motivo_correccion">Motivo de corrección o reapertura</label>
+                        <textarea name="motivo_correccion" id="motivo_correccion" class="sap-textarea" rows="2" placeholder="Obligatorio si corriges una etapa o reabres el proceso."></textarea>
+                    </div>
+                    {% endif %}
+
+                    <div class="sap-form-group" id="grupo_motivo_descarte">
+                        <label class="sap-label" for="motivo_descarte">
+                            Motivo de cierre <span id="label_descarte_obligatorio" style="color: #b91c1c; font-weight: 700; display: none;">(Obligatorio)</span>
+                        </label>
+                        <textarea name="motivo_descarte" id="motivo_descarte" class="sap-textarea" rows="2" placeholder="Indica por qué se descarta, no aprueba o abandona el proceso..." {% if not puede_modificar %}disabled{% endif %}>{{ proceso.motivo_descarte }}</textarea>
+                    </div>
+
+                    {% if puede_modificar %}
+                    <button type="submit" class="sap-btn sap-btn-primary" style="width: 100%; padding: 8px 12px; font-size: 0.875rem;">
+                        <svg class="sap-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                        <span>Confirmar cambio de etapa</span>
+                    </button>
+                    {% else %}
+                    <div style="text-align: center; color: var(--sap-muted); font-size: 0.8125rem; padding: 8px; background: #f1f5f9; border-radius: 4px;">
+                        Cambios de etapa en modo de solo lectura
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div style="background: #f1f5f9; color: var(--sap-muted); padding: 0.85rem; border-radius: var(--sap-radius-sm); font-size: 0.8125rem;">
+                        No hay otra etapa disponible para este proceso. Para corregir o reabrir, solicita apoyo a Gerencia de CH.
                     </div>
                     {% endif %}
                 </form>

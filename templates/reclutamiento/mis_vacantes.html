@@ -150,6 +150,22 @@
         border-radius: var(--sap-radius-sm);
         border: 1px solid var(--sap-border);
     }
+    .sap-sla-dialog {
+        width: min(92%, 520px);
+        max-height: 90vh;
+        padding: 0;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        box-shadow: var(--sap-shadow-card);
+        overflow-y: auto;
+    }
+    .sap-sla-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.45);
+    }
+    .sap-sla-dialog .sap-modal-info-box {
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
 </style>
 {% endblock %}
 
@@ -282,14 +298,20 @@
                                             Excepciones agotadas (2/2)
                                         </span>
                                     {% elif es_directora_ch and vacante.asesora_encargada != user %}
-                                        <form action="{% url 'reiniciar_vacante' vacante.id %}" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('¿Desea autorizar el reinicio del SLA para \'{{ vacante.titulo.nombre|escapejs }}\'? Esto iniciará el Ciclo #{{ vacante.numero_reinicios|add:1 }} (Máximo 2 permitidos).');">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="comentario" value="Excepción de SLA autorizada por Gerencia de CH">
-                                            <button type="submit" class="sap-btn sap-btn-warning sap-btn-sm" title="Autorizar reinicio de SLA (Ciclo {{ vacante.numero_reinicios|add:1 }}/2)">
-                                                <svg class="sap-icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                                                <span>Autorizar reinicio ({{ vacante.numero_reinicios|add:1 }}/2)</span>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="sap-btn sap-btn-warning sap-btn-sm js-abrir-reinicio-sla"
+                                                data-action="{% url 'reiniciar_vacante' vacante.id %}"
+                                                data-vacante="{{ vacante.titulo.nombre }}"
+                                                data-responsable="{{ vacante.asesora_encargada.get_full_name|default:vacante.asesora_encargada.username|default:'Sin asignar' }}"
+                                                data-inicio-original="{{ vacante.fecha_inicio_sla_original|date:'d/m/Y H:i' }}"
+                                                data-inicio-actual="{{ vacante.fecha_inicio_sla|date:'d/m/Y H:i' }}"
+                                                data-dias="{{ vacante.dias_transcurridos }}"
+                                                data-meta="{{ vacante.dias_meta }}"
+                                                data-reinicios="{{ vacante.numero_reinicios }}"
+                                                data-siguiente="{{ vacante.numero_reinicios|add:1 }}"
+                                                title="Autorizar reinicio de SLA ({{ vacante.numero_reinicios|add:1 }}/2)">
+                                            <svg class="sap-icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                            <span>Autorizar reinicio ({{ vacante.numero_reinicios|add:1 }}/2)</span>
+                                        </button>
                                     {% endif %}
                                 {% endif %}
                             </div>
@@ -303,6 +325,40 @@
 </div>
 
 {% if es_directora_ch %}
+<dialog id="dialogReinicioSla" class="sap-sla-dialog" aria-labelledby="dialogReinicioSlaTitle">
+    <div class="sap-modal-header">
+        <h3 id="dialogReinicioSlaTitle">Autorizar reinicio de SLA</h3>
+        <button type="button" class="sap-btn sap-btn-ghost js-cerrar-reinicio-sla" aria-label="Cerrar" style="padding: 4px 8px; font-size: 1.25rem; line-height: 1;">&times;</button>
+    </div>
+    <form id="formReinicioSla" method="post">
+        {% csrf_token %}
+        <div class="sap-modal-body">
+            <div class="sap-modal-info-box">
+                <div><strong>Vacante:</strong> <span id="reinicioVacante"></span></div>
+                <div><strong>Responsable:</strong> <span id="reinicioResponsable"></span></div>
+                <div><strong>Inicio original del SLA:</strong> <span id="reinicioInicioOriginal"></span></div>
+                <div><strong>Inicio del ciclo actual:</strong> <span id="reinicioInicioActual"></span></div>
+                <div><strong>Tiempo actual / meta:</strong> <span id="reinicioTiempo"></span></div>
+                <div><strong>Excepciones utilizadas:</strong> <span id="reinicioUtilizados"></span></div>
+            </div>
+            <p id="reinicioImpacto" style="font-size: 0.875rem; line-height: 1.5;"></p>
+            <div class="sap-form-group">
+                <label class="sap-label" for="motivoReinicioSla">Motivo de la excepción <span aria-hidden="true">*</span></label>
+                <textarea id="motivoReinicioSla" name="comentario" class="sap-textarea" rows="3" required
+                          aria-describedby="ayudaMotivoReinicioSla" style="width: 100%; box-sizing: border-box;"></textarea>
+                <div id="ayudaMotivoReinicioSla" style="font-size: 0.8125rem; color: var(--sap-muted); margin-top: 0.35rem;">
+                    Describe por qué se autoriza el reinicio. El motivo quedará registrado en la auditoría.
+                </div>
+            </div>
+        </div>
+        <div class="sap-modal-footer">
+            <button type="button" class="sap-btn sap-btn-secondary js-cerrar-reinicio-sla">Cancelar</button>
+            <button type="submit" class="sap-btn sap-btn-warning">Autorizar reinicio</button>
+        </div>
+    </form>
+</dialog>
+<noscript><p>Para autorizar un reinicio de SLA, habilita JavaScript y vuelve a cargar la página.</p></noscript>
+
 <!-- Modal de Reasignación Rápida SAP Fiori -->
 <div id="modalReasignarVacante" class="sap-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalReasignarTitle">
     <div class="sap-modal-dialog">
@@ -388,8 +444,52 @@
         });
         {% endif %}
     });
-
+</script>
+<script>
     {% if es_directora_ch %}
+    (function() {
+        var dialog = document.getElementById('dialogReinicioSla');
+        var form = document.getElementById('formReinicioSla');
+        var motivo = document.getElementById('motivoReinicioSla');
+        var botonOrigen;
+
+        document.addEventListener('click', function(event) {
+            var boton = event.target.closest('.js-abrir-reinicio-sla');
+            if (!boton) return;
+
+            botonOrigen = boton;
+            form.reset();
+            motivo.setCustomValidity('');
+            form.action = boton.dataset.action;
+            document.getElementById('reinicioVacante').textContent = boton.dataset.vacante;
+            document.getElementById('reinicioResponsable').textContent = boton.dataset.responsable;
+            document.getElementById('reinicioInicioOriginal').textContent = boton.dataset.inicioOriginal;
+            document.getElementById('reinicioInicioActual').textContent = boton.dataset.inicioActual;
+            document.getElementById('reinicioTiempo').textContent = boton.dataset.dias + ' / ' + boton.dataset.meta + ' días';
+            document.getElementById('reinicioUtilizados').textContent = boton.dataset.reinicios + ' de 2';
+            document.getElementById('reinicioImpacto').textContent =
+                'Se iniciará la excepción ' + boton.dataset.siguiente + ' de 2 y el contador actual volverá a cero. El inicio original del SLA se conserva.';
+            dialog.showModal();
+            motivo.focus();
+        });
+
+        dialog.querySelectorAll('.js-cerrar-reinicio-sla').forEach(function(boton) {
+            boton.addEventListener('click', function() { dialog.close(); });
+        });
+        dialog.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                dialog.close();
+            }
+        });
+        dialog.addEventListener('close', function() {
+            if (botonOrigen && botonOrigen.isConnected) botonOrigen.focus();
+        });
+        motivo.addEventListener('input', function() {
+            motivo.setCustomValidity(motivo.value && !motivo.value.trim() ? 'Escribe el motivo de la excepción.' : '');
+        });
+    })();
+
     function abrirModalReasignarVacante(vacanteId, titulo, agencia, asesoraActualNombre, asesoraActualId) {
         var url = "{% url 'reasignar_vacante' 999999 %}".replace('999999', vacanteId);
         $('#formReasignarVacante').attr('action', url);

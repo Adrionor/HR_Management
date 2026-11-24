@@ -288,6 +288,25 @@
             font-weight: 500;
         }
 
+        .application-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin: -0.75rem 0.75rem 1.25rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background-color: var(--google-blue-subtle);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .application-note .material-icons {
+            flex: 0 0 auto;
+            color: var(--google-blue);
+            font-size: 18px;
+        }
+
         /* Tarjeta Destacada: Prácticas */
         .featured-card {
             background: linear-gradient(135deg, #ffffff 0%, #f9f6ff 100%);
@@ -602,7 +621,7 @@
         </div>
         <h1 class="hero-title">Encuentra tu próximo desafío profesional</h1>
         <p class="hero-subtitle">
-            Forma parte del grupo automotriz líder. Explora las oportunidades laborales disponibles o registra tus datos para futuras vacantes.
+            Explora las oportunidades disponibles y registra tus datos e interés en el puesto que elijas.
         </p>
 
         <!-- Barra de Búsqueda y Filtros Interactivos -->
@@ -645,9 +664,14 @@
         <div class="section-header">
             <h2 class="section-title">Oportunidades Abiertas</h2>
             <span class="vacancy-counter" id="counterBadge">
-                <span id="activeCount">{{ total_vacantes|default:vacantes|length }}</span> vacantes activas
+                <span id="activeCount">{{ total_vacantes|default:0 }}</span>
+                <span id="activeLabel">{% if total_vacantes == 1 %}vacante activa{% else %}vacantes activas{% endif %}</span>
             </span>
         </div>
+        <p class="application-note" role="note">
+            <span class="material-icons" aria-hidden="true">info</span>
+            <span>Al pulsar «Postularme» abrirás un formulario para registrar tus datos y el puesto de tu interés. Enviar el formulario no inicia automáticamente un proceso de selección.</span>
+        </p>
 
         <!-- Tarjeta de Prácticas Profesionales (Siempre disponible) -->
         <div class="featured-card" data-title="Prácticas Profesionales Estudiantes Becarios" data-city="Todas las ciudades" data-area="Talento Joven">
@@ -665,10 +689,6 @@
                     <span class="meta-item">
                         <span class="material-icons">location_on</span>
                         Culiacán, Mazatlán, Mochis, Hermosillo y más
-                    </span>
-                    <span class="meta-item">
-                        <span class="material-icons">schedule</span>
-                        Horario Flexible
                     </span>
                 </div>
             </div>
@@ -714,7 +734,12 @@
                             <span class="material-icons">location_on</span>
                             {{ puesto.get_ciudad_display }}
                         </span>
-                        {% if puesto.experiencia_minima %}
+                        {% if puesto.experiencia_minima == 0 %}
+                        <span class="meta-item">
+                            <span class="material-icons">history_edu</span>
+                            Sin experiencia requerida
+                        </span>
+                        {% elif puesto.experiencia_minima %}
                         <span class="meta-item">
                             <span class="material-icons">history_edu</span>
                             {{ puesto.experiencia_minima }} año(s) de exp.
@@ -722,7 +747,7 @@
                         {% else %}
                         <span class="meta-item">
                             <span class="material-icons">history_edu</span>
-                            Sin experiencia previa
+                            Experiencia no especificada
                         </span>
                         {% endif %}
                         {% if puesto.horario %}
@@ -756,11 +781,11 @@
         <section class="spontaneous-banner">
             <h3>¿No encuentras el puesto ideal para ti?</h3>
             <p>
-                Estamos constantemente buscando talento excepcional para integrarse a Grupo Premier. Envíanos tu información y te consideraremos para nuestras próximas aperturas.
+                Puedes registrar tus datos sin elegir una vacante específica. El registro no inicia automáticamente un proceso de selección ni garantiza contacto posterior.
             </p>
             <a href="{% url 'registro_candidato' %}" class="btn-spontaneous">
                 <span class="material-icons">send</span>
-                <span>Registrar Postulación Espontánea</span>
+                <span>Registrar mis datos</span>
             </a>
         </section>
 
@@ -792,6 +817,7 @@
             const jobCards = document.querySelectorAll('.vacancies-list .job-card');
             const featuredCard = document.querySelector('.featured-card');
             const activeCountEl = document.getElementById('activeCount');
+            const activeLabelEl = document.getElementById('activeLabel');
             const emptyState = document.getElementById('emptyState');
 
             function applyFilters() {
@@ -799,7 +825,8 @@
                 const selectedCity = cityFilter.value;
                 const selectedArea = areaFilter.value;
 
-                let visibleCount = 0;
+                let visibleOpportunityCount = 0;
+                let visibleVacancyCount = 0;
 
                 // Filtrar tarjeta de prácticas
                 if (featuredCard) {
@@ -809,7 +836,7 @@
                     // Prácticas aplica para todas las ciudades
                     const isVisible = matchesSearch && matchesArea;
                     featuredCard.style.display = isVisible ? 'flex' : 'none';
-                    if (isVisible) visibleCount++;
+                    if (isVisible) visibleOpportunityCount++;
                 }
 
                 // Filtrar tarjetas de vacantes
@@ -824,7 +851,8 @@
 
                     if (matchesSearch && matchesCity && matchesArea) {
                         card.style.display = 'flex';
-                        visibleCount++;
+                        visibleOpportunityCount++;
+                        visibleVacancyCount++;
                     } else {
                         card.style.display = 'none';
                     }
@@ -832,12 +860,15 @@
 
                 // Actualizar contador
                 if (activeCountEl) {
-                    activeCountEl.textContent = visibleCount;
+                    activeCountEl.textContent = visibleVacancyCount;
+                }
+                if (activeLabelEl) {
+                    activeLabelEl.textContent = visibleVacancyCount === 1 ? 'vacante activa' : 'vacantes activas';
                 }
 
                 // Mostrar o esconder estado vacío
                 if (emptyState) {
-                    emptyState.style.display = (visibleCount === 0) ? 'block' : 'none';
+                    emptyState.style.display = (visibleOpportunityCount === 0) ? 'block' : 'none';
                 }
             }
 
@@ -856,6 +887,7 @@
             if (emptyResetBtn) {
                 emptyResetBtn.addEventListener('click', clearFilters);
             }
+            applyFilters();
         });
     </script>
 </body>

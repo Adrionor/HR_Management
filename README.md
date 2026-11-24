@@ -85,7 +85,7 @@ python reclutamiento/test_services.py
 ### SLA, bono y Telegram
 
 - Las vacantes nuevas inician el SLA al registrarse; la fecha de requisición física se conserva por separado. La meta proviene del catálogo; gerencia puede indicar una excepción con motivo.
-- Solo gerencia distinta de la responsable puede reiniciar una vacante abierta y vencida, con motivo y hasta dos veces. El bono usa el SLA original, no el ciclo reiniciado.
+- Solo gerencia distinta de la responsable puede reiniciar una vacante abierta y vencida, con motivo y hasta dos veces. El diálogo solicita la justificación y muestra el SLA original, el ciclo actual y las excepciones utilizadas; el motivo se registra en la auditoría. El bono usa el SLA original, no el ciclo reiniciado.
 - El bono requiere cobertura completa dentro del SLA original o tres candidatos distintos enviados al jefe dentro de ese plazo, con Integridad aprobada y Pyxoom Óptimo o Ideal al momento del envío.
 - Las vacantes anteriores a esta versión usan la fecha de solicitud como aproximación del inicio original. Cuando no existe evidencia suficiente para la terna, el bono queda indeterminado y requiere revisión manual; no debe utilizarse como resultado definitivo de nómina.
 - El Excel ejecutivo agrupa por fecha de solicitud y muestra estados actuales; no es una fotografía histórica ni un reporte de ingresos por fecha de contratación.

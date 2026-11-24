@@ -58,6 +58,51 @@
         flex: 1;
     }
 
+    .rh-advanced-filters {
+        margin-top: 0.85rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--sap-border);
+    }
+
+    .rh-advanced-filters summary {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        cursor: pointer;
+        color: var(--sap-text);
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+
+    .rh-advanced-hint {
+        color: var(--sap-muted);
+        font-weight: 400;
+    }
+
+    .rh-advanced-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.85rem;
+        margin-top: 0.85rem;
+    }
+
+    .rh-report-context {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.65rem 1rem;
+        padding: 0.75rem 1rem;
+        background: #ffffff;
+        border: 1px solid var(--sap-border);
+        border-radius: var(--sap-radius-md);
+        color: var(--sap-muted);
+        font-size: 0.8125rem;
+        line-height: 1.45;
+    }
+
+    .rh-report-context strong {
+        color: var(--sap-text);
+    }
+
     @media (max-width: 640px) {
         .rh-filter-grid {
             grid-template-columns: 1fr;
@@ -152,6 +197,11 @@
     .rh-warning-icon.success {
         background-color: var(--sap-success-bg);
         color: var(--sap-success-text);
+    }
+
+    .rh-warning-icon.neutral {
+        background-color: #f1f5f9;
+        color: var(--sap-muted);
     }
 
     .rh-warning-num {
@@ -546,7 +596,7 @@
                 Suite de Reportes & Analítica de Talento
             </h1>
             <p class="sap-page-subtitle">
-                Monitoreo estratégico de ciclo de vida de vacantes, productividad operativa, detección de cuellos de botella y visualización de reportes ejecutivos.
+                Consulta vacantes, seguimiento y alertas según el periodo y los filtros seleccionados.
             </p>
         </div>
     </div>
@@ -584,32 +634,6 @@
                 </div>
                 {% endif %}
 
-                <!-- Marca (Automotriz) -->
-                <div class="sap-form-group" style="margin-bottom: 0;">
-                    <label class="sap-label" for="marca">Marca:</label>
-                    <select name="marca" id="marca" class="sap-select">
-                        <option value="">-- Todas las marcas --</option>
-                        {% for m in marcas_disponibles %}
-                        <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>
-                            {{ m.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Puesto -->
-                <div class="sap-form-group" style="margin-bottom: 0;">
-                    <label class="sap-label" for="puesto">Puesto:</label>
-                    <select name="puesto" id="puesto" class="sap-select">
-                        <option value="">-- Todos los puestos --</option>
-                        {% for cat in puestos_disponibles %}
-                        <option value="{{ cat.id }}" {% if filtros_aplicados.puesto == cat.id|stringformat:"s" %}selected{% endif %}>
-                            {{ cat.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
                 <!-- Agencia -->
                 <div class="sap-form-group" style="margin-bottom: 0;">
                     <label class="sap-label" for="agencia">Agencia:</label>
@@ -618,19 +642,6 @@
                         {% for ag in agencias_disponibles %}
                         <option value="{{ ag }}" {% if filtros_aplicados.agencia == ag %}selected{% endif %}>
                             {{ ag }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Ciudad -->
-                <div class="sap-form-group" style="margin-bottom: 0;">
-                    <label class="sap-label" for="ciudad">Ciudad:</label>
-                    <select name="ciudad" id="ciudad" class="sap-select">
-                        <option value="">-- Todas las ciudades --</option>
-                        {% for c in ciudades_disponibles %}
-                        <option value="{{ c.codigo }}" {% if filtros_aplicados.ciudad == c.codigo %}selected{% endif %}>
-                            {{ c.nombre }}
                         </option>
                         {% endfor %}
                     </select>
@@ -648,6 +659,51 @@
                 </div>
             </div>
 
+            <details class="rh-advanced-filters" {% if filtros_aplicados.marca or filtros_aplicados.puesto or filtros_aplicados.ciudad %}open{% endif %}>
+                <summary>
+                    <span>Filtros avanzados</span>
+                    <span class="rh-advanced-hint">Marca, puesto y ciudad</span>
+                    {% if filtros_aplicados.marca or filtros_aplicados.puesto or filtros_aplicados.ciudad %}
+                    <span class="sap-badge sap-badge-info">Aplicados</span>
+                    {% endif %}
+                </summary>
+                <div class="rh-advanced-grid">
+                    <div class="sap-form-group" style="margin-bottom: 0;">
+                        <label class="sap-label" for="marca">Marca:</label>
+                        <select name="marca" id="marca" class="sap-select">
+                            <option value="">-- Todas las marcas --</option>
+                            {% for m in marcas_disponibles %}
+                            <option value="{{ m.id }}" {% if filtros_aplicados.marca == m.id|stringformat:"s" %}selected{% endif %}>
+                                {{ m.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sap-form-group" style="margin-bottom: 0;">
+                        <label class="sap-label" for="puesto">Puesto:</label>
+                        <select name="puesto" id="puesto" class="sap-select">
+                            <option value="">-- Todos los puestos --</option>
+                            {% for cat in puestos_disponibles %}
+                            <option value="{{ cat.id }}" {% if filtros_aplicados.puesto == cat.id|stringformat:"s" %}selected{% endif %}>
+                                {{ cat.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="sap-form-group" style="margin-bottom: 0;">
+                        <label class="sap-label" for="ciudad">Ciudad:</label>
+                        <select name="ciudad" id="ciudad" class="sap-select">
+                            <option value="">-- Todas las ciudades --</option>
+                            {% for c in ciudades_disponibles %}
+                            <option value="{{ c.codigo }}" {% if filtros_aplicados.ciudad == c.codigo %}selected{% endif %}>
+                                {{ c.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </details>
+
             <!-- Atajos rápidos de fecha -->
             <div class="rh-date-presets">
                 <span style="font-size: 0.75rem; color: var(--sap-muted); font-weight: 600;">Atajos de Fecha:</span>
@@ -658,6 +714,21 @@
             </div>
         </form>
     </div>
+
+    <section class="rh-report-context" aria-label="Alcance de los reportes">
+        <div>
+            <strong>Periodo:</strong>
+            {% if filtros_aplicados.fecha_desde %}{{ filtros_aplicados.fecha_desde }}{% else %}Desde el histórico{% endif %}
+            hasta
+            {% if filtros_aplicados.fecha_hasta %}{{ filtros_aplicados.fecha_hasta }}{% else %}hoy{% endif %}
+        </div>
+        <div>
+            <strong>Vacantes incluidas:</strong> {{ total_vacantes }} (según rol y filtros activos).
+        </div>
+        <div>
+            <strong>Base de fecha:</strong> los indicadores de vacantes usan la fecha de solicitud y la bitácora usa la fecha del movimiento. Los estados y el SLA muestran la situación actual, no una fotografía histórica.
+        </div>
+    </section>
 
     <!-- 2. RADAR DE ALERTA TEMPRANA Y SEMÁFOROS DE ACCIÓN INMEDIATA -->
     <div class="rh-early-warning-grid">
@@ -672,25 +743,25 @@
             </div>
         </div>
 
-        <!-- Tarjeta 2: Cumplimiento SLA Global -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-resumen');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-resumen');}" tabindex="0" role="button" aria-label="Ver resumen de cumplimiento de SLA">
-            <div class="rh-warning-icon {% if cumplimiento_sla >= 85 %}success{% elif cumplimiento_sla >= 70 %}warning{% else %}danger{% endif %}">
+        <!-- Tarjeta 2: Cumplimiento SLA en vacantes activas -->
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-resumen');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-resumen');}" tabindex="0" role="button" aria-label="Ver resumen de SLA de vacantes activas">
+            <div class="rh-warning-icon {% if not total_activas %}neutral{% elif cumplimiento_sla >= 85 %}success{% elif cumplimiento_sla >= 70 %}warning{% else %}danger{% endif %}">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
             </div>
             <div>
-                <div class="rh-warning-num" style="color: {% if cumplimiento_sla >= 85 %}var(--sap-success-text){% elif cumplimiento_sla >= 70 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">{% if total_activas %}{{ cumplimiento_sla }}%{% else %}Sin datos{% endif %}</div>
-                <div class="rh-warning-label">Cumplimiento SLA a Tiempo</div>
+                <div class="rh-warning-num" style="color: {% if not total_activas %}var(--sap-muted){% elif cumplimiento_sla >= 85 %}var(--sap-success-text){% elif cumplimiento_sla >= 70 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">{% if total_activas %}{{ cumplimiento_sla }}%{% else %}Sin datos{% endif %}</div>
+                <div class="rh-warning-label">Cumplimiento SLA de vacantes activas</div>
             </div>
         </div>
 
-        <!-- Tarjeta 3: Candidatos Estancados (+7d) -->
-        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-alertas');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-alertas');}" tabindex="0" role="button" aria-label="Ver candidatos detenidos más de 7 días">
+        <!-- Tarjeta 3: Candidatos Estancados (30 días o más) -->
+        <div class="rh-warning-kpi" onclick="activarPestañaBI('tab-alertas');" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();activarPestañaBI('tab-alertas');}" tabindex="0" role="button" aria-label="Ver candidatos detenidos 30 días o más">
             <div class="rh-warning-icon warning">
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
             </div>
             <div>
                 <div class="rh-warning-num" style="color: var(--sap-warning-text);">{{ total_estancados_count }}</div>
-                <div class="rh-warning-label">Candidatos Detenidos (+7 días)</div>
+                <div class="rh-warning-label">Candidatos Detenidos (30 días o más)</div>
             </div>
         </div>
 
@@ -746,19 +817,19 @@
     <div class="rh-bi-tabs-bar" role="tablist" aria-label="Reportes y Analítica de Talento">
         <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-resumen' %}active{% endif %}" id="btn-tab-resumen" role="tab" aria-selected="{% if active_tab == 'tab-resumen' %}true{% else %}false{% endif %}" aria-controls="tab-resumen" tabindex="0" onclick="activarPestañaBI('tab-resumen');">
             <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-            <span>Reporte 1: Resumen & Balance</span>
+            <span>Resumen y balance</span>
         </button>
         <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-auditoria' %}active{% endif %}" id="btn-tab-auditoria" role="tab" aria-selected="{% if active_tab == 'tab-auditoria' %}true{% else %}false{% endif %}" aria-controls="tab-auditoria" tabindex="0" onclick="activarPestañaBI('tab-auditoria');">
             <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-            <span>Reporte 2: Auditoría & Productividad Asesoras</span>
+            <span>Productividad de asesoras</span>
         </button>
         <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-sabana' %}active{% endif %}" id="btn-tab-sabana" role="tab" aria-selected="{% if active_tab == 'tab-sabana' %}true{% else %}false{% endif %}" aria-controls="tab-sabana" tabindex="0" onclick="activarPestañaBI('tab-sabana');">
             <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-            <span>Reporte 3: Sábana Operativa</span>
+            <span>Sábana operativa</span>
         </button>
         <button type="button" class="rh-bi-tab-btn {% if active_tab == 'tab-alertas' %}active{% endif %}" id="btn-tab-alertas" role="tab" aria-selected="{% if active_tab == 'tab-alertas' %}true{% else %}false{% endif %}" aria-controls="tab-alertas" tabindex="0" onclick="activarPestañaBI('tab-alertas');">
             <svg class="sap-icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            <span>Radar de Alertas & Cuellos de Botella</span>
+            <span>Alertas y cuellos de botella</span>
             {% if total_atoradas_count > 0 %}
             <span class="sap-badge sap-badge-error" style="font-size: 0.75rem; padding: 2px 7px;">{{ total_atoradas_count }}</span>
             {% endif %}
@@ -1316,14 +1387,14 @@
             </div>
         </div>
 
-        <!-- 2. Grid de Candidatos Estancados (+7 días) y Cuellos de Botella -->
+        <!-- 2. Grid de Candidatos Estancados y Cuellos de Botella -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.25rem;">
             <!-- Candidatos Estancados -->
             <div class="sap-card">
                 <div class="sap-card-header">
                     <div>
-                        <h3 class="sap-card-title">Candidatos con Demora Excesiva (+7 días)</h3>
-                        <div style="font-size: 0.775rem; color: var(--sap-muted);">Procesos que requieren desatorarse con el solicitante o acelerar pruebas</div>
+                        <h3 class="sap-card-title">Candidatos con Demora Excesiva (30 días o más)</h3>
+                        <div style="font-size: 0.775rem; color: var(--sap-muted);">Procesos activos en vacantes abiertas sin cambio de etapa durante 30 días o más</div>
                     </div>
                 </div>
                 <div class="sap-card-body">

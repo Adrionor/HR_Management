@@ -80,6 +80,17 @@ def lista_vacantes_publica_view(request):
 
 # reclutamiento/views.py
 
+def _puesto_interes_seleccionado(form):
+    valor = form['puesto_de_interes'].value()
+    if not valor:
+        return None
+    return next(
+        (etiqueta for opcion, etiqueta in form.fields['puesto_de_interes'].choices
+         if str(opcion) == str(valor)),
+        None
+    )
+
+
 def registro_candidato_view(request):
     if request.method == 'POST':
         form = RegistroCandidatoForm(request.POST, request.FILES)
@@ -103,6 +114,7 @@ def registro_candidato_view(request):
                 # Si no existe, procedemos a guardar como antes
                 candidato = form.save(commit=False)
                 puesto_seleccionado_str = form.cleaned_data.get('puesto_de_interes')
+                puesto_interes = _puesto_interes_seleccionado(form)
 
                 if puesto_seleccionado_str and puesto_seleccionado_str.isdigit():
                     candidato.puesto_de_interes_id = int(puesto_seleccionado_str)
@@ -113,6 +125,7 @@ def registro_candidato_view(request):
 
                 candidato.save()
                 form.save_m2m()
+                request.session['registro_exitoso_puesto'] = puesto_interes
                 return redirect('registro_exitoso')
     else:
         puesto_param = request.GET.get('puesto', '').strip()
@@ -121,10 +134,16 @@ def registro_candidato_view(request):
             initial_data['puesto_de_interes'] = puesto_param
         form = RegistroCandidatoForm(initial=initial_data)
 
-    return render(request, 'reclutamiento/registro_candidato.html', {'form': form})
+    return render(request, 'reclutamiento/registro_candidato.html', {
+        'form': form,
+        'puesto_interes': _puesto_interes_seleccionado(form),
+    })
 
 def registro_exitoso_view(request):
-    return render(request, 'reclutamiento/registro_exitoso.html')
+    puesto_interes = request.session.pop('registro_exitoso_puesto', None)
+    return render(request, 'reclutamiento/registro_exitoso.html', {
+        'puesto_interes': puesto_interes,
+    })
 
 def password_reset_info_view(request):
     return render(request, 'registration/password_reset_info.html')
@@ -1117,11 +1136,55 @@ def detalle_proceso_view(request, proceso_id):
 
         action = request.POST.get('action')
 
-        if action == 'actualizar_estatus':
+        if action == 'guardar_seguimiento':
+            nuevas_notas = request.POST.get('retroalimentacion', '').strip()
+            resultado_integridad = request.POST.get('resultado_integridad', '').strip()
+            resultado_pyxoom = request.POST.get('resultado_pyxoom', '').strip()
+
+            if resultado_integridad in Proceso.ResultadoIntegridad.values:
+                proceso.resultado_integridad = resultado_integridad
+            elif resultado_integridad == 'CLEAR':
+                proceso.resultado_integridad = None
+
+            if resultado_pyxoom in Proceso.ResultadoPyxoom.values:
+                proceso.resultado_pyxoom = resultado_pyxoom
+            elif resultado_pyxoom == 'CLEAR':
+                proceso.resultado_pyxoom = None
+
+            proceso.retroalimentacion = nuevas_notas
+            proceso.save(update_fields=[
+                'retroalimentacion',
+                'resultado_integridad',
+                'resultado_pyxoom',
+            ])
+
+            detalles_log = []
+            if nuevas_notas:
+                detalles_log.append(f"Notas: {nuevas_notas}")
+            if resultado_integridad == 'CLEAR':
+                detalles_log.append("Integridad: resultado borrado")
+            elif resultado_integridad in Proceso.ResultadoIntegridad.values:
+                detalles_log.append(f"Integridad: {proceso.get_resultado_integridad_display()}")
+            if resultado_pyxoom == 'CLEAR':
+                detalles_log.append("Pyxoom: resultado borrado")
+            elif resultado_pyxoom in Proceso.ResultadoPyxoom.values:
+                detalles_log.append(f"Pyxoom: {proceso.get_resultado_pyxoom_display()}")
+
+            RegistroActividad.objects.create(
+                usuario=request.user,
+                accion=f"Actualizó seguimiento en etapa '{proceso.get_estatus_proceso_display()}' para '{proceso.candidato.nombre_completo}'",
+                tipo_objeto="Proceso",
+                id_objeto=proceso.id,
+                detalles=" | ".join(detalles_log) if detalles_log else None
+            )
+            messages.success(request, "Seguimiento y evaluaciones guardados sin cambiar la etapa.")
+
+        elif action == 'actualizar_estatus':
             estatus_anterior_raw = proceso.estatus_proceso
             estatus_anterior = proceso.get_estatus_proceso_display()
             nuevo_estatus = request.POST.get('estatus_proceso')
-            nuevas_notas = request.POST.get('retroalimentacion', '').strip()
+            notas_enviadas = 'retroalimentacion' in request.POST
+            nuevas_notas = request.POST.get('retroalimentacion', proceso.retroalimentacion).strip()
             resultado_integridad = request.POST.get('resultado_integridad', '').strip()
             resultado_pyxoom = request.POST.get('resultado_pyxoom', '').strip()
             motivo_descarte = request.POST.get('motivo_descarte', '').strip()
@@ -1260,7 +1323,7 @@ def detalle_proceso_view(request, proceso_id):
 
             # 5. Registro detallado en auditoría
             detalles_log = []
-            if nuevas_notas:
+            if notas_enviadas and nuevas_notas:
                 detalles_log.append(f"Notas: {nuevas_notas}")
             if correccion:
                 detalles_log.append(f"Corrección autorizada por gerencia: {motivo_correccion}")
@@ -1387,7 +1450,8 @@ def detalle_proceso_view(request, proceso_id):
         'form_publicacion': form_publicacion,
         'estatus_choices': [
             (value, label) for value, label in Proceso.Estatus.choices
-            if es_gerente_ch(request.user) or value in Proceso.estatus_siguientes(proceso.estatus_proceso)
+            if value != proceso.estatus_proceso
+            and (es_gerente_ch(request.user) or value in Proceso.estatus_siguientes(proceso.estatus_proceso))
         ],
         'integridad_choices': Proceso.ResultadoIntegridad.choices,
         'pyxoom_choices': Proceso.ResultadoPyxoom.choices,

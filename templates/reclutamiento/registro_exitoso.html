@@ -12,17 +12,21 @@
             background-color: #f4f7f6;
             display: grid;
             place-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
         }
 
         .container {
             max-width: 500px;
+            width: 100%;
             padding: 3em;
             background-color: #ffffff;
             border-radius: 10px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
+            box-sizing: border-box;
         }
 
         h1 {
@@ -32,6 +36,20 @@
         p {
             color: #34495e;
             line-height: 1.6;
+        }
+
+        .position-summary {
+            margin: 1.5em 0;
+            padding: 1em;
+            border: 1px solid #b6d8ff;
+            border-radius: 6px;
+            background-color: #e8f3ff;
+            color: #1d2d3e;
+        }
+
+        .position-summary strong {
+            display: block;
+            margin-top: 0.25em;
         }
 
         a {
@@ -54,11 +72,18 @@
 
 <body>
     <div class="container">
-        <h1>¡Gracias por registrarte!</h1>
-        <p>Hemos recibido tu información correctamente. Nuestro equipo de reclutamiento se pondrá en contacto si tu
-            perfil coincide con alguna de nuestras vacantes.</p>
+        <h1>¡Registro recibido!</h1>
+        <p>Tus datos e interés se registraron correctamente. Este registro no inicia automáticamente un proceso de selección ni garantiza contacto posterior.</p>
+        <div class="position-summary">
+            Puesto de interés:
+            {% if puesto_interes %}
+            <strong>{{ puesto_interes }}</strong>
+            {% else %}
+            <strong>Sin puesto específico</strong>
+            {% endif %}
+        </div>
 
-        <a href="{% url 'homepage_publica' %}">Ver Todas las Oportunidades</a>
+        <a href="{% url 'homepage_publica' %}">Volver a las oportunidades</a>
     </div>
 </body>
 

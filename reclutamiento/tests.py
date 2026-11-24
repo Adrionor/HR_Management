@@ -52,6 +52,36 @@ class HRManagementTests(TestCase):
         self.assertContains(response, 'Toyota Premier')
         self.assertContains(response, 'Asesor de Ventas')
         self.assertContains(response, 'Google Sans Flex')
+        self.assertContains(response, 'no inicia automáticamente un proceso de selección')
+        self.assertContains(response, 'id="activeCount">1</span>')
+        self.assertContains(response, 'id="activeLabel">vacante activa</span>')
+
+    def test_homepage_distingue_experiencia_cero_de_no_especificada(self):
+        for agencia, experiencia in (
+            ('Toyota Sin Experiencia', 0),
+            ('Toyota Experiencia No Especificada', None),
+            ('Toyota Experiencia Requerida', 2),
+        ):
+            Puesto.objects.create(
+                titulo=self.cat_puesto,
+                marca=self.marca,
+                agencia=agencia,
+                ciudad='CUL',
+                area='VTAS',
+                estatus_autorizacion='AUTORIZADO',
+                esta_abierto=True,
+                es_confidencial=False,
+                sueldo_base=15000,
+                experiencia_minima=experiencia,
+            )
+
+        response = self.client.get(reverse('homepage_publica'))
+
+        self.assertContains(response, 'Sin experiencia requerida')
+        self.assertContains(response, 'Experiencia no especificada')
+        self.assertContains(response, '2 año(s) de exp.')
+        self.assertNotContains(response, 'Sin experiencia previa')
+        self.assertNotContains(response, 'Horario Flexible')
 
     def test_admin_search_fields_validity(self):
         """Verifica que los search_fields de los ModelAdmin no contengan campos o propiedades inválidas."""
@@ -1092,8 +1122,8 @@ class HRManagementTests(TestCase):
         proceso.refresh_from_db()
         self.assertEqual(proceso.estatus_proceso, Proceso.Estatus.NUEVO)
 
-    def test_guardar_notas_no_reinicia_fecha_inicio_etapa(self):
-        """P2: Guardar notas sin cambiar etapa conserva fecha_inicio_etapa."""
+    def test_guardar_seguimiento_no_cambia_etapa_ni_reinicia_fecha(self):
+        """Guardar seguimiento no debe cambiar la etapa ni su fecha de inicio."""
         from django.contrib.auth.models import Group
         grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
         self.user.groups.add(grupo_asesoras)
@@ -1119,16 +1149,31 @@ class HRManagementTests(TestCase):
         )
 
         self.client.login(username='testuser', password='password123')
+        pagina = self.client.get(reverse('detalle_proceso', args=[proceso.id]))
+        self.assertContains(pagina, 'Guardar seguimiento')
+        self.assertContains(pagina, 'Confirmar cambio de etapa')
+        self.assertNotIn(
+            Proceso.Estatus.CONTACTO,
+            [value for value, label in pagina.context['estatus_choices']],
+        )
+        self.assertEqual(pagina.content.decode().count('id="motivo_descarte"'), 1)
+
         resp = self.client.post(reverse('detalle_proceso', args=[proceso.id]), {
-            'action': 'actualizar_estatus',
-            'estatus_proceso': Proceso.Estatus.CONTACTO,
+            'action': 'guardar_seguimiento',
+            'estatus_proceso': Proceso.Estatus.CONTRATADO,
             'retroalimentacion': 'Se añadió nota de seguimiento sin cambiar etapa'
         })
         self.assertEqual(resp.status_code, 302)
         proceso.refresh_from_db()
         self.assertEqual(proceso.retroalimentacion, 'Se añadió nota de seguimiento sin cambiar etapa')
-        # La fecha de inicio de etapa no debe haber cambiado
+        self.assertEqual(proceso.estatus_proceso, Proceso.Estatus.CONTACTO)
         self.assertEqual(proceso.fecha_inicio_etapa.date(), fecha_original.date())
+        self.assertTrue(
+            RegistroActividad.objects.filter(
+                id_objeto=proceso.id,
+                accion__contains='Actualizó seguimiento',
+            ).exists()
+        )
 
     def test_sobrecontratacion_bloqueada_select_for_update(self):
         """P2: Evita sobrecontratar una vacante que ya cubrió sus plazas."""
@@ -1274,6 +1319,40 @@ class HRManagementTests(TestCase):
         resp = self.client.get(reverse('registro_candidato') + f'?puesto={puesto_pub.id}')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(str(resp.context['form'].initial.get('puesto_de_interes')), str(puesto_pub.id))
+        self.assertContains(resp, 'Puesto de interés seleccionado:')
+        self.assertContains(resp, f'{self.cat_puesto.nombre} (Culiacán)')
+
+    def test_registro_publico_muestra_puesto_y_no_inicia_proceso(self):
+        puesto_pub = Puesto.objects.create(
+            titulo=self.cat_puesto,
+            marca=self.marca,
+            agencia='Toyota Premier',
+            ciudad='CUL',
+            area='VTAS',
+            estatus_autorizacion='AUTORIZADO',
+            esta_abierto=True,
+            es_confidencial=False,
+            sueldo_base=15000
+        )
+
+        respuesta = self.client.post(reverse('registro_candidato'), {
+            'nombres': 'Candidata',
+            'apellidos': 'Prueba',
+            'email': 'candidata@example.test',
+            'ciudad_residencia': 'CUL',
+            'puesto_de_interes': str(puesto_pub.id),
+        })
+
+        self.assertRedirects(respuesta, reverse('registro_exitoso'), fetch_redirect_response=False)
+        candidato = Candidato.objects.get(email='candidata@example.test')
+        self.assertEqual(candidato.puesto_de_interes, puesto_pub)
+        self.assertFalse(Proceso.objects.filter(candidato=candidato).exists())
+
+        confirmacion = self.client.get(respuesta.url)
+        self.assertContains(confirmacion, 'Tus datos e interés se registraron correctamente.')
+        self.assertContains(confirmacion, f'{self.cat_puesto.nombre} (Culiacán)')
+        self.assertContains(confirmacion, 'no inicia automáticamente un proceso de selección')
+        self.assertNotContains(confirmacion, 'se pondrá en contacto')
 
     def test_descarga_cv_restringida_a_personal_rh(self):
         """P1: Descarga de CV prohibida a usuarios externos o sin rol de RH."""
@@ -2469,6 +2548,60 @@ class SLAReportingTelegramRegressionTests(TestCase):
         self.puesto.save()
         self.assertEqual(self.client.post(url, {'comentario': 'Autoaprobación'}).status_code, 403)
 
+    def test_dialogo_reinicio_muestra_contexto_solo_a_gerencia_autorizable(self):
+        Puesto.objects.filter(pk=self.puesto.pk).update(
+            fecha_registro_sla=timezone.now() - timezone.timedelta(days=12)
+        )
+        self.client.force_login(self.gerente)
+        response = self.client.get(reverse('mis_vacantes'))
+        self.assertContains(response, reverse('reiniciar_vacante', args=[self.puesto.pk]))
+        self.assertContains(response, 'data-responsable="asesora_regresion"')
+        self.assertContains(response, 'data-meta="10"')
+        self.assertContains(response, 'Inicio original del SLA:')
+        self.assertContains(response, 'name="comentario"')
+        self.assertNotContains(response, 'Excepción de SLA autorizada por Gerencia de CH')
+
+        self.puesto.asesora_encargada = self.gerente
+        self.puesto.save()
+        response = self.client.get(reverse('mis_vacantes'))
+        self.assertNotContains(response, reverse('reiniciar_vacante', args=[self.puesto.pk]))
+
+        self.client.force_login(self.asesora)
+        response = self.client.get(reverse('mis_vacantes'))
+        self.assertNotContains(response, 'dialogReinicioSla')
+
+    def test_reinicio_exige_motivo_real_y_lo_registra(self):
+        Puesto.objects.filter(pk=self.puesto.pk).update(
+            fecha_registro_sla=timezone.now() - timezone.timedelta(days=12)
+        )
+        self.puesto.refresh_from_db()
+        inicio_original = self.puesto.fecha_inicio_sla_original
+        url = reverse('reiniciar_vacante', args=[self.puesto.id])
+        self.client.force_login(self.gerente)
+
+        for comentario in ('', '   '):
+            response = self.client.post(url, {'comentario': comentario}, follow=True)
+            self.assertContains(response, 'Es obligatorio especificar el motivo')
+            self.puesto.refresh_from_db()
+            self.assertEqual(self.puesto.numero_reinicios, 0)
+            self.assertFalse(RegistroActividad.objects.filter(
+                tipo_objeto='Puesto', id_objeto=self.puesto.pk
+            ).exists())
+
+        self.client.force_login(self.asesora)
+        self.assertEqual(self.client.post(url, {'comentario': 'Motivo'}).status_code, 403)
+        self.client.force_login(self.gerente)
+        motivo = 'La agencia suspendió temporalmente las entrevistas.'
+        self.client.post(url, {'comentario': f'  {motivo}  '})
+        self.puesto.refresh_from_db()
+        self.assertEqual(self.puesto.numero_reinicios, 1)
+        self.assertEqual(self.puesto.fecha_inicio_sla_original, inicio_original)
+        self.assertIn(motivo, self.puesto.comentarios)
+        self.assertEqual(
+            RegistroActividad.objects.get(tipo_objeto='Puesto', id_objeto=self.puesto.pk).detalles,
+            f'Motivo justificado: {motivo}',
+        )
+
     def test_meta_catalogo_y_excepcion_gerencial_con_motivo(self):
         datos = {
             'titulo': self.catalogo.pk, 'agencia': self.agencia.pk, 'ciudad': 'CUL',
@@ -2487,7 +2620,12 @@ class SLAReportingTelegramRegressionTests(TestCase):
 
     def test_etapas_secuenciales_y_correccion_con_motivo(self):
         candidato = Candidato.objects.create(nombres='Prueba', apellidos='Flujo', email='flujo@example.test')
-        proceso = Proceso.objects.create(puesto=self.puesto, candidato=candidato, asesora_asignada=self.asesora)
+        proceso = Proceso.objects.create(
+            puesto=self.puesto,
+            candidato=candidato,
+            asesora_asignada=self.asesora,
+            retroalimentacion='Seguimiento previo',
+        )
         url = reverse('detalle_proceso', args=[proceso.pk])
         self.client.force_login(self.asesora)
         resp = self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'CONTRATADO'})
@@ -2495,6 +2633,7 @@ class SLAReportingTelegramRegressionTests(TestCase):
         self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'CONTACTO'})
         proceso.refresh_from_db()
         self.assertEqual(proceso.estatus_proceso, 'CONTACTO')
+        self.assertEqual(proceso.retroalimentacion, 'Seguimiento previo')
         self.client.force_login(self.gerente)
         self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'NUEVO'})
         proceso.refresh_from_db()
@@ -2502,6 +2641,7 @@ class SLAReportingTelegramRegressionTests(TestCase):
         self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'NUEVO', 'motivo_correccion': 'Error de captura'})
         proceso.refresh_from_db()
         self.assertEqual(proceso.estatus_proceso, 'NUEVO')
+        self.assertEqual(proceso.retroalimentacion, 'Seguimiento previo')
         self.assertTrue(RegistroActividad.objects.filter(id_objeto=proceso.id, detalles__contains='Error de captura').exists())
 
     def test_bono_terna_aprobada_y_sla_original(self):
@@ -2584,6 +2724,101 @@ class SLAReportingTelegramRegressionTests(TestCase):
         diagnostico = ReportesService.compute_alertas_y_diagnosticos([self.puesto], [], self.gerente)
         insight = next(i for i in diagnostico['insights'] if i['titulo'] == 'Filtros de Integridad y Psicometría')
         self.assertEqual(insight['badge'], '100.0% con resultado no aprobado')
+
+    def test_reportes_muestran_alcance_y_sla_sin_datos_en_estado_neutral(self):
+        self.puesto.esta_abierto = False
+        self.puesto.save(update_fields=['esta_abierto'])
+        self.client.force_login(self.gerente)
+        fecha_desde = (self.puesto.fecha_solicitud.date() - timezone.timedelta(days=1)).isoformat()
+        fecha_hasta = (timezone.localdate() + timezone.timedelta(days=1)).isoformat()
+
+        response = self.client.get(reverse('vista_reportes'), {
+            'fecha_desde': fecha_desde,
+            'fecha_hasta': fecha_hasta,
+            'puesto': str(self.catalogo.pk),
+            'ciudad': 'CUL',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_vacantes'], 1)
+        self.assertContains(response, 'Periodo:')
+        self.assertContains(response, fecha_desde)
+        self.assertContains(response, 'Vacantes incluidas:')
+        self.assertContains(response, 'Base de fecha:')
+        self.assertContains(response, 'los indicadores de vacantes usan la fecha de solicitud')
+        self.assertContains(response, 'Los estados y el SLA muestran la situación actual')
+        self.assertContains(response, '<details class="rh-advanced-filters" open>')
+        self.assertContains(response, 'Cumplimiento SLA de vacantes activas')
+        self.assertContains(response, 'Sin datos')
+        self.assertContains(response, 'rh-warning-icon neutral')
+
+    def test_alerta_reporte_explica_y_aplica_umbral_de_30_dias(self):
+        self.client.force_login(self.gerente)
+        url = reverse('vista_reportes')
+        response = self.client.get(url)
+        self.assertContains(response, 'No hay candidatos estancados con 30 días o más.')
+
+        ahora = timezone.now()
+        procesos = []
+        for nombre, antiguedad, estado in (
+            ('Antes', timezone.timedelta(days=29, hours=23), Proceso.Estatus.CONTACTO),
+            ('Limite', timezone.timedelta(days=30), Proceso.Estatus.CONTACTO),
+            ('Terminado', timezone.timedelta(days=40), Proceso.Estatus.DESCARTADO_CH),
+        ):
+            candidato = Candidato.objects.create(
+                nombres=nombre, apellidos='Umbral', email=f'{nombre.lower()}@example.test'
+            )
+            procesos.append(Proceso.objects.create(
+                puesto=self.puesto, candidato=candidato, asesora_asignada=self.asesora,
+                estatus_proceso=estado, fecha_inicio_etapa=ahora - antiguedad,
+            ))
+
+        with patch('reclutamiento.models.timezone.now', return_value=ahora):
+            response = self.client.get(url)
+
+        self.assertEqual(response.context['total_estancados_count'], 1)
+        self.assertEqual(
+            [item['proceso_id'] for item in response.context['candidatos_estancados_detalle']],
+            [procesos[1].pk],
+        )
+        self.assertContains(response, 'Candidatos Detenidos (30 días o más)')
+        self.assertContains(response, 'Ver candidatos detenidos 30 días o más')
+        self.assertContains(response, 'Candidatos con Demora Excesiva (30 días o más)')
+        self.assertNotContains(response, 'Candidatos Detenidos (+7 días)')
+        self.assertNotContains(response, 'Candidatos con Demora Excesiva (+7 días)')
+
+    def test_alerta_seguimiento_solo_en_procesos_activos_estancados(self):
+        candidato = Candidato.objects.create(
+            nombres='Seguimiento', apellidos='Prueba', email='seguimiento@example.test'
+        )
+        ahora = timezone.now()
+        proceso = Proceso.objects.create(
+            puesto=self.puesto, candidato=candidato, asesora_asignada=self.asesora,
+            estatus_proceso=Proceso.Estatus.CONTACTO,
+            fecha_inicio_etapa=ahora - timezone.timedelta(days=29, hours=23),
+        )
+        self.client.force_login(self.gerente)
+        url = reverse('detalle_proceso', args=[proceso.pk])
+        titulo_alerta = 'ATENCIÓN OPERATIVA: 30 días o más sin cambio de etapa'
+
+        with patch('reclutamiento.models.timezone.now', return_value=ahora):
+            self.assertNotContains(self.client.get(url), titulo_alerta)
+            Proceso.objects.filter(pk=proceso.pk).update(
+                fecha_inicio_etapa=ahora - timezone.timedelta(days=30)
+            )
+            response = self.client.get(url)
+            self.assertContains(response, titulo_alerta)
+            self.assertContains(response, 'Cambia la etapa solo si corresponde a lo sucedido.')
+            self.assertNotContains(response, 'descártalo para mantener al día tus indicadores')
+
+            for estado in (
+                Proceso.Estatus.CONTRATADO, Proceso.Estatus.DESCARTADO_CH,
+                Proceso.Estatus.NO_PRUEBAS, Proceso.Estatus.ABANDONO,
+            ):
+                Proceso.objects.filter(pk=proceso.pk).update(estatus_proceso=estado)
+                response = self.client.get(url)
+                self.assertNotContains(response, titulo_alerta)
+                self.assertNotContains(response, 'Sin cambio de etapa durante 30 días')
 
     def test_sabana_filtra_antes_de_limitar(self):
         from .services import ReportesService

@@ -22,6 +22,9 @@
     .checkbox-group { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
     .checkbox-group input[type="checkbox"] { width: auto; height: 1.2em; }
     .form-group-conditional { display: none; } /* Ocultamos el campo de motivo por defecto */
+    .application-notice { margin: 0 0 1.5em; padding: 1em 1.25em; border: 1px solid #b6d8ff; border-radius: 6px; background-color: #e8f3ff; color: #1d2d3e; line-height: 1.5; }
+    .application-notice p { margin: 0; }
+    .selected-position { margin-top: 0.5em !important; }
 
     .file-upload-wrapper input[type="file"] { display: none; }
     .boton-file { display: inline-block; padding: 10px 16px; background-color: #0070f2; color: #ffffff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background-color 0.15s ease; }
@@ -52,7 +55,10 @@
         <img src="{% static 'reclutamiento/img/Logo_Premier.png' %}" alt="Logo Premier Automotriz">
     </div>
     <h1>Únete a nuestra Bolsa de Trabajo</h1>
-    <p style="text-align:center;">Completa el formulario para ser considerado en futuras vacantes.</p>
+    <div class="application-notice">
+        <p>Este formulario registra tus datos e interés; enviarlo no inicia automáticamente un proceso de selección.</p>
+        <p class="selected-position"><strong>Puesto de interés seleccionado:</strong> <span id="puesto-interes-seleccionado" aria-live="polite">{{ puesto_interes|default:'Sin puesto específico' }}</span></p>
+    </div>
 
     <form id="registro-form" method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -138,6 +144,18 @@ $(document).ready(function() {
     const modal = $('#confirmation-modal');
     const checkboxColaborador = $('#id_es_colaborador_actual');
     const motivoWrapper = $('#motivo_busqueda_wrapper');
+    const puestoSelect = $('#id_puesto_de_interes');
+
+    function actualizarPuestoInteres() {
+        const puestoSeleccionado = puestoSelect.val();
+        const textoPuesto = puestoSeleccionado
+            ? puestoSelect.find('option:selected').text()
+            : 'Sin puesto específico';
+        $('#puesto-interes-seleccionado').text(textoPuesto);
+    }
+
+    puestoSelect.on('change', actualizarPuestoInteres);
+    actualizarPuestoInteres();
 
     function toggleMotivoField() {
         if (checkboxColaborador.is(':checked')) {
@@ -163,7 +181,7 @@ $(document).ready(function() {
         $('#confirm-rfc').text($('input[name="rfc"]').val());
         $('#confirm-ciudad').text($('#id_ciudad_residencia option:selected').text() || $('select[name="ciudad_residencia"]').val() || 'No especificada');
         $('#confirm-nacimiento').text($('input[name="fecha_nacimiento"]').val());
-        $('#confirm-puesto').text($('#id_puesto_de_interes option:selected').text());
+        $('#confirm-puesto').text(puestoSelect.val() ? puestoSelect.find('option:selected').text() : 'Sin puesto específico');
         $('#confirm-educacion').text($('#id_nivel_educativo option:selected').text());
         $('#confirm-experiencia').text($('input[name="años_de_experiencia"]').val());
         $('#confirm-ultimo-puesto').text($('input[name="ultimo_puesto"]').val());

@@ -283,7 +283,7 @@ class RegistroCandidatoForm(forms.ModelForm):
 
         # Añadimos nuestras opciones personalizadas al principio
         opciones_personalizadas = [
-            ('', 'Me gustaría que me consideren para futuras oportunidades'),
+            ('', 'Sin puesto específico'),
             ('PRACTICAS', 'Prácticas Profesionales')
         ]
 
