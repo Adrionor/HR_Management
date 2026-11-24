@@ -198,9 +198,17 @@
                     {{ form.fecha_solicitud }}
                 </div>
                 <div class="sap-form-group">
-                    <label for="{{ form.dias_meta.id_for_label }}">Días Meta SLA (Editable) *</label>
+                    <label for="{{ form.dias_meta.id_for_label }}">Días Meta SLA</label>
                     {{ form.dias_meta }}
+                    <div class="sap-file-hint">Se usa la meta del catálogo. El SLA comienza al registrar la vacante.</div>
                 </div>
+                {% if form.motivo_meta_sla %}
+                <div class="sap-form-group">
+                    <label for="{{ form.motivo_meta_sla.id_for_label }}">{{ form.motivo_meta_sla.label }}</label>
+                    {{ form.motivo_meta_sla }}
+                    <div class="sap-file-hint">Obligatorio si se indica una meta distinta a la del catálogo.</div>
+                </div>
+                {% endif %}
             </div>
         </fieldset>
 

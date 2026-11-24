@@ -1,7 +1,8 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from reclutamiento.models import PerfilUsuario
 from reclutamiento.telegram_service import TelegramService
+from reclutamiento.permissions import es_gerente_ch
 
 
 class Command(BaseCommand):
@@ -21,7 +22,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Telegram Bot no está configurado (falta TELEGRAM_BOT_TOKEN)."))
             return
 
-        hoy = timezone.now()
+        hoy = timezone.localtime()
         # Por defecto, enviar los lunes (weekday 0)
         if hoy.weekday() != 0 and not options.get('force'):
             self.stdout.write(self.style.NOTICE("Hoy no es lunes: Flash omitido (usa --force para ignorar)."))
@@ -37,20 +38,22 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("No hay directivos con Telegram vinculado."))
             return
 
-        texto_resumen = TelegramService.generar_resumen_ejecutivo_texto()
-        texto_semanal = (
-            f"📅 <b>FLASH SEMANAL • PREMIER CAPITAL HUMANO</b>\n\n"
-            f"{texto_resumen}"
-        )
         teclado = TelegramService.obtener_teclado_ejecutivo()
 
         self.stdout.write("Generando archivo Excel oficial...")
-        buffer_excel, nombre_archivo = TelegramService.generar_excel_buffer()
 
         enviados = 0
         fallidos = 0
 
         for perfil in destinatarios:
+            if not perfil.telegram_chat_id.isdigit() or not es_gerente_ch(perfil.usuario):
+                continue
+            texto_resumen = TelegramService.generar_resumen_ejecutivo_texto(perfil.usuario)
+            texto_semanal = (
+                f"📅 <b>FLASH SEMANAL • PREMIER CAPITAL HUMANO</b>\n\n"
+                f"{texto_resumen}"
+            )
+            buffer_excel, nombre_archivo = TelegramService.generar_excel_buffer(perfil.usuario)
             res_txt = TelegramService.enviar_mensaje(perfil.telegram_chat_id, texto_semanal, reply_markup=teclado)
             res_doc = TelegramService.enviar_documento_excel(
                 perfil.telegram_chat_id,
@@ -59,11 +62,16 @@ class Command(BaseCommand):
                 caption="📊 <b>Resumen Ejecutivo Oficial • Premier Automotriz</b>"
             )
 
-            if res_txt.get('ok') or res_doc.get('ok'):
+            if res_txt.get('ok') and res_doc.get('ok'):
                 enviados += 1
                 self.stdout.write(self.style.SUCCESS(f"✓ Enviado Flash + Excel a {perfil.usuario.username} ({perfil.telegram_chat_id})"))
             else:
                 fallidos += 1
-                self.stdout.write(self.style.ERROR(f"✗ Error al enviar a {perfil.usuario.username}"))
+                self.stdout.write(self.style.ERROR(
+                    f"✗ Envío incompleto a {perfil.usuario.username}: "
+                    f"texto={bool(res_txt.get('ok'))}, Excel={bool(res_doc.get('ok'))}"
+                ))
 
         self.stdout.write(self.style.SUCCESS(f"Flash Semanal concluido: {enviados} enviados, {fallidos} fallidos."))
+        if fallidos:
+            raise CommandError(f"El Flash tuvo entregas incompletas para {fallidos} destinatario(s).")

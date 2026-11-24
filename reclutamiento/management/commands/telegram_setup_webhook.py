@@ -6,7 +6,7 @@ Uso:
     python manage.py telegram_setup_webhook --info
     python manage.py telegram_setup_webhook --delete
 """
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from reclutamiento.telegram_service import TelegramService
 
@@ -58,6 +58,8 @@ class Command(BaseCommand):
             return
 
         # 3. Registrar webhook
+        if not secret:
+            raise CommandError("TELEGRAM_WEBHOOK_SECRET es obligatorio para registrar el webhook.")
         target_url = (options.get('url') or '').strip()
         if not target_url:
             pa_host = None
@@ -80,8 +82,7 @@ class Command(BaseCommand):
             'max_connections': 40,
             'drop_pending_updates': False,
         }
-        if secret:
-            payload['secret_token'] = secret
+        payload['secret_token'] = secret
 
         res = TelegramService.api_call('setWebhook', data=payload)
         if res.get('ok'):

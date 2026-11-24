@@ -521,11 +521,6 @@ def crear_vacante_view(request):
             nueva_vacante.estatus_autorizacion = Puesto.EstatusAutorizacion.AUTORIZADO
             nueva_vacante.esta_abierto = True
 
-            if (not nueva_vacante.dias_meta or nueva_vacante.dias_meta == 20) and nueva_vacante.titulo:
-                meta_sugerida = getattr(nueva_vacante.titulo, 'dias_meta_default', None) or getattr(nueva_vacante.titulo, 'dias_meta', None)
-                if meta_sugerida:
-                    nueva_vacante.dias_meta = meta_sugerida
-
             nueva_vacante.save()
 
             nombre_responsable = (
@@ -538,7 +533,11 @@ def crear_vacante_view(request):
                 accion=f"Capturó la requisición '{nueva_vacante.titulo}' (Agencia: {nueva_vacante.agencia}) asignada a {nombre_responsable}",
                 tipo_objeto="Puesto",
                 id_objeto=nueva_vacante.id,
-                detalles=nueva_vacante.comentarios
+                detalles=" | ".join(filter(None, [
+                    nueva_vacante.comentarios,
+                    f"Excepción de meta SLA: {form.cleaned_data['motivo_meta_sla']}"
+                    if form.cleaned_data.get('motivo_meta_sla') else None,
+                ]))
             )
 
             try:
@@ -555,7 +554,6 @@ def crear_vacante_view(request):
     else:
         form = SolicitudPuestoForm(initial={
             'fecha_solicitud': timezone.now().strftime('%Y-%m-%dT%H:%M'),
-            'dias_meta': 20
         }, usuario=request.user)
 
     contexto = {
@@ -1059,35 +1057,31 @@ def reiniciar_vacante_view(request, puesto_id):
     Requiere autorización exclusiva de Gerencia de CH (perfil distinto al responsable).
     Exige justificación obligatoria y registra la auditoría.
     """
-    puesto = get_object_or_404(Puesto, id=puesto_id)
-    if puesto.numero_reinicios >= 2:
-        messages.error(
-            request,
-            f"Operación Bloqueada: La vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' ya alcanzó el límite máximo permitido de 2 reinicios de SLA (excepciones autorizadas agotadas)."
-        )
-        return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
-
-    if not puede_reiniciar_sla(request.user, puesto):
-        raise PermissionDenied(
-            "No tienes autorización para reiniciar el SLA de esta vacante. "
-            "La aprobación de excepciones está reservada a la Gerencia de Capital Humano "
-            "y debe ser realizada por alguien distinto a la persona responsable de la vacante."
-        )
-
     comentario = request.POST.get('comentario', '').strip()
     if not comentario:
         messages.error(request, 'Es obligatorio especificar el motivo o justificación de la excepción para reiniciar el SLA.')
         return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
 
-    puesto.reiniciar_sla(nueva_fecha=timezone.now(), comentario=comentario)
-
-    RegistroActividad.objects.create(
-        usuario=request.user,
-        accion=f"Autorizó reinicio de SLA para la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' (Ciclo #{puesto.numero_reinicios})",
-        tipo_objeto="Puesto",
-        id_objeto=puesto.id,
-        detalles=f"Motivo justificado: {comentario}"
-    )
+    with transaction.atomic():
+        puesto = get_object_or_404(Puesto.objects.select_for_update(), id=puesto_id)
+        if not puede_reiniciar_sla(request.user, puesto):
+            raise PermissionDenied(
+                "La excepción requiere autorización de gerencia distinta de la persona responsable."
+            )
+        if puesto.numero_reinicios >= 2:
+            messages.error(request, "La vacante ya alcanzó el límite de dos reinicios.")
+            return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+        if not puesto.esta_abierto or puesto.estatus_sla != 'VENCIDA':
+            messages.error(request, "Solo se puede reiniciar el SLA de una vacante abierta y vencida.")
+            return redirect(request.META.get('HTTP_REFERER') or 'mis_vacantes')
+        puesto.reiniciar_sla(nueva_fecha=timezone.now(), comentario=comentario)
+        RegistroActividad.objects.create(
+            usuario=request.user,
+            accion=f"Autorizó reinicio de SLA para la vacante '{puesto.titulo.nombre if puesto.titulo else puesto.id}' (Ciclo #{puesto.numero_reinicios})",
+            tipo_objeto="Puesto",
+            id_objeto=puesto.id,
+            detalles=f"Motivo justificado: {comentario}"
+        )
 
     messages.success(
         request,
@@ -1098,12 +1092,17 @@ def reiniciar_vacante_view(request, puesto_id):
 
 @login_required
 @user_passes_test(puede_acceder_proceso, login_url=reverse_lazy('acceso_denegado'))
+@transaction.atomic
 def detalle_proceso_view(request, proceso_id):
+    procesos = Proceso.objects
+    if request.method == 'POST':
+        referencia = get_object_or_404(Proceso.objects.only('puesto_id', 'candidato_id'), id=proceso_id)
+        if referencia.puesto_id:
+            get_object_or_404(Puesto.objects.select_for_update(), id=referencia.puesto_id)
+        get_object_or_404(Candidato.objects.select_for_update(), id=referencia.candidato_id)
+        procesos = procesos.select_for_update()
     proceso = get_object_or_404(
-        Proceso.objects.select_related(
-            'candidato', 'puesto__titulo', 'puesto__marca',
-            'puesto__solicitado_por', 'asesora_asignada', 'puesto__asesora_encargada'
-        ),
+        procesos,
         id=proceso_id
     )
 
@@ -1133,6 +1132,16 @@ def detalle_proceso_view(request, proceso_id):
                 return redirect('detalle_proceso', proceso_id=proceso.id)
 
             cambio_etapa = (nuevo_estatus != estatus_anterior_raw)
+            motivo_correccion = request.POST.get('motivo_correccion', '').strip()
+            correccion = nuevo_estatus not in Proceso.estatus_siguientes(estatus_anterior_raw)
+            if correccion and not es_gerente_ch(request.user):
+                raise PermissionDenied("Solo gerencia puede corregir etapas o reabrir procesos.")
+            if correccion and not motivo_correccion:
+                messages.error(request, "La corrección o reapertura requiere un motivo de gerencia.")
+                return redirect('detalle_proceso', proceso_id=proceso.id)
+            if nuevo_estatus == Proceso.Estatus.CONTRATADO and proceso.candidato.es_no_contratable:
+                messages.error(request, "No se puede contratar a un candidato marcado como no contratable.")
+                return redirect('detalle_proceso', proceso_id=proceso.id)
 
             # 2. Motivo obligatorio al descartar o abandono
             estatus_terminales_descarte = [
@@ -1159,6 +1168,15 @@ def detalle_proceso_view(request, proceso_id):
                 proceso.resultado_pyxoom = resultado_pyxoom
             elif resultado_pyxoom == 'CLEAR':
                 proceso.resultado_pyxoom = None
+
+            if (
+                cambio_etapa and nuevo_estatus == Proceso.Estatus.ENT_JF
+                and not proceso.fecha_envio_jefe_apto
+                and not proceso.candidato.es_no_contratable
+                and proceso.resultado_integridad == Proceso.ResultadoIntegridad.APROBADO
+                and proceso.resultado_pyxoom in (Proceso.ResultadoPyxoom.OPTIMO, Proceso.ResultadoPyxoom.IDEAL)
+            ):
+                proceso.fecha_envio_jefe_apto = timezone.now()
 
             # 4. Actualización con transacción atómica y control de sobrecontratación
             if nuevo_estatus == Proceso.Estatus.CONTRATADO:
@@ -1244,6 +1262,8 @@ def detalle_proceso_view(request, proceso_id):
             detalles_log = []
             if nuevas_notas:
                 detalles_log.append(f"Notas: {nuevas_notas}")
+            if correccion:
+                detalles_log.append(f"Corrección autorizada por gerencia: {motivo_correccion}")
             if motivo_descarte and nuevo_estatus in estatus_terminales_descarte:
                 detalles_log.append(f"Motivo descarte/abandono: {motivo_descarte}")
             if proceso.resultado_integridad:
@@ -1266,11 +1286,8 @@ def detalle_proceso_view(request, proceso_id):
             )
 
             if nuevo_estatus == Proceso.Estatus.CONTRATADO and estatus_anterior_raw != Proceso.Estatus.CONTRATADO:
-                try:
-                    from .telegram_service import TelegramService
-                    TelegramService.notificar_plaza_cubierta(proceso)
-                except Exception as e:
-                    logger.warning(f"Error al enviar notificación Telegram de contratación: {e}")
+                from .telegram_service import TelegramService
+                transaction.on_commit(lambda: TelegramService.notificar_plaza_cubierta(proceso), robust=True)
 
         elif action == 'marcar_no_contratable':
             motivo = request.POST.get('motivo_no_contratable', '').strip()
@@ -1368,7 +1385,10 @@ def detalle_proceso_view(request, proceso_id):
         'asesoras_disponibles': asesoras_disponibles,
         'publicaciones': publicaciones_del_puesto,
         'form_publicacion': form_publicacion,
-        'estatus_choices': Proceso.Estatus.choices,
+        'estatus_choices': [
+            (value, label) for value, label in Proceso.Estatus.choices
+            if es_gerente_ch(request.user) or value in Proceso.estatus_siguientes(proceso.estatus_proceso)
+        ],
         'integridad_choices': Proceso.ResultadoIntegridad.choices,
         'pyxoom_choices': Proceso.ResultadoPyxoom.choices,
         'puede_modificar': puede_modificar,
@@ -1571,6 +1591,8 @@ def panel_administracion_view(request):
             active_tab = 'tab-equipo'
             user_id = request.POST.get('user_id') or request.user.id
             target_user = get_object_or_404(User, id=user_id)
+            if target_user != request.user:
+                raise PermissionDenied("Solo puedes vincular tu propia cuenta de Telegram.")
             from .telegram_service import TelegramService
             token, deep_link = TelegramService.generar_token_vinculacion(target_user)
 
@@ -1597,6 +1619,8 @@ def panel_administracion_view(request):
             active_tab = 'tab-equipo'
             user_id = request.POST.get('user_id') or request.user.id
             target_user = get_object_or_404(User, id=user_id)
+            if target_user != request.user:
+                raise PermissionDenied("Solo puedes desvincular tu propia cuenta de Telegram.")
             from .telegram_service import TelegramService
             TelegramService.desvincular_usuario(target_user)
             messages.success(
@@ -2010,18 +2034,20 @@ def telegram_webhook_view(request):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
 
-    # 1. Validación de seguridad con Secret Token si está configurado
+    # 1. Validación de seguridad con Secret Token
     from django.conf import settings
+    from django.utils.crypto import constant_time_compare
     secret_esperado = getattr(settings, 'TELEGRAM_WEBHOOK_SECRET', '') or ''
-    if secret_esperado:
-        secret_recibido = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
-        if secret_recibido != secret_esperado:
-            return HttpResponseForbidden("Firma de seguridad inválida.")
+    secret_recibido = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+    if not secret_esperado or not constant_time_compare(secret_recibido, secret_esperado):
+        return HttpResponseForbidden("Firma de seguridad inválida.")
 
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception as e:
         logger.warning(f"[TelegramWebhook] JSON inválido: {e}")
+        return HttpResponseBadRequest("Payload JSON inválido.")
+    if not isinstance(data, dict):
         return HttpResponseBadRequest("Payload JSON inválido.")
 
     from .telegram_service import TelegramService
@@ -2033,6 +2059,9 @@ def telegram_webhook_view(request):
         cb_data = cb.get('data', '')
         chat_id = cb.get('message', {}).get('chat', {}).get('id')
         message_id = cb.get('message', {}).get('message_id')
+        chat = cb.get('message', {}).get('chat', {})
+        if chat.get('type') != 'private' or cb.get('from', {}).get('id') != chat_id:
+            return JsonResponse({'status': 'unauthorized'}, status=403)
 
         usuario = TelegramService.obtener_usuario_por_chat_id(chat_id)
         if not usuario:
@@ -2153,6 +2182,8 @@ def telegram_webhook_view(request):
 
         if not chat_id or not raw_text:
             return JsonResponse({'status': 'ignored'})
+        if msg.get('chat', {}).get('type') != 'private' or msg.get('from', {}).get('id') != chat_id:
+            return JsonResponse({'status': 'unauthorized'}, status=403)
 
         # Caso especial: Vinculación con token (/start <token>)
         if raw_text.startswith('/start'):

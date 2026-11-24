@@ -187,10 +187,14 @@ class TelegramService:
     @classmethod
     def generar_token_vinculacion(cls, usuario):
         """Genera un token temporal seguro de 1 solo clic para vincular la cuenta."""
+        from .permissions import es_gerente_ch
+        if not usuario.is_active or not es_gerente_ch(usuario):
+            raise ValueError("Solo una cuenta directiva activa puede vincular Telegram.")
         perfil = usuario.perfilusuario
         token = str(uuid.uuid4()).replace('-', '')[:24]
         perfil.telegram_token_enlace = token
-        perfil.save(update_fields=['telegram_token_enlace'])
+        perfil.telegram_token_creado = timezone.now()
+        perfil.save(update_fields=['telegram_token_enlace', 'telegram_token_creado'])
 
         bot_user = cls.get_bot_username()
         deep_link = f"https://t.me/{bot_user}?start={token}"
@@ -200,38 +204,38 @@ class TelegramService:
     def vincular_usuario_por_token(cls, token, chat_id, telegram_username=''):
         """Valida el token recibido en /start <token> y guarda el chat_id en PerfilUsuario."""
         from .models import PerfilUsuario, RegistroActividad
-        from .permissions import puede_administrar_rh, es_gerente_ch
+        from .permissions import es_gerente_ch
+        from django.db import transaction
 
         token = (token or '').strip()
         if not token:
             return False, None, "Token de vinculación no proporcionado."
 
-        perfil = PerfilUsuario.objects.select_related('usuario').filter(telegram_token_enlace=token).first()
-        if not perfil:
-            return False, None, "El enlace de vinculación es inválido o ya expiró. Por favor genera uno nuevo desde el portal web."
+        with transaction.atomic():
+            perfil = PerfilUsuario.objects.select_for_update().select_related('usuario').filter(telegram_token_enlace=token).first()
+            if not perfil or not perfil.telegram_token_creado or perfil.telegram_token_creado < timezone.now() - timedelta(minutes=15):
+                return False, None, "El enlace de vinculación es inválido o expiró. Genera uno nuevo desde el portal web."
 
-        usuario = perfil.usuario
-        if not (usuario.is_superuser or puede_administrar_rh(usuario) or es_gerente_ch(usuario)):
-            return False, usuario, "Acceso no autorizado: Este servicio de reportería ejecutiva es exclusivo para la Dirección y Gerencias de Capital Humano."
+            usuario = perfil.usuario
+            if not usuario.is_active or not es_gerente_ch(usuario):
+                return False, usuario, "Acceso no autorizado: el bot es exclusivo para gerencia activa."
+            if PerfilUsuario.objects.filter(telegram_chat_id=str(chat_id)).exclude(id=perfil.id).exists():
+                return False, usuario, "Este chat ya está vinculado a otra cuenta."
 
-        PerfilUsuario.objects.filter(telegram_chat_id=str(chat_id)).exclude(id=perfil.id).update(
-            telegram_chat_id=None,
-            telegram_username=None
-        )
+            perfil.telegram_chat_id = str(chat_id)
+            perfil.telegram_username = (telegram_username or '').lstrip('@')
+            perfil.telegram_token_enlace = None
+            perfil.telegram_token_creado = None
+            perfil.notificaciones_telegram = True
+            perfil.save(update_fields=['telegram_chat_id', 'telegram_username', 'telegram_token_enlace', 'telegram_token_creado', 'notificaciones_telegram'])
 
-        perfil.telegram_chat_id = str(chat_id)
-        perfil.telegram_username = (telegram_username or '').lstrip('@')
-        perfil.telegram_token_enlace = None
-        perfil.notificaciones_telegram = True
-        perfil.save(update_fields=['telegram_chat_id', 'telegram_username', 'telegram_token_enlace', 'notificaciones_telegram'])
-
-        RegistroActividad.objects.create(
-            usuario=usuario,
-            accion="Vinculación Telegram",
-            tipo_objeto="User",
-            id_objeto=usuario.id,
-            detalles=f"Usuario {usuario.username} vinculó Telegram (Chat ID: {chat_id}, @{perfil.telegram_username})."
-        )
+            RegistroActividad.objects.create(
+                usuario=usuario,
+                accion="Vinculación Telegram",
+                tipo_objeto="User",
+                id_objeto=usuario.id,
+                detalles=f"Usuario {usuario.username} vinculó Telegram (Chat ID: {chat_id}, @{perfil.telegram_username})."
+            )
         return True, usuario, "¡Vinculación completada exitosamente!"
 
     @classmethod
@@ -239,12 +243,13 @@ class TelegramService:
         """Remueve la asociación de Telegram para un usuario."""
         from .models import RegistroActividad
         perfil = getattr(usuario, 'perfilusuario', None)
-        if perfil and perfil.telegram_chat_id:
+        if perfil and (perfil.telegram_chat_id or perfil.telegram_token_enlace):
             chat_id = perfil.telegram_chat_id
             perfil.telegram_chat_id = None
             perfil.telegram_username = None
             perfil.telegram_token_enlace = None
-            perfil.save(update_fields=['telegram_chat_id', 'telegram_username', 'telegram_token_enlace'])
+            perfil.telegram_token_creado = None
+            perfil.save(update_fields=['telegram_chat_id', 'telegram_username', 'telegram_token_enlace', 'telegram_token_creado'])
 
             RegistroActividad.objects.create(
                 usuario=usuario,
@@ -260,8 +265,9 @@ class TelegramService:
     def obtener_usuario_por_chat_id(cls, chat_id):
         """Retorna el objeto User vinculado a un chat_id, o None."""
         from .models import PerfilUsuario
+        from .permissions import es_gerente_ch
         perfil = PerfilUsuario.objects.select_related('usuario').filter(telegram_chat_id=str(chat_id)).first()
-        if perfil and perfil.usuario.is_active:
+        if perfil and perfil.usuario.is_active and es_gerente_ch(perfil.usuario):
             return perfil.usuario
         return None
 
@@ -282,7 +288,7 @@ class TelegramService:
         lista_puestos = list(qs_puestos.select_related('titulo', 'marca', 'asesora_encargada').prefetch_related('procesos'))
         kpis = ReportesService.compute_kpis(lista_puestos)
 
-        ahora = timezone.now()
+        ahora = timezone.localtime()
         mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         contrataciones_mes = Proceso.objects.filter(
             puesto__in=lista_puestos,
@@ -314,9 +320,9 @@ class TelegramService:
             f"<b>ESTATUS GLOBAL DE VACANTES:</b>\n"
             f"📋 <b>{total_req}</b> requisiciones (<b>{total_pl}</b> plazas pendientes)\n"
             f"🟢 {en_tiempo_req} en tiempo ({en_tiempo_pl} pl) │ 🟡 {por_vencer_req} por vencer ({por_vencer_pl} pl) │ 🔴 {vencidas_req} vencidas ({vencidas_pl} pl)\n\n"
-            f"⚡ <b>SLA Promedio:</b> {sla_prom:.1f} días │ <b>Cumplimiento:</b> {cumplimiento}%\n"
+            f"⚡ <b>Cobertura promedio (SLA original):</b> {sla_prom:.1f} días │ <b>Activas en tiempo:</b> {str(cumplimiento) + '%' if total_req else 'Sin datos'}\n"
             f"🎉 <b>Ingresos del mes:</b> <b>{contrataciones_mes}</b> contrataciones\n"
-            f"🎯 <b>Auditoría de Bono:</b> {bono_cumplido}/{len(lista_puestos)} vacantes cumplieron meta\n"
+            f"🎯 <b>Auditoría de Bono:</b> {bono_cumplido} cumplen; {kpis.get('vacantes_bono_indeterminado', 0)} requieren revisión\n"
             f"🔄 <b>Reinicios:</b> {reinicios_vac} vacantes con reinicios ({reinicios_tot} totales)\n"
             f"⚠️ <b>Candidatos detenidos (≥30d):</b> {estancados}\n\n"
             f"<i>💡 Usa los botones inferiores para consultar por dimensión o descargar reportes en Excel.</i>"
@@ -470,7 +476,6 @@ class TelegramService:
             contratados = a['contratados']
             bono_cumplido = a['bono_cumplido']
             total_asig = a['total_asignadas']
-            bono_pct = a['bono_pct']
             reiniciadas = a['reiniciadas']
             total_reinicios = a['total_reinicios']
 
@@ -478,7 +483,7 @@ class TelegramService:
                 f"• <b>{_esc(nombre)}</b>\n"
                 f"  <b>{activas} activas ({plazas_pend} pl pend.)</b> │ 🟢 {en_tiempo} │ 🔴 {vencidas}\n"
                 f"  🎉 <b>{contratados}</b> contrataciones concretadas\n"
-                f"  🎯 Meta Bono: <b>{bono_cumplido}/{total_asig}</b> ({bono_pct}%) │ 🔄 Reinicios: <b>{reiniciadas}</b> vac. ({total_reinicios} tot.)\n\n"
+                f"  🎯 Bono: <b>{bono_cumplido}</b> acreditados; {a['bono_indeterminado']} por revisar │ 🔄 Reinicios: <b>{reiniciadas}</b> vac. ({total_reinicios} tot.)\n\n"
             )
 
         msg += "<i>👇 Selecciona una asesora para consultar su detalle individual y descargar su auditoría:</i>"
@@ -518,14 +523,14 @@ class TelegramService:
 
         # Contrataciones de la asesora (conteo de registros de Proceso)
         contrataciones_total = Proceso.objects.filter(
-            asesora_asignada=asesora,
+            puesto__in=qs,
             estatus_proceso=Proceso.Estatus.CONTRATADO
         ).count()
 
-        ahora = timezone.now()
+        ahora = timezone.localtime()
         mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         contrataciones_mes = Proceso.objects.filter(
-            asesora_asignada=asesora,
+            puesto__in=qs,
             estatus_proceso=Proceso.Estatus.CONTRATADO,
             fecha_inicio_etapa__gte=mes_inicio
         ).count()
@@ -581,7 +586,7 @@ class TelegramService:
         promedio = (dias_totales / total_req_activas) if total_req_activas > 0 else 0
         bono_cumplido = sum(1 for p in puestos_todos if p.cumplio_meta_bono)
         total_puestos = len(puestos_todos)
-        bono_pct = round((bono_cumplido / total_puestos * 100), 1) if total_puestos > 0 else 0.0
+        bono_indeterminado = sum(1 for p in puestos_todos if p.cumplio_meta_bono is None)
         reiniciadas = sum(1 for p in puestos_todos if p.numero_reinicios > 0)
         total_reinicios = sum(p.numero_reinicios for p in puestos_todos)
 
@@ -592,7 +597,7 @@ class TelegramService:
             f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"⚡ <b>SLA Promedio Activo:</b> {promedio:.1f} días\n"
             f"🎉 <b>Contrataciones:</b> {contrataciones_mes} este mes │ {contrataciones_total} históricas\n"
-            f"🎯 <b>Meta de Bono:</b> {bono_cumplido}/{total_puestos} vacantes ({bono_pct}%)\n"
+            f"🎯 <b>Meta de Bono:</b> {bono_cumplido} acreditados; {bono_indeterminado} por revisar\n"
             f"🔄 <b>Reinicios:</b> {reiniciadas} vacantes ({total_reinicios} totales)\n"
             f"⚠️ <b>Candidatos detenidos (≥30d):</b> {estancados}\n"
         )
@@ -718,9 +723,12 @@ class TelegramService:
 
         qs = ReportesService.get_base_queryset(usuario).filter(
             esta_abierto=True,
-            estatus_autorizacion='AUTORIZADO',
-            agencia__icontains=agencia_real
+            estatus_autorizacion='AUTORIZADO'
         ).select_related('titulo', 'marca', 'asesora_encargada')
+        if str(agencia_id_or_name).isdigit() and ag_obj:
+            qs = qs.filter(agencia__iexact=agencia_real)
+        else:
+            qs = qs.filter(agencia__icontains=agencia_real)
 
         if not qs.exists():
             return f"🏢 <b>AGENCIA: {_esc(agencia_real.upper())}</b>\n\n🟢 0 vacantes abiertas en esta agencia."
@@ -832,6 +840,7 @@ class TelegramService:
     def generar_estancados_texto(cls, usuario=None):
         """Candidatos con más de 30 días sin avance en etapa, agrupados por Asesora."""
         from .models import Proceso
+        from .services import ReportesService
         ahora = timezone.now()
         limite_30d = ahora - timedelta(days=30)
         terminales = [
@@ -842,6 +851,7 @@ class TelegramService:
         ]
 
         estancados = Proceso.objects.filter(
+            puesto__in=ReportesService.get_base_queryset(usuario).filter(esta_abierto=True),
             fecha_inicio_etapa__lte=limite_30d
         ).exclude(
             estatus_proceso__in=terminales
@@ -892,11 +902,13 @@ class TelegramService:
     def generar_contrataciones_mes_texto(cls, usuario=None):
         """Lista compacta de contrataciones concretadas en el mes en curso."""
         from .models import Proceso
-        ahora = timezone.now()
+        from .services import ReportesService
+        ahora = timezone.localtime()
         mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         nombre_mes = ahora.strftime('%B').upper()
 
         contratados = Proceso.objects.filter(
+            puesto__in=ReportesService.get_base_queryset(usuario),
             estatus_proceso=Proceso.Estatus.CONTRATADO,
             fecha_inicio_etapa__gte=mes_inicio
         ).select_related('candidato', 'puesto', 'puesto__titulo', 'asesora_asignada').order_by('-fecha_inicio_etapa')
@@ -977,10 +989,10 @@ class TelegramService:
         """
         from .services import ReportesService
         filtros = {}
-        hoy = timezone.now().date()
+        hoy = timezone.localdate()
 
         if periodo == 'semana':
-            filtros['fecha_desde'] = (hoy - timedelta(days=7)).strftime('%Y-%m-%d')
+            filtros['fecha_desde'] = (hoy - timedelta(days=hoy.weekday())).strftime('%Y-%m-%d')
             filtros['fecha_hasta'] = hoy.strftime('%Y-%m-%d')
         elif periodo == 'mes_actual':
             filtros['fecha_desde'] = hoy.replace(day=1).strftime('%Y-%m-%d')
@@ -1171,7 +1183,8 @@ class TelegramService:
         for ag_nombre, data in sorted(agencias_map.items(), key=lambda x: x[1]['pl'], reverse=True)[:14]:
             ag_obj = Agencia.objects.filter(nombre=ag_nombre).first()
             if not ag_obj:
-                ag_obj, _ = Agencia.objects.get_or_create(nombre=ag_nombre)
+                logger.warning("Agencia sin registro de catálogo: %s", ag_nombre)
+                continue
             cb_data = f"f:ag:{ag_obj.id}"
             nom_btn = (ag_nombre[:12] + '..') if len(ag_nombre) > 14 else ag_nombre
             row.append({'text': f"🏢 {nom_btn} ({data['req']}r/{data['pl']}p)", 'callback_data': cb_data})
@@ -1327,6 +1340,11 @@ class TelegramService:
         meta = puesto.dias_meta or 20
         asesora = puesto.asesora_encargada.get_full_name() if puesto.asesora_encargada else "Capital Humano"
 
+        cierre = (
+            "La vacante ha sido cerrada automáticamente en el sistema."
+            if not puesto.esta_abierto else
+            f"La vacante continúa abierta: quedan {puesto.plazas_pendientes} plazas."
+        )
         texto = (
             f"🎉 <b>¡PLAZA CUBIERTA EXITOSAMENTE!</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -1335,7 +1353,7 @@ class TelegramService:
             f"• <b>Colaborador:</b> {_esc(candidato_nombre)}\n"
             f"• <b>Tiempo de Cobertura:</b> {dias} días (Meta: {meta}d)\n"
             f"• <b>Asesora Encargada:</b> {_esc(asesora)}\n\n"
-            f"<i>La vacante ha sido cerrada automáticamente en el sistema.</i>"
+            f"<i>{cierre}</i>"
         )
 
         destinatarios = PerfilUsuario.objects.filter(
@@ -1343,13 +1361,18 @@ class TelegramService:
             notificaciones_telegram=True,
             recibir_alertas_criticas=True,
             usuario__is_active=True
-        ).values_list('telegram_chat_id', flat=True)
+        ).select_related('usuario')
 
         enviados = 0
-        for chat_id in destinatarios:
-            res = cls.enviar_mensaje(chat_id, texto)
+        from .permissions import es_gerente_ch
+        for perfil in destinatarios:
+            if not perfil.telegram_chat_id.isdigit() or not es_gerente_ch(perfil.usuario):
+                continue
+            res = cls.enviar_mensaje(perfil.telegram_chat_id, texto)
             if res.get('ok'):
                 enviados += 1
+            else:
+                logger.warning("Falló la alerta de contratación para %s: %s", perfil.usuario.username, res.get('description'))
         return enviados
 
     @classmethod
@@ -1382,11 +1405,16 @@ class TelegramService:
             notificaciones_telegram=True,
             recibir_alertas_criticas=True,
             usuario__is_active=True
-        ).values_list('telegram_chat_id', flat=True)
+        ).select_related('usuario')
 
         enviados = 0
-        for chat_id in destinatarios:
-            res = cls.enviar_mensaje(chat_id, texto)
+        from .permissions import es_gerente_ch
+        for perfil in destinatarios:
+            if not perfil.telegram_chat_id.isdigit() or not es_gerente_ch(perfil.usuario):
+                continue
+            res = cls.enviar_mensaje(perfil.telegram_chat_id, texto)
             if res.get('ok'):
                 enviados += 1
+            else:
+                logger.warning("Falló la alerta de requisición para %s: %s", perfil.usuario.username, res.get('description'))
         return enviados

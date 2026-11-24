@@ -24,18 +24,18 @@ class AgenciaChoiceField(forms.ModelChoiceField):
             return super().to_python(value)
         except forms.ValidationError:
             val_str = str(value).strip()
-            if val_str.isdigit():
-                agencia = Agencia.objects.filter(id=int(val_str)).first()
-                if agencia:
-                    return agencia
-            agencia = Agencia.objects.filter(nombre__iexact=val_str).first()
-            if not agencia:
-                marca_match = Marca.objects.filter(nombre__iexact=val_str).first()
-                agencia, _ = Agencia.objects.get_or_create(nombre=val_str, defaults={'marca': marca_match, 'activo': True})
-            return agencia
+            agencia = self.queryset.filter(nombre__iexact=val_str).first()
+            if agencia:
+                return agencia
+            raise
 
 
 class SolicitudPuestoForm(forms.ModelForm):
+    motivo_meta_sla = forms.CharField(
+        required=False,
+        label="Motivo de excepción de la meta SLA",
+        widget=forms.Textarea(attrs={'rows': 2}),
+    )
     fecha_solicitud = forms.DateTimeField(
         required=False,
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
@@ -53,6 +53,10 @@ class SolicitudPuestoForm(forms.ModelForm):
         self.usuario = usuario
         self.es_directora = bool(usuario and (usuario.is_superuser or es_gerente_ch(usuario)))
         super().__init__(*args, **kwargs)
+        self.fields['dias_meta'].required = False
+        if not self.es_directora:
+            self.fields['dias_meta'].disabled = True
+            self.fields.pop('motivo_meta_sla')
 
         # Filtrar puestos activos manteniendo el actual si se edita
         if 'titulo' in self.fields:
@@ -100,6 +104,16 @@ class SolicitudPuestoForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        titulo = cleaned_data.get('titulo')
+        if titulo:
+            meta_catalogo = titulo.dias_meta or titulo.dias_meta_default
+            meta_solicitada = cleaned_data.get('dias_meta')
+            if self.es_directora and meta_solicitada is not None and meta_solicitada < 1:
+                self.add_error('dias_meta', 'La meta SLA debe ser de al menos un día.')
+            elif not self.es_directora or meta_solicitada is None:
+                cleaned_data['dias_meta'] = meta_catalogo
+            elif meta_solicitada != meta_catalogo and not cleaned_data.get('motivo_meta_sla', '').strip():
+                self.add_error('motivo_meta_sla', 'Indica el motivo para cambiar la meta del catálogo.')
         agencia_val = cleaned_data.get('agencia')
         if isinstance(agencia_val, Agencia):
             self._selected_agencia = agencia_val
@@ -173,6 +187,8 @@ class SolicitudPuestoForm(forms.ModelForm):
 
     def clean_fecha_solicitud(self):
         fecha = self.cleaned_data.get("fecha_solicitud")
+        if fecha and fecha > timezone.now():
+            raise ValidationError("La fecha de la requisición física no puede estar en el futuro.")
         return fecha or timezone.now()
 
     def clean_archivo_justificacion(self):

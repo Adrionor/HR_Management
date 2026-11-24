@@ -519,6 +519,13 @@
                         </select>
                     </div>
 
+                    {% if es_gerente_ch %}
+                    <div class="sap-form-group">
+                        <label class="sap-label" for="motivo_correccion">Motivo de corrección o reapertura</label>
+                        <textarea name="motivo_correccion" id="motivo_correccion" class="sap-textarea" rows="2" placeholder="Obligatorio al corregir etapas o reabrir un proceso."></textarea>
+                    </div>
+                    {% endif %}
+
                     <!-- Panel de Resultados de Evaluaciones (Integridad y Pyxoom) -->
                     <div style="background: #f8fafc; border: 1px solid var(--sap-border); border-radius: var(--sap-radius-sm); padding: 0.85rem; margin-bottom: 1rem;">
                         <div class="sap-section-label" style="margin-bottom: 0.5rem; font-weight: 600; color: var(--sap-text);">

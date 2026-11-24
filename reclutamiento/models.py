@@ -66,6 +66,7 @@ class PerfilUsuario(models.Model):
         verbose_name="Token de Vinculación",
         help_text="Token temporal seguro para conectar Telegram en 1 clic"
     )
+    telegram_token_creado = models.DateTimeField(null=True, blank=True)
     notificaciones_telegram = models.BooleanField(
         default=True,
         verbose_name="Notificaciones Telegram Activas"
@@ -236,6 +237,7 @@ class Puesto(models.Model):
     esta_abierto = models.BooleanField(default=True, db_index=True, verbose_name="¿Vacante Activa/Abierta?")
     solicitado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='puestos_solicitados')
     fecha_solicitud = models.DateTimeField(default=timezone.now)
+    fecha_registro_sla = models.DateTimeField(null=True, blank=True, editable=False)
     autorizado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='puestos_autorizados')
     fecha_autorizacion = models.DateTimeField(null=True, blank=True)
     segundo_autorizado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='puestos_segunda_autorizacion')
@@ -265,6 +267,8 @@ class Puesto(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        if self._state.adding and self.fecha_registro_sla is None:
+            self.fecha_registro_sla = timezone.now()
         # Sincronización bidireccional de nombres de jefe inmediato
         if not self.jefe_inmediato_nombre and self.nombre_jefe_inmediato:
             self.jefe_inmediato_nombre = self.nombre_jefe_inmediato
@@ -316,7 +320,7 @@ class Puesto(models.Model):
     @property
     def fecha_inicio_sla(self):
         """El reloj de SLA inicia con fecha_inicio_sla_custom (si hubo reinicio), o fecha_solicitud."""
-        return self.fecha_inicio_sla_custom or self.fecha_solicitud or timezone.now()
+        return self.fecha_inicio_sla_custom or self.fecha_inicio_sla_original
 
     @property
     def dias_transcurridos(self):
@@ -357,77 +361,30 @@ class Puesto(models.Model):
 
     @property
     def cumplio_meta_bono(self):
-        """
-        Retorna True si:
-        1) Cubrió las plazas requeridas (esta_completamente_cubierta) estrictamente dentro
-           del plazo de dias_meta del ciclo activo (dias_transcurridos <= dias_meta), O
-        2) Envió al menos 3 candidatos aptos (con pruebas de integridad y psicometría aprobadas
-           y sin estar boletinados como No Contratables) a entrevista con jefe (ENT_JF o posterior)
-           dentro de la ventana de días meta del ciclo activo, validado históricamente.
-        """
-        if self.esta_completamente_cubierta:
-            return self.dias_transcurridos <= self.dias_meta
+        """Cumplimiento con el SLA original; None indica historial insuficiente."""
+        inicio = self.fecha_inicio_sla_original
+        limite = self.fecha_limite_sla_original
+        procesos = list(self.procesos.all())
+        contratados = [p for p in procesos if p.estatus_proceso == Proceso.Estatus.CONTRATADO]
+        if len(contratados) >= self.cantidad_vacantes:
+            fecha_cobertura = max(p.fecha_inicio_etapa for p in contratados)
+            if inicio <= fecha_cobertura <= limite:
+                return True
 
-        fecha_inicio = self.fecha_inicio_sla
-        if not fecha_inicio:
-            return False
-
-        fecha_limite = fecha_inicio + timezone.timedelta(days=self.dias_meta)
-
-        etapas_jefe = [
-            Proceso.Estatus.ENT_JF,
-            Proceso.Estatus.CONF_JF,
-            Proceso.Estatus.MEDICO,
-            Proceso.Estatus.DOCS,
-            Proceso.Estatus.INGRESO_PROG,
-            Proceso.Estatus.ALTA_ADMIN,
-            Proceso.Estatus.CONTRATADO,
-        ]
-
-        candidatos_calificados = 0
-        procesos = self.procesos.all() if hasattr(self, '_prefetched_objects_cache') and 'procesos' in self._prefetched_objects_cache else self.procesos.select_related('candidato').all()
-
-        for pr in procesos:
-            # 1. Candidato no marcado como No Contratable
-            if getattr(pr.candidato, 'es_no_contratable', False):
-                continue
-
-            # 2. Pruebas de integridad y psicometría no reprobadas
-            if pr.resultado_integridad == Proceso.ResultadoIntegridad.NO_APROBADO:
-                continue
-            if pr.resultado_pyxoom == Proceso.ResultadoPyxoom.REPROBADO:
-                continue
-
-            # 3. Fecha histórica de envío a entrevista con jefe dentro de los días meta del ciclo
-            fecha_envio = None
-            if pr.estatus_proceso in etapas_jefe:
-                logs = pr.registros_de_actividad.filter(
-                    models.Q(accion__icontains='Entrevista con Jefe') |
-                    models.Q(accion__icontains='ENT_JF')
-                ).order_by('fecha_hora')
-                first_log = logs.first()
-                if first_log:
-                    fecha_envio = first_log.fecha_hora
-                else:
-                    fecha_envio = pr.fecha_inicio_etapa or timezone.now()
-            else:
-                logs = pr.registros_de_actividad.filter(
-                    models.Q(accion__icontains='Entrevista con Jefe') |
-                    models.Q(accion__icontains='ENT_JF')
-                ).order_by('fecha_hora')
-                first_log = logs.first()
-                if first_log:
-                    fecha_envio = first_log.fecha_hora
-
-            if fecha_envio and (fecha_inicio <= fecha_envio <= fecha_limite):
-                candidatos_calificados += 1
-
-        return candidatos_calificados >= 3
+        candidatos = {
+            p.candidato_id for p in procesos
+            if p.fecha_envio_jefe_apto and inicio <= p.fecha_envio_jefe_apto <= limite
+        }
+        if len(candidatos) >= 3:
+            return True
+        if self.fecha_registro_sla is None:
+            return None
+        return False
 
     @property
     def fecha_inicio_sla_original(self):
         """Conserva la fecha de solicitud original sin alterar para auditoría."""
-        return self.fecha_solicitud or timezone.now()
+        return self.fecha_registro_sla or self.fecha_solicitud
 
     @property
     def fecha_limite_sla_original(self):
@@ -436,8 +393,12 @@ class Puesto(models.Model):
 
     @property
     def dias_transcurridos_total(self):
-        """Total de días transcurridos desde la creación original de la vacante."""
-        return max(0, (timezone.now() - self.fecha_inicio_sla_original).days)
+        """Días del SLA original, hasta la cobertura completa o hasta ahora."""
+        fin = timezone.now()
+        if self.esta_completamente_cubierta:
+            contratados = [p for p in self.procesos.all() if p.estatus_proceso == Proceso.Estatus.CONTRATADO]
+            fin = max(p.fecha_inicio_etapa for p in contratados)
+        return max(0, (fin - self.fecha_inicio_sla_original).days)
 
     @property
     def etapa_operativa(self):
@@ -717,6 +678,21 @@ class Proceso(models.Model):
         OPTIMO = 'OPTIMO', 'Óptimo'
         IDEAL = 'IDEAL', 'Ideal'
 
+    @classmethod
+    def estatus_siguientes(cls, actual):
+        secuencia = [
+            cls.Estatus.NUEVO, cls.Estatus.CONTACTO, cls.Estatus.PRUEBAS,
+            cls.Estatus.ENT_CH, cls.Estatus.REF, cls.Estatus.ENT_JF,
+            cls.Estatus.CONF_JF, cls.Estatus.MEDICO, cls.Estatus.DOCS,
+            cls.Estatus.INGRESO_PROG, cls.Estatus.ALTA_ADMIN, cls.Estatus.CONTRATADO,
+        ]
+        if actual not in secuencia or actual == cls.Estatus.CONTRATADO:
+            return {actual}
+        return {
+            actual, secuencia[secuencia.index(actual) + 1],
+            cls.Estatus.DESCARTADO_CH, cls.Estatus.NO_PRUEBAS, cls.Estatus.ABANDONO,
+        }
+
     candidato = models.ForeignKey('Candidato', on_delete=models.CASCADE, related_name='procesos', verbose_name="Candidato")
     puesto = models.ForeignKey('Puesto', on_delete=models.SET_NULL, null=True, blank=True, related_name='procesos', verbose_name="Puesto Aplicado")
     asesora_asignada = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Asesora Asignada")
@@ -739,6 +715,7 @@ class Proceso(models.Model):
         null=True,
         verbose_name="Resultado Psicométrico Pyxoom"
     )
+    fecha_envio_jefe_apto = models.DateTimeField(null=True, blank=True, editable=False)
     motivo_descarte = models.TextField(
         blank=True,
         default="",

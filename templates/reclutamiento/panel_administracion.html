@@ -504,16 +504,16 @@
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--sap-text);">Canal Ejecutivo de Telegram • Reportería & BI</h3>
                         {% if telegram_bot_configurado %}
-                            <span class="sap-badge sap-badge-success" style="font-size: 0.7rem;"><span class="sap-badge-dot"></span>Bot Activo (@{{ telegram_bot_username }})</span>
+                            <span class="sap-badge sap-badge-success" style="font-size: 0.7rem;"><span class="sap-badge-dot"></span>Token configurado (@{{ telegram_bot_username }})</span>
                         {% else %}
                             <span class="sap-badge sap-badge-warning" style="font-size: 0.7rem;" title="Configura TELEGRAM_BOT_TOKEN en el archivo .env"><span class="sap-badge-dot"></span>Token pendiente en .env</span>
                         {% endif %}
                     </div>
                     <p style="margin: 0.25rem 0 0 0; font-size: 0.8125rem; color: var(--sap-muted); line-height: 1.4;">
                         {% if request.user.perfilusuario.telegram_chat_id %}
-                            Tu cuenta directiva está conectada a Telegram <strong>(@{{ request.user.perfilusuario.telegram_username|default:"conectado" }})</strong>. Recibes el Pulse Matutino (8:30 AM), alertas críticas y consultas BI en tiempo real.
+                            Tu cuenta está vinculada a Telegram <strong>(@{{ request.user.perfilusuario.telegram_username|default:"conectado" }})</strong>. Los envíos programados dependen del programador configurado en el servidor.
                         {% else %}
-                            Recibe reportes matutinos automáticos, alertas de vacantes vencidas (SLA) y descarga archivos Excel (.xlsx) ejecutivos directamente en tu teléfono.
+                            Consulta reportes y recibe alertas de requisiciones y contrataciones. Los reportes programados requieren configuración en el servidor.
                         {% endif %}
                     </p>
                 </div>
@@ -619,12 +619,14 @@
                                         <span class="sap-badge sap-badge-success" title="Chat ID: {{ u.perfilusuario.telegram_chat_id }}">
                                             <span class="sap-badge-dot"></span>Conectado (@{{ u.perfilusuario.telegram_username|default:"ID" }})
                                         </span>
-                                    {% else %}
+                                    {% elif u == request.user %}
                                         <button type="button" class="sap-btn sap-btn-secondary sap-btn-sm" style="font-size: 0.75rem; padding: 2px 8px;"
                                             onclick="generarEnlaceTelegramModal('{{ u.id }}', '{{ u.get_full_name|default:u.username|escapejs }}', {% if u == request.user %}true{% else %}false{% endif %});"
                                             title="Generar enlace de vinculación con Telegram">
                                             <span>+ Vincular</span>
                                         </button>
+                                    {% else %}
+                                        <span style="font-size: 0.75rem; color: var(--sap-muted);">Vinculación personal</span>
                                     {% endif %}
                                 {% else %}
                                     <span style="font-size: 0.75rem; color: var(--sap-muted);">Exclusivo Dirección</span>

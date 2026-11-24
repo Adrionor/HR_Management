@@ -172,7 +172,8 @@ class HRManagementTests(TestCase):
                 candidato=c,
                 puesto=puesto_abierto,
                 asesora_asignada=self.user,
-                estatus_proceso=Proceso.Estatus.ENT_JF
+                estatus_proceso=Proceso.Estatus.ENT_JF,
+                fecha_envio_jefe_apto=timezone.now()
             )
         self.assertFalse(puesto_abierto.esta_completamente_cubierta)
         self.assertTrue(puesto_abierto.cumplio_meta_bono)
@@ -257,6 +258,7 @@ class HRManagementTests(TestCase):
         grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
         self.user.groups.add(grupo_asesoras)
         self.client.login(username='testuser', password='password123')
+        Agencia.objects.get_or_create(nombre='Toyota Premier Culiacán')
 
         response = self.client.post(reverse('crear_vacante'), {
             'titulo': self.cat_puesto.id,
@@ -278,7 +280,7 @@ class HRManagementTests(TestCase):
         self.assertTrue(puesto.esta_abierto)
         self.assertEqual(puesto.asesora_encargada, self.user)
         self.assertEqual(puesto.solicitado_por, self.user)
-        self.assertEqual(puesto.dias_meta, 25)
+        self.assertEqual(puesto.dias_meta, self.cat_puesto.dias_meta)
         self.assertEqual(puesto.jefe_inmediato_nombre, 'Ing. Roberto Gómez')
 
     def test_captura_vacante_por_gerente_con_asignacion_a_otra_asesora(self):
@@ -288,6 +290,7 @@ class HRManagementTests(TestCase):
         grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
         self.user.groups.add(grupo_ch)
         self.client.login(username='testuser', password='password123')
+        Agencia.objects.get_or_create(nombre='Toyota Premier Culiacán')
 
         asesora_operativa = User.objects.create_user(
             username='asesora.operativa',
@@ -698,7 +701,7 @@ class HRManagementTests(TestCase):
         self.assertGreater(v2, v1)
 
     def test_detalle_proceso_avance_directo_y_evaluaciones(self):
-        """Verifica que la asesora gestione directamente ENT_JF, CONF_JF y capture resultados de pruebas."""
+        """Verifica que la asesora avance secuencialmente y capture resultados."""
         from django.contrib.auth.models import Group
         from reclutamiento.models import RegistroActividad
         grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
@@ -724,7 +727,11 @@ class HRManagementTests(TestCase):
 
         self.client.login(username='testuser', password='password123')
 
-        # 1. Capturar resultados de pruebas y avanzar a ENT_JF
+        # Capturar resultados y recorrer las etapas intermedias.
+        for etapa in (Proceso.Estatus.ENT_CH, Proceso.Estatus.REF):
+            self.client.post(reverse('detalle_proceso', args=[proc.id]), {
+                'action': 'actualizar_estatus', 'estatus_proceso': etapa,
+            })
         resp = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
             'action': 'actualizar_estatus',
             'estatus_proceso': Proceso.Estatus.ENT_JF,
@@ -739,7 +746,7 @@ class HRManagementTests(TestCase):
         self.assertEqual(proc.resultado_pyxoom, 'OPTIMO')
 
         # Verificar rastro en RegistroActividad
-        reg = RegistroActividad.objects.filter(tipo_objeto='Proceso', id_objeto=proc.id).first()
+        reg = RegistroActividad.objects.filter(tipo_objeto='Proceso', id_objeto=proc.id).order_by('-id').first()
         self.assertIsNotNone(reg)
         self.assertEqual(reg.usuario, self.user)
         self.assertIn('Enviado a Entrevista con Jefe', reg.accion)
@@ -872,6 +879,7 @@ class HRManagementTests(TestCase):
             area='VTAS',
             asesora_encargada=otra_asesora,
             fecha_solicitud=fecha_antigua,
+            fecha_registro_sla=fecha_antigua,
             dias_meta=20,
             esta_abierto=True,
             sueldo_base=15000
@@ -1143,10 +1151,10 @@ class HRManagementTests(TestCase):
         cand2 = Candidato.objects.create(nombres='Beto', apellidos='Overhire', email='beto2@test.com')
 
         proc1 = Proceso.objects.create(
-            candidato=cand1, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.DOCS
+            candidato=cand1, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.ALTA_ADMIN
         )
         proc2 = Proceso.objects.create(
-            candidato=cand2, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.DOCS
+            candidato=cand2, puesto=puesto, asesora_asignada=self.user, estatus_proceso=Proceso.Estatus.ALTA_ADMIN
         )
 
         self.client.login(username='testuser', password='password123')
@@ -1177,6 +1185,7 @@ class HRManagementTests(TestCase):
         from django.contrib.auth.models import Group
         grupo_asesoras, _ = Group.objects.get_or_create(name='Asesoras')
         self.user.groups.add(grupo_asesoras)
+        self.user.groups.add(Group.objects.get_or_create(name='Gerentes de Capital Humano')[0])
 
         puesto = Puesto.objects.create(
             titulo=self.cat_puesto,
@@ -1199,7 +1208,8 @@ class HRManagementTests(TestCase):
         # Revertir a PRUEBAS
         resp = self.client.post(reverse('detalle_proceso', args=[proc.id]), {
             'action': 'actualizar_estatus',
-            'estatus_proceso': Proceso.Estatus.PRUEBAS
+            'estatus_proceso': Proceso.Estatus.PRUEBAS,
+            'motivo_correccion': 'Corrección de contratación'
         })
         self.assertEqual(resp.status_code, 302)
         puesto.refresh_from_db()
@@ -1285,6 +1295,7 @@ class HRManagementTests(TestCase):
             cantidad_vacantes=1,
             esta_abierto=False,
             fecha_solicitud=fecha_antigua,
+            fecha_registro_sla=fecha_antigua,
             dias_meta=20
         )
         cand = Candidato.objects.create(nombres='Tarde', apellidos='Contratado', email='tarde@example.com')
@@ -1344,7 +1355,8 @@ class HRManagementTests(TestCase):
             ciudad='CUL',
             asesora_encargada=otra_asesora,
             esta_abierto=True,
-            dias_meta=20
+            dias_meta=20,
+            fecha_registro_sla=timezone.now() - timezone.timedelta(days=25)
         )
         self.client.login(username='testuser', password='password123')
 
@@ -1355,6 +1367,7 @@ class HRManagementTests(TestCase):
         self.assertEqual(puesto.numero_reinicios, 1)
 
         # 2do reinicio -> Exitoso
+        Puesto.objects.filter(id=puesto.id).update(fecha_inicio_sla_custom=timezone.now() - timezone.timedelta(days=25))
         resp2 = self.client.post(reverse('reiniciar_vacante', args=[puesto.id]), {'comentario': 'Excepción 2'})
         self.assertEqual(resp2.status_code, 302)
         puesto.refresh_from_db()
@@ -1859,10 +1872,8 @@ class TelegramBotExecutiveTests(TestCase):
     def test_asesora_rechazada_al_vincular_bot_ejecutivo(self):
         """Verifica que un usuario con rol de Asesora no pueda vincularse al bot reservado para Dirección."""
         from reclutamiento.telegram_service import TelegramService
-        token, _ = TelegramService.generar_token_vinculacion(self.asesora)
-        ok, user, msg = TelegramService.vincular_usuario_por_token(token, 555555, "asesora_tg")
-        self.assertFalse(ok)
-        self.assertIn("Acceso no autorizado", msg)
+        with self.assertRaises(ValueError):
+            TelegramService.generar_token_vinculacion(self.asesora)
         self.asesora.perfilusuario.refresh_from_db()
         self.assertIsNone(self.asesora.perfilusuario.telegram_chat_id)
 
@@ -1942,8 +1953,8 @@ class TelegramBotExecutiveTests(TestCase):
 
         payload = {
             'message': {
-                'chat': {'id': 123456789},
-                'from': {'username': 'patricia_tg'},
+                'chat': {'id': 123456789, 'type': 'private'},
+                'from': {'id': 123456789, 'username': 'patricia_tg'},
                 'text': f'/start {token}'
             }
         }
@@ -1976,7 +1987,7 @@ class TelegramBotExecutiveTests(TestCase):
         # Comando /resumen
         resp = self.client.post(
             url,
-            data=json.dumps({'message': {'chat': {'id': 998877}, 'text': '/resumen'}}),
+            data=json.dumps({'message': {'chat': {'id': 998877, 'type': 'private'}, 'from': {'id': 998877}, 'text': '/resumen'}}),
             content_type='application/json',
             **headers
         )
@@ -1990,8 +2001,9 @@ class TelegramBotExecutiveTests(TestCase):
             data=json.dumps({
                 'callback_query': {
                     'id': 'cb_test_1',
+                    'from': {'id': 998877},
                     'data': 'cmd_excel',
-                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                    'message': {'chat': {'id': 998877, 'type': 'private'}, 'message_id': 42}
                 }
             }),
             content_type='application/json',
@@ -2008,8 +2020,9 @@ class TelegramBotExecutiveTests(TestCase):
             data=json.dumps({
                 'callback_query': {
                     'id': 'cb_test_sc',
+                    'from': {'id': 998877},
                     'data': 'cmd_scorecard_global',
-                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                    'message': {'chat': {'id': 998877, 'type': 'private'}, 'message_id': 42}
                 }
             }),
             content_type='application/json',
@@ -2025,8 +2038,9 @@ class TelegramBotExecutiveTests(TestCase):
             data=json.dumps({
                 'callback_query': {
                     'id': 'cb_test_cd',
+                    'from': {'id': 998877},
                     'data': 'cmd_ciudades_panorama',
-                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                    'message': {'chat': {'id': 998877, 'type': 'private'}, 'message_id': 42}
                 }
             }),
             content_type='application/json',
@@ -2042,8 +2056,9 @@ class TelegramBotExecutiveTests(TestCase):
             data=json.dumps({
                 'callback_query': {
                     'id': 'cb_test_focos',
+                    'from': {'id': 998877},
                     'data': 'cmd_focos_rojos',
-                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                    'message': {'chat': {'id': 998877, 'type': 'private'}, 'message_id': 42}
                 }
             }),
             content_type='application/json',
@@ -2059,8 +2074,9 @@ class TelegramBotExecutiveTests(TestCase):
             data=json.dumps({
                 'callback_query': {
                     'id': 'cb_test_cul',
+                    'from': {'id': 998877},
                     'data': 'flt_cd:CUL',
-                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                    'message': {'chat': {'id': 998877, 'type': 'private'}, 'message_id': 42}
                 }
             }),
             content_type='application/json',
@@ -2073,7 +2089,7 @@ class TelegramBotExecutiveTests(TestCase):
         mock_api.reset_mock()
         resp_cmd_sc = self.client.post(
             url,
-            data=json.dumps({'message': {'chat': {'id': 998877}, 'text': '/scorecard'}}),
+            data=json.dumps({'message': {'chat': {'id': 998877, 'type': 'private'}, 'from': {'id': 998877}, 'text': '/scorecard'}}),
             content_type='application/json',
             **headers
         )
@@ -2083,7 +2099,7 @@ class TelegramBotExecutiveTests(TestCase):
         mock_api.reset_mock()
         resp_cmd_cd = self.client.post(
             url,
-            data=json.dumps({'message': {'chat': {'id': 998877}, 'text': 'culiacan'}}),
+            data=json.dumps({'message': {'chat': {'id': 998877, 'type': 'private'}, 'from': {'id': 998877}, 'text': 'culiacan'}}),
             content_type='application/json',
             **headers
         )
@@ -2306,8 +2322,9 @@ class TelegramBotExecutiveTests(TestCase):
                 data=json.dumps({
                     'callback_query': {
                         'id': f'cb_{prefijo}',
+                        'from': {'id': 998877},
                         'data': prefijo,
-                        'message': {'chat': {'id': 998877}, 'message_id': 100}
+                        'message': {'chat': {'id': 998877, 'type': 'private'}, 'message_id': 100}
                     }
                 }),
                 content_type='application/json',
@@ -2408,6 +2425,276 @@ class TelegramBotExecutiveTests(TestCase):
         TelegramService.notificar_plaza_cubierta(self.proceso)
         self.assertTrue(mock_api.called)
 
+
+class SLAReportingTelegramRegressionTests(TestCase):
+    def setUp(self):
+        self.asesora = User.objects.create_user(username='asesora_regresion')
+        self.gerente = User.objects.create_user(username='gerente_regresion')
+        self.asesora.groups.add(Group.objects.get_or_create(name='Asesoras')[0])
+        self.gerente.groups.add(Group.objects.get_or_create(name='Gerentes de Capital Humano')[0])
+        self.catalogo = CatalogoPuesto.objects.create(nombre='Puesto regresion', dias_meta=10)
+        self.agencia = Agencia.objects.create(nombre='Agencia regresion')
+        self.puesto = Puesto.objects.create(
+            titulo=self.catalogo, agencia=self.agencia.nombre, ciudad='CUL',
+            asesora_encargada=self.asesora, dias_meta=10,
+            fecha_solicitud=timezone.now() - timezone.timedelta(days=30),
+        )
+
+    def test_sla_inicia_al_registrar_y_conserva_fecha_fisica(self):
+        self.assertLess(self.puesto.fecha_solicitud, self.puesto.fecha_inicio_sla_original)
+        self.assertEqual(self.puesto.dias_transcurridos, 0)
+        Puesto.objects.filter(pk=self.puesto.pk).update(fecha_registro_sla=None)
+        self.puesto.refresh_from_db()
+        self.assertEqual(self.puesto.fecha_inicio_sla_original, self.puesto.fecha_solicitud)
+
+    def test_reinicio_solo_abierta_vencida_y_autoridad_distinta(self):
+        url = reverse('reiniciar_vacante', args=[self.puesto.id])
+        self.client.force_login(self.gerente)
+        self.client.post(url, {'comentario': 'Excepción'})
+        self.puesto.refresh_from_db()
+        self.assertEqual(self.puesto.numero_reinicios, 0)
+        Puesto.objects.filter(pk=self.puesto.pk).update(
+            fecha_registro_sla=timezone.now() - timezone.timedelta(days=12)
+        )
+        self.client.post(url, {'comentario': 'Excepción'})
+        self.puesto.refresh_from_db()
+        self.assertEqual(self.puesto.numero_reinicios, 1)
+        self.assertEqual(self.puesto.estatus_sla, 'EN_TIEMPO')
+        self.assertGreater(self.puesto.dias_transcurridos_total, self.puesto.dias_meta)
+
+        self.gerente.is_superuser = True
+        self.gerente.save()
+        self.puesto.asesora_encargada = self.gerente
+        self.puesto.fecha_inicio_sla_custom = timezone.now() - timezone.timedelta(days=12)
+        self.puesto.save()
+        self.assertEqual(self.client.post(url, {'comentario': 'Autoaprobación'}).status_code, 403)
+
+    def test_meta_catalogo_y_excepcion_gerencial_con_motivo(self):
+        datos = {
+            'titulo': self.catalogo.pk, 'agencia': self.agencia.pk, 'ciudad': 'CUL',
+            'cantidad_vacantes': 1, 'motivo_requisicion': 'ROT', 'sueldo_base': 100,
+            'dias_meta': 99,
+        }
+        form = SolicitudPuestoForm(datos, usuario=self.asesora)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['dias_meta'], 10)
+        form = SolicitudPuestoForm(datos, usuario=self.gerente)
+        self.assertFalse(form.is_valid())
+        self.assertIn('motivo_meta_sla', form.errors)
+        form = SolicitudPuestoForm({**datos, 'motivo_meta_sla': 'Excepción autorizada'}, usuario=self.gerente)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['dias_meta'], 99)
+
+    def test_etapas_secuenciales_y_correccion_con_motivo(self):
+        candidato = Candidato.objects.create(nombres='Prueba', apellidos='Flujo', email='flujo@example.test')
+        proceso = Proceso.objects.create(puesto=self.puesto, candidato=candidato, asesora_asignada=self.asesora)
+        url = reverse('detalle_proceso', args=[proceso.pk])
+        self.client.force_login(self.asesora)
+        resp = self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'CONTRATADO'})
+        self.assertEqual(resp.status_code, 403)
+        self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'CONTACTO'})
+        proceso.refresh_from_db()
+        self.assertEqual(proceso.estatus_proceso, 'CONTACTO')
+        self.client.force_login(self.gerente)
+        self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'NUEVO'})
+        proceso.refresh_from_db()
+        self.assertEqual(proceso.estatus_proceso, 'CONTACTO')
+        self.client.post(url, {'action': 'actualizar_estatus', 'estatus_proceso': 'NUEVO', 'motivo_correccion': 'Error de captura'})
+        proceso.refresh_from_db()
+        self.assertEqual(proceso.estatus_proceso, 'NUEVO')
+        self.assertTrue(RegistroActividad.objects.filter(id_objeto=proceso.id, detalles__contains='Error de captura').exists())
+
+    def test_bono_terna_aprobada_y_sla_original(self):
+        self.client.force_login(self.asesora)
+        for i in range(3):
+            candidato = Candidato.objects.create(nombres=f'C{i}', apellidos='Bono', email=f'bono{i}@example.test')
+            proceso = Proceso.objects.create(
+                puesto=self.puesto, candidato=candidato, asesora_asignada=self.asesora,
+                estatus_proceso=Proceso.Estatus.REF,
+            )
+            self.client.post(reverse('detalle_proceso', args=[proceso.id]), {
+                'action': 'actualizar_estatus', 'estatus_proceso': 'ENT_JF',
+                'resultado_integridad': 'APROBADO', 'resultado_pyxoom': 'OPTIMO' if i < 2 else 'BAJO',
+            })
+        self.assertFalse(self.puesto.cumplio_meta_bono)
+        proceso = Proceso.objects.get(candidato__email='bono2@example.test')
+        proceso.estatus_proceso = Proceso.Estatus.REF
+        proceso.save()
+        self.client.post(reverse('detalle_proceso', args=[proceso.id]), {
+            'action': 'actualizar_estatus', 'estatus_proceso': 'ENT_JF',
+            'resultado_integridad': 'APROBADO', 'resultado_pyxoom': 'IDEAL',
+        })
+        self.assertTrue(self.puesto.cumplio_meta_bono)
+        Puesto.objects.filter(pk=self.puesto.pk).update(
+            fecha_registro_sla=timezone.now() - timezone.timedelta(days=20),
+            fecha_inicio_sla_custom=timezone.now(),
+        )
+        self.puesto.refresh_from_db()
+        self.assertFalse(self.puesto.cumplio_meta_bono)
+        Puesto.objects.filter(pk=self.puesto.pk).update(fecha_registro_sla=None)
+        self.puesto.refresh_from_db()
+        self.assertIsNone(self.puesto.cumplio_meta_bono)
+
+    def test_cobertura_despues_de_reinicio_no_borra_incumplimiento_original(self):
+        self.puesto.fecha_registro_sla = timezone.now() - timezone.timedelta(days=20)
+        self.puesto.fecha_inicio_sla_custom = timezone.now()
+        self.puesto.esta_abierto = False
+        self.puesto.save()
+        candidato = Candidato.objects.create(nombres='Tarde', apellidos='Ingreso', email='tarde2@example.test')
+        Proceso.objects.create(puesto=self.puesto, candidato=candidato, estatus_proceso='CONTRATADO')
+        self.assertEqual(self.puesto.dias_transcurridos, 0)
+        self.assertFalse(self.puesto.cumplio_meta_bono)
+
+    def test_excel_detalle_muestra_sla_original_y_bono_indeterminado(self):
+        from .services import ReportesService
+        Puesto.objects.filter(pk=self.puesto.pk).update(fecha_registro_sla=None)
+        libro = openpyxl.load_workbook(ReportesService.generar_excel_auditoria_bono({}, self.gerente))
+        filas = list(libro['Detalle Vacantes y SLA'].values)
+        encabezados = filas[3]
+        fila = next(fila for fila in filas[4:] if fila[0] == self.puesto.pk)
+        self.assertEqual(fila[encabezados.index('Origen SLA Original')], 'Fecha de solicitud aproximada')
+        self.assertEqual(fila[encabezados.index('Bono')], 'Indeterminado')
+
+    def test_reportes_no_doble_cuentan_y_muestran_historial_indeterminado(self):
+        from .services import ReportesService
+        self.puesto.cantidad_vacantes = 3
+        self.puesto.esta_abierto = False
+        self.puesto.estatus_autorizacion = Puesto.EstatusAutorizacion.RECHAZADO
+        self.puesto.save()
+        candidato = Candidato.objects.create(nombres='R', apellidos='Reporte', email='reporte@example.test')
+        Proceso.objects.create(puesto=self.puesto, candidato=candidato, estatus_proceso=Proceso.Estatus.CONTRATADO)
+        otro = Puesto.objects.create(titulo=self.catalogo, agencia=self.agencia.nombre, ciudad='CUL', cantidad_vacantes=2)
+        kpis = ReportesService.compute_kpis([self.puesto, otro])
+        self.assertEqual(kpis['total_plazas_canceladas'], 2)
+        self.assertEqual(kpis['total_plazas_pendientes'], 2)
+        self.assertEqual(ReportesService.compute_asesoras_scorecard([self.puesto])[0]['plazas_pendientes'], 0)
+        self.assertEqual(ReportesService.compute_agencias_scorecard([self.puesto, otro])[0]['plazas_pendientes'], 2)
+        excel = openpyxl.load_workbook(ReportesService.generar_excel_resumen_ejecutivo({}, self.gerente))
+        filas = {fila[0]: fila for fila in excel['Resumen Ejecutivo'].values if fila[0]}
+        self.assertEqual(filas['4. Plazas Pendientes Canceladas'][1], 2)
+        self.assertEqual(filas['5. PLAZAS PENDIENTES'][1], 2)
+
+    def test_porcentaje_no_duplica_evaluaciones_reprobadas(self):
+        from .services import ReportesService
+        candidato = Candidato.objects.create(nombres='R', apellidos='Pruebas', email='pruebas@example.test')
+        Proceso.objects.create(
+            puesto=self.puesto, candidato=candidato, resultado_integridad='NO_APROBADO',
+            resultado_pyxoom='REPROBADO',
+        )
+        diagnostico = ReportesService.compute_alertas_y_diagnosticos([self.puesto], [], self.gerente)
+        insight = next(i for i in diagnostico['insights'] if i['titulo'] == 'Filtros de Integridad y Psicometría')
+        self.assertEqual(insight['badge'], '100.0% con resultado no aprobado')
+
+    def test_sabana_filtra_antes_de_limitar(self):
+        from .services import ReportesService
+        RegistroActividad.objects.create(usuario=self.gerente, tipo_objeto='Puesto', id_objeto=self.puesto.pk, accion='Movimiento buscado')
+        otro_catalogo = CatalogoPuesto.objects.create(nombre='Otro puesto')
+        otro = Puesto.objects.create(titulo=otro_catalogo, agencia=self.agencia.nombre, ciudad='CUL')
+        RegistroActividad.objects.bulk_create([
+            RegistroActividad(usuario=self.gerente, tipo_objeto='Puesto', id_objeto=otro.pk, accion='Otro movimiento')
+            for _ in range(3001)
+        ])
+        buffer = ReportesService.generar_excel_sabana_historica({'puesto': str(self.catalogo.pk)}, self.gerente)
+        hoja = openpyxl.load_workbook(buffer).active
+        self.assertIn('Movimiento buscado', [fila[3] for fila in list(hoja.values)[5:]])
+
+    def test_formulario_no_crea_agencias_arbitrarias(self):
+        datos = {
+            'titulo': self.catalogo.pk, 'agencia': 'Agencia inexistente', 'ciudad': 'CUL',
+            'cantidad_vacantes': 1, 'motivo_requisicion': 'ROT', 'sueldo_base': 100,
+        }
+        form = SolicitudPuestoForm(datos, usuario=self.asesora)
+        self.assertFalse(form.is_valid())
+        self.assertFalse(Agencia.objects.filter(nombre='Agencia inexistente').exists())
+
+    def test_fecha_fisica_no_puede_ser_futura(self):
+        datos = {
+            'titulo': self.catalogo.pk, 'agencia': self.agencia.pk, 'ciudad': 'CUL',
+            'cantidad_vacantes': 1, 'motivo_requisicion': 'ROT', 'sueldo_base': 100,
+            'fecha_solicitud': (timezone.localtime() + timezone.timedelta(days=1)).strftime('%Y-%m-%dT%H:%M'),
+        }
+        form = SolicitudPuestoForm(datos, usuario=self.asesora)
+        self.assertFalse(form.is_valid())
+        self.assertIn('fecha_solicitud', form.errors)
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='secret-test')
+    @patch('reclutamiento.telegram_service.TelegramService.enviar_mensaje')
+    def test_webhook_exige_secreto_y_chat_privado(self, enviar):
+        url = reverse('telegram_webhook')
+        payload = {'message': {'chat': {'id': 42, 'type': 'group'}, 'from': {'id': 42}, 'text': '/start'}}
+        self.assertEqual(self.client.post(url, json.dumps(payload), content_type='application/json').status_code, 403)
+        self.assertEqual(self.client.post(url, json.dumps(payload), content_type='application/json',
+                                          HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='secret-test').status_code, 403)
+        enviar.assert_not_called()
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='')
+    def test_webhook_sin_secreto_configurado_rechaza_peticiones(self):
+        response = self.client.post(reverse('telegram_webhook'), '{}', content_type='application/json')
+        self.assertEqual(response.status_code, 403)
+
+    def test_gerente_no_puede_vincular_ni_desvincular_otra_cuenta(self):
+        otra = User.objects.create_superuser(username='otra_gerencia', password='password123')
+        self.client.force_login(self.gerente)
+        for action in ('generar_token_telegram', 'desvincular_telegram'):
+            response = self.client.post(reverse('panel_administracion'), {'action': action, 'user_id': otra.pk})
+            self.assertEqual(response.status_code, 403)
+
+    def test_telegram_token_expira_y_rol_se_revalida(self):
+        from .telegram_service import TelegramService
+        token, _ = TelegramService.generar_token_vinculacion(self.gerente)
+        perfil = self.gerente.perfilusuario
+        perfil.telegram_token_creado = timezone.now() - timezone.timedelta(minutes=16)
+        perfil.save()
+        self.assertFalse(TelegramService.vincular_usuario_por_token(token, 42)[0])
+        token, _ = TelegramService.generar_token_vinculacion(self.gerente)
+        self.assertTrue(TelegramService.vincular_usuario_por_token(token, 42)[0])
+        self.assertEqual(TelegramService.obtener_usuario_por_chat_id(42), self.gerente)
+        self.gerente.groups.clear()
+        self.assertIsNone(TelegramService.obtener_usuario_por_chat_id(42))
+
+    @override_settings(TELEGRAM_BOT_TOKEN='test-token-long')
+    @patch('reclutamiento.telegram_service.TelegramService.enviar_mensaje', return_value={'ok': True})
+    def test_pulse_usa_usuario_autorizado(self, enviar):
+        self.gerente.perfilusuario.telegram_chat_id = '42'
+        self.gerente.perfilusuario.save()
+        self.asesora.perfilusuario.telegram_chat_id = '43'
+        self.asesora.perfilusuario.save()
+        call_command('telegram_pulse_matutino', '--force', stdout=StringIO())
+        self.assertEqual(enviar.call_count, 1)
+        self.assertEqual(enviar.call_args.args[0], '42')
+        self.assertIn('<b>1</b> requisiciones', enviar.call_args.args[1])
+
+    @override_settings(TELEGRAM_BOT_TOKEN='test-token-long')
+    @patch('reclutamiento.telegram_service.TelegramService.enviar_documento_excel', return_value={'ok': False})
+    @patch('reclutamiento.telegram_service.TelegramService.enviar_mensaje', return_value={'ok': True})
+    def test_flash_excel_con_datos_y_fallo_parcial_visible(self, enviar, documento):
+        from django.core.management.base import CommandError
+        self.gerente.perfilusuario.telegram_chat_id = '42'
+        self.gerente.perfilusuario.save()
+        salida = StringIO()
+        with self.assertRaises(CommandError):
+            call_command('telegram_flash_semanal', '--force', stdout=salida)
+        self.assertIn('<b>1</b> requisiciones', enviar.call_args.args[1])
+        libro = openpyxl.load_workbook(documento.call_args.args[1])
+        filas = {fila[0]: fila for fila in libro['Resumen Ejecutivo'].values if fila[0]}
+        self.assertEqual(filas['1. Requisiciones Recibidas (Vacantes)'][1], 1)
+        self.assertIn('Envío incompleto', salida.getvalue())
+
+    @override_settings(TELEGRAM_BOT_TOKEN='test-token-long')
+    @patch('reclutamiento.telegram_service.TelegramService.enviar_mensaje', return_value={'ok': True})
+    def test_alerta_plaza_parcial_y_destinatario_revocado(self, enviar):
+        from .telegram_service import TelegramService
+        self.gerente.perfilusuario.telegram_chat_id = '42'
+        self.gerente.perfilusuario.save()
+        self.asesora.perfilusuario.telegram_chat_id = '43'
+        self.asesora.perfilusuario.save()
+        self.puesto.cantidad_vacantes = 2
+        self.puesto.save()
+        candidato = Candidato.objects.create(nombres='A', apellidos='Ingreso', email='ingreso@example.test')
+        proceso = Proceso.objects.create(puesto=self.puesto, candidato=candidato, estatus_proceso='CONTRATADO')
+        TelegramService.notificar_plaza_cubierta(proceso)
+        self.assertEqual(enviar.call_count, 1)
+        self.assertIn('continúa abierta: quedan 1 plazas', enviar.call_args.args[1])
 
 
 

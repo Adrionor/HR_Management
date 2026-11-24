@@ -217,7 +217,7 @@ class ReportesService:
         
         total_plazas_solicitadas = sum(p.cantidad_vacantes for p in puestos)
         total_plazas_cubiertas = sum(p.plazas_cubiertas for p in puestos)
-        total_plazas_canceladas = sum(p.cantidad_vacantes for p in canceladas)
+        total_plazas_canceladas = sum(p.plazas_pendientes for p in canceladas)
         
         # Cuadre matemático: Solicitadas - Cubiertas - Canceladas
         total_plazas_pendientes = max(0, total_plazas_solicitadas - total_plazas_cubiertas - total_plazas_canceladas)
@@ -230,6 +230,7 @@ class ReportesService:
         
         # Auditoría de bono y reinicios
         vacantes_cumplio_bono = sum(1 for p in puestos if p.cumplio_meta_bono)
+        vacantes_bono_indeterminado = sum(1 for p in puestos if p.cumplio_meta_bono is None)
         vacantes_con_reinicios = sum(1 for p in puestos if p.numero_reinicios > 0)
         total_reinicios = sum(p.numero_reinicios for p in puestos)
         
@@ -237,7 +238,7 @@ class ReportesService:
             ((len(en_tiempo) + len(por_vencer)) / total_activas * 100), 1
         ) if total_activas > 0 else 0.0
         
-        tiempos = [p.dias_transcurridos for p in puestos]
+        tiempos = [p.dias_transcurridos_total for p in cubiertas if p.esta_completamente_cubierta]
         promedio_dias_cobertura = round(sum(tiempos) / len(tiempos), 1) if tiempos else 0
         
         # Pipeline de candidatos
@@ -282,6 +283,7 @@ class ReportesService:
             'plazas_por_vencer_pendientes': plazas_por_vencer_pendientes,
             'plazas_en_tiempo_pendientes': plazas_en_tiempo_pendientes,
             'vacantes_cumplio_bono': vacantes_cumplio_bono,
+            'vacantes_bono_indeterminado': vacantes_bono_indeterminado,
             'vacantes_con_reinicios': vacantes_con_reinicios,
             'total_reinicios': total_reinicios,
             'cumplimiento_sla': cumplimiento_sla,
@@ -311,6 +313,7 @@ class ReportesService:
             'plazas_por_vencer_pendientes': 0,
             'plazas_en_tiempo_pendientes': 0,
             'vacantes_cumplio_bono': 0,
+            'vacantes_bono_indeterminado': 0,
             'vacantes_con_reinicios': 0,
             'total_reinicios': 0,
             'cumplimiento_sla': 0.0,
@@ -418,8 +421,8 @@ class ReportesService:
             else:
                 if p.estatus_autorizacion == 'RECHAZADO':
                     entry['canceladas'] += 1
-                    entry['plazas_canceladas'] += p.cantidad_vacantes
-                else:
+                    entry['plazas_canceladas'] += p.plazas_pendientes
+                elif p.estatus_autorizacion != p.EstatusAutorizacion.RECHAZADO:
                     entry['cubiertas'] += 1
                     
         scorecard = []
@@ -478,6 +481,7 @@ class ReportesService:
                     'reiniciadas': 0,
                     'total_reinicios': 0,
                     'bono_cumplido': 0,
+                    'bono_indeterminado': 0,
                     'plazas_solicitadas': 0,
                     'plazas_cubiertas': 0,
                     'plazas_pendientes': 0,
@@ -504,13 +508,15 @@ class ReportesService:
             
             if p.cumplio_meta_bono:
                 entry['bono_cumplido'] += 1
+            elif p.cumplio_meta_bono is None:
+                entry['bono_indeterminado'] += 1
                 
             if p.esta_abierto:
                 entry['activas'] += 1
                 entry['plazas_pendientes'] += p.plazas_pendientes
                 if p.estatus_sla == 'VENCIDA' or p.dias_transcurridos > p.dias_meta:
                     entry['vencidas'] += 1
-            else:
+            elif p.estatus_autorizacion != p.EstatusAutorizacion.RECHAZADO:
                 entry['cubiertas'] += 1
                 
             for pr in p.procesos.all():
@@ -575,13 +581,14 @@ class ReportesService:
                 'activas': data['activas'],
                 'cubiertas': data['cubiertas'],
                 'bono_cumplido': data['bono_cumplido'],
-                'bono_pct': round((data['bono_cumplido'] / data['total_asignadas'] * 100), 1) if data['total_asignadas'] > 0 else 0.0,
+                'bono_indeterminado': data['bono_indeterminado'],
+                'bono_pct': round((data['bono_cumplido'] / (data['total_asignadas'] - data['bono_indeterminado']) * 100), 1) if data['total_asignadas'] > data['bono_indeterminado'] else None,
                 'vencidas': data['vencidas'],
                 'reiniciadas': data['reiniciadas'],
                 'total_reinicios': data['total_reinicios'],
                 'plazas_solicitadas': data['plazas_solicitadas'],
                 'plazas_cubiertas': data['plazas_cubiertas'],
-                'plazas_pendientes': max(0, data['plazas_solicitadas'] - data['plazas_cubiertas']),
+                'plazas_pendientes': data['plazas_pendientes'],
                 'integridad_aprobados': data['integridad_aprobados'],
                 'integridad_reprobados': data['integridad_reprobados'],
                 'pyxoom_aprobados': data['pyxoom_aprobados'],
@@ -617,7 +624,7 @@ class ReportesService:
                 desglose_dict[key] = {
                     'marca': marca, 'agencia': agencia, 'ciudad': ciudad, 'puesto': puesto_nom,
                     'total_vacantes': 0, 'activas': 0, 'cubiertas': 0, 'canceladas': 0,
-                    'solicitadas': 0, 'cubiertas_plazas': 0, 'vencidas': 0,
+                    'solicitadas': 0, 'cubiertas_plazas': 0, 'plazas_canceladas': 0, 'vencidas': 0,
                     'listos_ingreso': 0, 'en_proceso': 0
                 }
             entry = desglose_dict[key]
@@ -637,12 +644,13 @@ class ReportesService:
             else:
                 if p.estatus_autorizacion == 'RECHAZADO':
                     entry['canceladas'] += 1
+                    entry['plazas_canceladas'] += p.plazas_pendientes
                 else:
                     entry['cubiertas'] += 1
                     
         resultado = []
         for key, d in sorted(desglose_dict.items(), key=lambda x: (x[1]['agencia'], x[1]['puesto'])):
-            pendientes = max(0, d['solicitadas'] - d['cubiertas_plazas'])
+            pendientes = max(0, d['solicitadas'] - d['cubiertas_plazas'] - d['plazas_canceladas'])
             cobertura_pct = round((d['cubiertas_plazas'] / d['solicitadas'] * 100), 1) if d['solicitadas'] > 0 else 0.0
             resultado.append({
                 'marca': d['marca'],
@@ -670,15 +678,14 @@ class ReportesService:
         resultado = []
         for p in puestos:
             criterio = ""
-            if p.esta_completamente_cubierta:
-                if p.dias_transcurridos <= p.dias_meta:
-                    criterio = "100% Plazas Cubiertas en Tiempo SLA"
-                else:
-                    criterio = "Cubierta con Retraso de SLA"
+            if p.cumplio_meta_bono is True:
+                criterio = "Cumple bono con SLA original"
+            elif p.cumplio_meta_bono is None:
+                criterio = "Bono indeterminado: falta historial verificable"
             elif p.dias_transcurridos <= p.dias_meta:
-                criterio = "En Proceso Activo (En Tiempo SLA)"
+                criterio = "Sin bono acreditado; ciclo vigente en tiempo"
             else:
-                criterio = f"Proceso Retrasado (+{p.dias_transcurridos - p.dias_meta}d sobre SLA)"
+                criterio = f"Sin bono acreditado; ciclo vigente retrasado (+{p.dias_transcurridos - p.dias_meta}d)"
                 
             cand_jefe = 0
             for pr in p.procesos.all():
@@ -698,13 +705,15 @@ class ReportesService:
                 'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
                 'fecha_solicitud': p.fecha_solicitud,
                 'dias_transcurridos': p.dias_transcurridos,
+                'dias_original': p.dias_transcurridos_total,
                 'dias_meta': p.dias_meta,
                 'estatus_sla': p.estatus_sla,
                 'reinicios': p.numero_reinicios,
                 'plazas_solicitadas': p.cantidad_vacantes,
                 'plazas_cubiertas': p.plazas_cubiertas,
                 'candidatos_jefe': cand_jefe,
-                'cumple_bono': p.esta_completamente_cubierta,
+                'cumple_bono': p.cumplio_meta_bono,
+                'sla_historico_aproximado': p.fecha_registro_sla is None,
                 'criterio': criterio,
                 'esta_abierto': p.esta_abierto,
             })
@@ -784,14 +793,14 @@ class ReportesService:
                     'asesora': p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
                 })
                 
-            # Candidatos estancados (>= 7 días en etapa activa)
+            # Candidatos estancados (>= 30 días en etapa activa)
             for pr in activos:
                 es_directora_usr = (usuario is None or usuario.is_superuser or es_gerente_ch(usuario))
                 if not es_directora_usr:
                     if pr.asesora_asignada_id and pr.asesora_asignada_id != usuario.id:
                         continue
                 dias_etapa = pr.dias_en_etapa_actual
-                if dias_etapa >= 7:
+                if dias_etapa >= 30:
                     candidatos_estancados.append({
                         'proceso_id': pr.id,
                         'candidato_nombre': pr.candidato.nombre_completo,
@@ -841,7 +850,7 @@ class ReportesService:
                 'texto': f"Se detectaron {vencidas_n} vacante(s) con SLA vencido y {sin_cand_n} con pipeline desierto (sin candidatos en proceso).",
                 'accion': "Priorizar asignación y revisión de cartera en las vacantes con mayor atraso.",
             })
-        else:
+        elif any(p.esta_abierto for p in lista_puestos):
             insights.append({
                 'titulo': 'Flujo de Vacantes Saludable',
                 'tipo': 'exito',
@@ -877,7 +886,7 @@ class ReportesService:
                     'texto': "Registras vacante(s) vencidas o requerimientos con atraso de SLA en el periodo actual.",
                     'accion': "Priorizar la gestión de tus vacantes con mayor antigüedad y agilizar el avance de candidatos.",
                 })
-        else:
+        elif asesoras_scorecard:
             if es_directora_diag:
                 insights.append({
                     'titulo': 'Equipo de Asesoras Equilibrado',
@@ -895,16 +904,22 @@ class ReportesService:
                     'accion': "Continuar con el avance habitual de candidatos.",
                 })
             
-        total_evaluados = sum(a['total_candidatos'] for a in asesoras_scorecard)
-        total_reprob_integ = sum(a['integridad_reprobados'] for a in asesoras_scorecard)
-        total_reprob_pyx = sum(a['pyxoom_reprobados'] for a in asesoras_scorecard)
-        if total_evaluados > 0:
-            pct_descarte = round(((total_reprob_integ + total_reprob_pyx) / total_evaluados) * 100, 1)
+        procesos_evaluados = [
+            pr for p in lista_puestos for pr in p.procesos.all()
+            if pr.resultado_integridad or pr.resultado_pyxoom
+        ]
+        if procesos_evaluados:
+            rechazados = sum(
+                1 for pr in procesos_evaluados
+                if pr.resultado_integridad == Proceso.ResultadoIntegridad.NO_APROBADO
+                or pr.resultado_pyxoom in (Proceso.ResultadoPyxoom.REPROBADO, Proceso.ResultadoPyxoom.BAJO)
+            )
+            pct_descarte = round(rechazados / len(procesos_evaluados) * 100, 1)
             insights.append({
                 'titulo': 'Filtros de Integridad y Psicometría',
                 'tipo': 'info',
-                'badge': f"{pct_descarte}% descarte técnico",
-                'texto': f"De {total_evaluados} candidatos evaluados, {total_reprob_integ} reprobaron Integridad y {total_reprob_pyx} Psicometría Pyxoom.",
+                'badge': f"{pct_descarte}% con resultado no aprobado",
+                'texto': f"{rechazados} de {len(procesos_evaluados)} procesos con al menos una evaluación registran un resultado no aprobado.",
                 'accion': "Calibrar fuentes de atracción para mejorar el índice de aprobación preliminar.",
             })
             
@@ -933,7 +948,7 @@ class ReportesService:
         return list(qs[:limit])
 
     @staticmethod
-    def generate_reporte_data(usuario, filtros, use_cache=True):
+    def generate_reporte_data(usuario, filtros, use_cache=False):
         """Genera los datos consolidados y semáforos de reporte de RH"""
         cache_key = ReportesService.get_cache_key(usuario.id, filtros)
         
@@ -1090,7 +1105,7 @@ class ReportesService:
         # Banner de Título
         ws1.append(["PREMIER AUTOMOTRIZ — GESTIÓN DE TALENTO HUMANO"])
         ws1.append(["REPORTE 1: RESUMEN EJECUTIVO DE VACANTES Y COBERTURA POR PERIODO"])
-        rango_str = f"Periodo: {fecha_desde_str or 'Histórico'} al {fecha_hasta_str or timezone.now().strftime('%Y-%m-%d')} | Fecha emisión: {timezone.now().strftime('%d/%m/%Y %H:%M')}"
+        rango_str = f"Cohorte por fecha de solicitud: {fecha_desde_str or 'Histórico'} al {fecha_hasta_str or timezone.localdate().strftime('%Y-%m-%d')} | Estados actuales, no fotografía histórica"
         ws1.append([rango_str])
         ws1.append([])
         
@@ -1110,8 +1125,8 @@ class ReportesService:
         
         canc_puestos_p = [p for p in puestos_periodo if p.estatus_autorizacion == 'RECHAZADO']
         canc_puestos_a = [p for p in puestos_acum if p.estatus_autorizacion == 'RECHAZADO']
-        canc_plazas_p = sum(p.cantidad_vacantes for p in canc_puestos_p)
-        canc_plazas_a = sum(p.cantidad_vacantes for p in canc_puestos_a)
+        canc_plazas_p = sum(p.plazas_pendientes for p in canc_puestos_p)
+        canc_plazas_a = sum(p.plazas_pendientes for p in canc_puestos_a)
         
         # Cuadre matemático: Pendientes = Solicitadas - Cubiertas - Canceladas
         pend_plazas_p = max(0, plazas_sol_p - ingresos_p - canc_plazas_p)
@@ -1138,17 +1153,17 @@ class ReportesService:
         data_balance = [
             ("1. Requisiciones Recibidas (Vacantes)", req_p, req_a, "Total de solicitudes capturadas por RH"),
             ("2. Plazas Solicitadas Totales", plazas_sol_p, plazas_sol_a, "Total de plazas autorizadas requeridas"),
-            ("3. Ingresos / Plazas Cubiertas", ingresos_p, ingresos_a, "Candidatos contratados que cerraron plaza"),
-            ("4. Requisiciones / Plazas Canceladas", canc_plazas_p, canc_plazas_a, "Vacantes rechazadas o suspendidas"),
-            ("5. VACANTES PENDIENTES REALES", pend_plazas_p, pend_plazas_a, "CUADRE EXACTO: Solicitadas - Cubiertas - Canceladas"),
+            ("3. Plazas Cubiertas Actuales", ingresos_p, ingresos_a, "Cobertura actual de las requisiciones de la cohorte"),
+            ("4. Plazas Pendientes Canceladas", canc_plazas_p, canc_plazas_a, "Plazas no cubiertas de requisiciones canceladas"),
+            ("5. PLAZAS PENDIENTES", pend_plazas_p, pend_plazas_a, "Solicitadas - Cubiertas - Canceladas"),
             ("6. Vacantes Abiertas Vencidas (SLA)", vencidas_p, vencidas_a, "Vacantes activas con días transcurridos > meta"),
-            ("7. Porcentaje Cumplimiento SLA", f"{cumpl_p}%", f"{cumpl_a}%", "% de vacantes abiertas en tiempo"),
+            ("7. Porcentaje Cumplimiento SLA", f"{cumpl_p}%" if activas_p else "Sin datos", f"{cumpl_a}%" if activas_a else "Sin datos", "% de vacantes abiertas en tiempo"),
         ]
         
         for titulo, vp, va, regla in data_balance:
             ws1.append([titulo, vp, va, regla])
             r = ws1.max_row
-            is_highlight = "VACANTES PENDIENTES" in titulo
+            is_highlight = "PLAZAS PENDIENTES" in titulo
             for c_idx in range(1, 5):
                 cell = ws1.cell(row=r, column=c_idx)
                 cell.border = BORDER_THIN
@@ -1267,7 +1282,7 @@ class ReportesService:
             if p in puestos_periodo:
                 entry['req_periodo'] += 1
             if p.estatus_autorizacion == 'RECHAZADO':
-                entry['canceladas'] += p.cantidad_vacantes
+                entry['canceladas'] += p.plazas_pendientes
             if p.esta_abierto:
                 if p.dias_transcurridos > p.dias_meta or p.estatus_sla == 'VENCIDA':
                     entry['vencidas'] += 1
@@ -1395,9 +1410,10 @@ class ReportesService:
         
         headers_ws2 = [
             "ID Vacante", "Asesora Encargada", "Puesto", "Marca", "Agencia", "Ciudad",
-            "Fecha Solicitud", "Días Transcurridos", "Días Meta SLA", "Estatus SLA",
+            "Fecha Solicitud", "Días Ciclo Vigente", "Días Meta SLA", "Estatus SLA",
             "Ciclo SLA / Reinicios", "Plazas Solicitadas", "Plazas Cubiertas",
-            "Cand. Enviados a Jefe", "Detalle de Seguimiento"
+            "Cand. Enviados a Jefe", "Detalle de Seguimiento", "Días SLA Original",
+            "Origen SLA Original", "Bono"
         ]
         ws2.append(headers_ws2)
         r_h2 = ws2.max_row
@@ -1408,18 +1424,10 @@ class ReportesService:
             cell.alignment = ALIGN_CENTER if c_i in [1, 7, 8, 9, 10, 11, 12, 13, 14] else ALIGN_LEFT
             cell.border = BORDER_THIN
             
+        detalles = {d['id']: d for d in ReportesService.compute_detalle_vacantes_bono(puestos)}
         for p in puestos:
+            detalle = detalles[p.id]
             cand_jefe = sum(1 for pr in p.procesos.all() if pr.estatus_proceso in ['ENT_JF', 'CONF_JF', 'MEDICO', 'DOCS', 'INGRESO_PROG', 'ALTA_ADMIN', 'CONTRATADO'])
-            if p.esta_completamente_cubierta:
-                if p.dias_transcurridos <= p.dias_meta:
-                    criterio = "100% Plazas Cubiertas en Tiempo SLA"
-                else:
-                    criterio = "Cubierta con Retraso de SLA"
-            elif p.dias_transcurridos <= p.dias_meta:
-                criterio = "En Proceso Activo (En Tiempo SLA)"
-            else:
-                criterio = f"Proceso Retrasado (+{p.dias_transcurridos - p.dias_meta}d sobre SLA)"
-                
             ws2.append([
                 p.id,
                 p.asesora_encargada.get_full_name() or p.asesora_encargada.username if p.asesora_encargada else "Sin Asignar",
@@ -1435,10 +1443,13 @@ class ReportesService:
                 p.cantidad_vacantes,
                 p.plazas_cubiertas,
                 cand_jefe,
-                criterio
+                detalle['criterio'],
+                detalle['dias_original'],
+                "Fecha de solicitud aproximada" if detalle['sla_historico_aproximado'] else "Registro",
+                "Indeterminado" if detalle['cumple_bono'] is None else ("Cumple" if detalle['cumple_bono'] else "No acreditado"),
             ])
             r = ws2.max_row
-            for c_i in range(1, 16):
+            for c_i in range(1, len(headers_ws2) + 1):
                 cell = ws2.cell(row=r, column=c_i)
                 cell.border = BORDER_THIN
                 cell.font = FONT_REGULAR
@@ -1485,7 +1496,19 @@ class ReportesService:
         if fecha_hasta_str:
             qs_act = qs_act.filter(fecha_hora__date__lte=fecha_hasta_str)
             
-        registros = list(qs_act[:3000])  # límite prudente de seguridad
+        filtros_dimensiones = {k: v for k, v in filtros.items() if k not in ('fecha_desde', 'fecha_hasta')}
+        if any(filtros_dimensiones.values()):
+            puestos_filtrados = ReportesService.apply_filters(
+                ReportesService.get_base_queryset(usuario), filtros_dimensiones, usuario=usuario
+            )
+            procesos_filtrados = Proceso.objects.filter(puesto__in=puestos_filtrados).values('id')
+            qs_act = qs_act.filter(
+                Q(tipo_objeto='Puesto', id_objeto__in=puestos_filtrados.values('id'))
+                | Q(tipo_objeto='Proceso', id_objeto__in=procesos_filtrados)
+            )
+        registros = list(qs_act[:3001])
+        truncado = len(registros) > 3000
+        registros = registros[:3000]
         
         # Identificar IDs de procesos y puestos
         proc_ids = [r.id_objeto for r in registros if r.tipo_objeto == 'Proceso' and r.id_objeto]
@@ -1512,7 +1535,9 @@ class ReportesService:
         
         ws.append(["PREMIER AUTOMOTRIZ — GESTIÓN DE TALENTO HUMANO"])
         ws.append(["REPORTE 3: SÁBANA HISTÓRICA DE MOVIMIENTOS Y AUDITORÍA DE PROCESOS"])
-        rango_str = f"Filtros: Periodo {fecha_desde_str or 'Histórico'} al {fecha_hasta_str or 'Hoy'} | Asesora: {asesora_f or 'Todas'} | Agencia: {agencia_f or 'Todas'}"
+        rango_str = f"Filtros: Periodo {fecha_desde_str or 'Histórico'} al {fecha_hasta_str or 'Hoy'} | Dimensiones y etapas actuales"
+        if truncado:
+            rango_str += " | Solo se muestran los 3000 movimientos más recientes"
         ws.append([rango_str])
         ws.append([])
         ws["A1"].font = FONT_TITLE
@@ -1522,7 +1547,7 @@ class ReportesService:
         headers = [
             "ID Movimiento", "Fecha y Hora Exacta", "Usuario Responsable", "Acción Realizada",
             "Tipo Registro", "Candidato", "Puesto / Vacante", "Marca", "Agencia", "Ciudad",
-            "Asesora Encargada", "Etapa / Estatus", "Días en Etapa", "Detalles y Observaciones"
+            "Asesora Actual", "Etapa / Estatus Actual", "Días en Etapa Actual", "Detalles y Observaciones"
         ]
         ws.append(headers)
         r_h = ws.max_row
@@ -1572,18 +1597,6 @@ class ReportesService:
                 marca_nom = puesto_ref.marca.nombre if puesto_ref.marca else "Sin Marca"
                 agencia_nom = puesto_ref.agencia or "Sin Agencia"
                 ciudad_nom = puesto_ref.get_ciudad_display() if puesto_ref.ciudad else "N/A"
-                
-            # Aplicar filtros específicos de Agencia, Asesora y Puesto
-            if agencia_f and agencia_f not in agencia_nom.lower():
-                continue
-            if asesora_f and asesora_f.isdigit():
-                aid = int(asesora_f)
-                usuario_mismo = (r.usuario_id == aid)
-                asesora_misma = (asesora_ref_id == aid)
-                if not (usuario_mismo or asesora_misma):
-                    continue
-            if puesto_f and puesto_f not in puesto_nom.lower():
-                continue
                 
             user_nom = r.usuario.get_full_name() or r.usuario.username if r.usuario else "Sistema"
             

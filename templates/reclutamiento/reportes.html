@@ -678,7 +678,7 @@
                 <svg class="sap-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
             </div>
             <div>
-                <div class="rh-warning-num" style="color: {% if cumplimiento_sla >= 85 %}var(--sap-success-text){% elif cumplimiento_sla >= 70 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">{{ cumplimiento_sla }}%</div>
+                <div class="rh-warning-num" style="color: {% if cumplimiento_sla >= 85 %}var(--sap-success-text){% elif cumplimiento_sla >= 70 %}var(--sap-warning-text){% else %}var(--sap-error-text){% endif %};">{% if total_activas %}{{ cumplimiento_sla }}%{% else %}Sin datos{% endif %}</div>
                 <div class="rh-warning-label">Cumplimiento SLA a Tiempo</div>
             </div>
         </div>
@@ -1003,7 +1003,8 @@
             <div class="sap-card-header">
                 <div>
                     <h3 class="sap-card-title">Auditoría Individual de Vacantes y Cumplimiento SLA (Hoja 2)</h3>
-                    <div style="font-size: 0.775rem; color: var(--sap-muted);">Verificación estricta de días transcurridos vs días meta y candidatos enviados por puesto</div>
+                    <div style="font-size: 0.775rem; color: var(--sap-muted);">Días del ciclo vigente; el bono se evalúa con el SLA original. Los registros anteriores a esta versión usan la fecha de solicitud como aproximación y pueden tener bono indeterminado.</div>
+                    {% if vacantes_bono_indeterminado %}<div style="font-size: 0.775rem; color: var(--sap-warning-text);">{{ vacantes_bono_indeterminado }} vacante(s) requieren revisión manual de bono.</div>{% endif %}
                 </div>
             </div>
             <div class="sap-card-body">
@@ -1030,6 +1031,7 @@
                                         {{ vac.puesto }}
                                     </a>
                                     <div class="rh-table-subtext">{{ vac.marca }} &bull; #{{ vac.id }}</div>
+                                    {% if vac.sla_historico_aproximado %}<div class="rh-table-subtext">SLA original aproximado</div>{% endif %}
                                 </td>
                                 <td>
                                     <div>{{ vac.agencia }}</div>
@@ -1038,6 +1040,7 @@
                                 <td>{{ vac.asesora }}</td>
                                 <td style="text-align: center;" class="tabular-nums">
                                     <span style="font-weight: 700;">{{ vac.dias_transcurridos }}</span> / {{ vac.dias_meta }}d
+                                    <div class="rh-table-subtext">Original: {{ vac.dias_original }} / {{ vac.dias_meta }}d</div>
                                     {% if vac.dias_transcurridos > vac.dias_meta %}
                                         <div style="font-size: 0.75rem; color: var(--sap-error-text); font-weight: 600;">Vencida</div>
                                     {% else %}
@@ -1360,7 +1363,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 2rem; color: var(--sap-muted);">No hay candidatos estancados mayores a 7 días.</td>
+                                    <td colspan="5" style="text-align: center; padding: 2rem; color: var(--sap-muted);">No hay candidatos estancados con 30 días o más.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

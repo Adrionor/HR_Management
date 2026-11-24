@@ -14,9 +14,8 @@ Se han implementado mejoras significativas en el módulo de reportes (`/reportes
    - Reutilización de componentes lógicos
 
 2. **Optimización de Performance**
-   - Implementación de caché (15 minutos) para resultados de reportes
+   - La caché de reportes es opcional; la vista recalcula por defecto para evitar cifras obsoletas
    - Queries optimizados con `select_related` y `prefetch_related`
-   - Eliminación de consultas N+1
    - Cálculos de KPIs optimizados
 
 3. **Paginación Implementada**
@@ -57,7 +56,7 @@ CACHES = {
 }
 ```
 
-Para producción, se recomienda usar Redis o Memcached (configuración incluida como comentario).
+La vista de reportes no usa caché por defecto. Si se habilita expresamente, debe utilizarse una caché compartida y una estrategia de invalidación.
 
 ### 📊 Métricas Disponibles
 
@@ -80,10 +79,18 @@ python reclutamiento/test_services.py
 
 ### 📈 Performance Mejoras
 
-- **Tiempo de carga**: Reducido ~60% mediante caché
-- **Queries**: Optimizados de ~50 a ~15 consultas típicas
 - **Memoria**: Paginación reduce carga en datasets grandes
 - **Escalabilidad**: Arquitectura preparada para crecimiento
+
+### SLA, bono y Telegram
+
+- Las vacantes nuevas inician el SLA al registrarse; la fecha de requisición física se conserva por separado. La meta proviene del catálogo; gerencia puede indicar una excepción con motivo.
+- Solo gerencia distinta de la responsable puede reiniciar una vacante abierta y vencida, con motivo y hasta dos veces. El bono usa el SLA original, no el ciclo reiniciado.
+- El bono requiere cobertura completa dentro del SLA original o tres candidatos distintos enviados al jefe dentro de ese plazo, con Integridad aprobada y Pyxoom Óptimo o Ideal al momento del envío.
+- Las vacantes anteriores a esta versión usan la fecha de solicitud como aproximación del inicio original. Cuando no existe evidencia suficiente para la terna, el bono queda indeterminado y requiere revisión manual; no debe utilizarse como resultado definitivo de nómina.
+- El Excel ejecutivo agrupa por fecha de solicitud y muestra estados actuales; no es una fotografía histórica ni un reporte de ingresos por fecha de contratación.
+- Para activar Telegram, configure `TELEGRAM_WEBHOOK_SECRET` con un valor secreto compatible con Telegram y vuelva a registrar el webhook con `python manage.py telegram_setup_webhook`. Sin secreto, el endpoint rechaza las solicitudes. Cada gerente debe generar su propio enlace, que dura 15 minutos y solo funciona en chat privado; los enlaces anteriores deben regenerarse.
+- Ejecute las migraciones antes de desplegar estas funciones. Las vacantes existentes no reciben una fecha de registro inventada.
 
 ## 🛠️ Instalación y Configuración
 

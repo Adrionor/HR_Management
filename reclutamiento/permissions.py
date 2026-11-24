@@ -149,7 +149,7 @@ def puede_reiniciar_sla(user, puesto):
     if not es_gerente_ch(user):
         return False
     # La persona autorizadora no puede ser la misma persona responsable de la vacante
-    if puesto.asesora_encargada_id == user.id and not user.is_superuser:
+    if puesto.asesora_encargada_id == user.id:
         return False
     return True
 

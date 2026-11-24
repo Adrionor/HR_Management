@@ -1,7 +1,8 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from reclutamiento.models import PerfilUsuario
 from reclutamiento.telegram_service import TelegramService
+from reclutamiento.permissions import es_gerente_ch
 
 
 class Command(BaseCommand):
@@ -22,7 +23,7 @@ class Command(BaseCommand):
             return
 
         # Por defecto, enviar de lunes a viernes (weekday 0 a 4)
-        hoy = timezone.now()
+        hoy = timezone.localtime()
         if hoy.weekday() >= 5 and not options.get('force'):
             self.stdout.write(self.style.NOTICE("Fin de semana: Pulse omitido (usa --force para ignorar)."))
             return
@@ -38,13 +39,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("No hay directivos con Telegram vinculado y recibir_pulse_matutino=True."))
             return
 
-        texto = TelegramService.generar_resumen_ejecutivo_texto()
         teclado = TelegramService.obtener_teclado_ejecutivo()
 
         enviados = 0
         fallidos = 0
 
         for perfil in destinatarios:
+            if not perfil.telegram_chat_id.isdigit() or not es_gerente_ch(perfil.usuario):
+                continue
+            texto = TelegramService.generar_resumen_ejecutivo_texto(perfil.usuario)
             res = TelegramService.enviar_mensaje(perfil.telegram_chat_id, texto, reply_markup=teclado)
             if res.get('ok'):
                 enviados += 1
@@ -54,3 +57,5 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"✗ Error al enviar a {perfil.usuario.username}: {res.get('description')}"))
 
         self.stdout.write(self.style.SUCCESS(f"Pulse Matutino concluido: {enviados} enviados, {fallidos} fallidos."))
+        if fallidos:
+            raise CommandError(f"El Pulse no se entregó a {fallidos} destinatario(s).")
