@@ -39,10 +39,8 @@ class Command(BaseCommand):
 
         texto_resumen = TelegramService.generar_resumen_ejecutivo_texto()
         texto_semanal = (
-            f"📊 <b>FLASH EJECUTIVO SEMANAL • PREMIER CAPITAL HUMANO</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"{texto_resumen}\n"
-            f"📎 <i>A continuación se adjunta el libro de Excel oficial con el detalle por agencia y asesoras.</i>"
+            f"📅 <b>FLASH SEMANAL • PREMIER CAPITAL HUMANO</b>\n\n"
+            f"{texto_resumen}"
         )
         teclado = TelegramService.obtener_teclado_ejecutivo()
 

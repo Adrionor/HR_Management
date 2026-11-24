@@ -99,6 +99,33 @@ class TelegramService:
         return resp
 
     @classmethod
+    def editar_mensaje(cls, chat_id, message_id, texto_html, reply_markup=None):
+        """Edita un mensaje existente en su sitio para evitar saturar el chat de Telegram."""
+        if not chat_id or not message_id:
+            return cls.enviar_mensaje(chat_id, texto_html, reply_markup=reply_markup)
+
+        import json
+        payload = {
+            'chat_id': str(chat_id),
+            'message_id': int(message_id),
+            'text': texto_html,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
+        if reply_markup is not None:
+            payload['reply_markup'] = json.dumps(reply_markup)
+
+        resp = cls.api_call('editMessageText', data=payload)
+        # Si Telegram rechaza la edición (ej. contenido idéntico o mensaje no encontrado), manejar limpiamente
+        if not resp.get('ok'):
+            desc = resp.get('description', '').lower()
+            if 'message is not modified' in desc:
+                return {'ok': True, 'description': 'No modificado.'}
+            # Fallback seguro: enviar como mensaje nuevo
+            return cls.enviar_mensaje(chat_id, texto_html, reply_markup=reply_markup)
+        return resp
+
+    @classmethod
     def enviar_documento_excel(cls, chat_id, buffer_bytes, nombre_archivo="Reporte_Ejecutivo_RH.xlsx", caption=None):
         """Envía un archivo Excel (.xlsx) generado en memoria al chat de Telegram."""
         if not chat_id or not buffer_bytes:
@@ -233,18 +260,16 @@ class TelegramService:
     @classmethod
     def generar_resumen_ejecutivo_texto(cls, usuario=None):
         """
-        Snapshot completo de métricas operativas y estado de SLAs para Dirección.
+        Snapshot ejecutivo de métricas clave con mínima carga cognitiva.
         Utiliza ReportesService para máxima consistencia con el dashboard web.
         """
         from .services import ReportesService
-        from .models import Puesto, Proceso
+        from .models import Proceso
 
-        # Si el usuario es directivo, ve la visión global corporativa
         qs_puestos = ReportesService.get_base_queryset(usuario)
         lista_puestos = list(qs_puestos)
         kpis = ReportesService.compute_kpis(lista_puestos)
 
-        # Conteo de contrataciones en el mes actual
         ahora = timezone.now()
         mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         contrataciones_mes = Proceso.objects.filter(
@@ -252,7 +277,6 @@ class TelegramService:
             fecha_inicio_etapa__gte=mes_inicio
         ).count()
 
-        # Candidatos detenidos (+7 días sin avance)
         limite_7d = ahora - timedelta(days=7)
         terminales = [
             Proceso.Estatus.CONTRATADO,
@@ -264,52 +288,72 @@ class TelegramService:
             fecha_inicio_etapa__lte=limite_7d
         ).exclude(estatus_proceso__in=terminales).count()
 
-        fecha_str = ahora.strftime("%d/%b/%Y • %H:%M hrs")
+        fecha_str = ahora.strftime("%d/%b • %H:%M hrs")
+        total = kpis.get('total_abiertas', 0)
+        en_tiempo = kpis.get('en_tiempo_total', 0)
+        en_riesgo = kpis.get('en_riesgo_total', 0)
+        vencidas = kpis.get('vencidas_total', 0)
+        tiempo_prom = kpis.get('tiempo_promedio_cobertura', 0)
+        sin_cand = kpis.get('puestos_sin_candidatos', 0)
 
         msg = (
-            f"🏢 <b>PREMIER AUTOMOTRIZ • CAPITAL HUMANO</b>\n"
-            f"<i>Resumen Ejecutivo • {fecha_str}</i>\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"<b>📊 ESTATUS GLOBAL DE VACANTES:</b>\n"
-            f"• Total Abiertas: <b>{kpis.get('total_abiertas', 0)}</b> plazas\n"
-            f"• 🟢 En Tiempo: <b>{kpis.get('en_tiempo_total', 0)}</b>\n"
-            f"• 🟡 En Riesgo (SLA próximo): <b>{kpis.get('en_riesgo_total', 0)}</b>\n"
-            f"• 🔴 Vencidas SLA: <b>{kpis.get('vencidas_total', 0)}</b>\n\n"
-            f"<b>⏱️ VELOCIDAD DE COBERTURA:</b>\n"
-            f"• Promedio Real: <b>{kpis.get('tiempo_promedio_cobertura', 0):.1f} días</b> (Meta: 20d)\n"
-            f"• 🎉 Contrataciones este mes: <b>{contrataciones_mes}</b> ingresos\n\n"
-            f"<b>⚠️ ALERTAS OPERATIVAS:</b>\n"
-            f"• Candidatos estancados (+7d): <b>{estancados_count}</b> en proceso\n"
-            f"• Vacantes sin candidatos: <b>{kpis.get('puestos_sin_candidatos', 0)}</b> plazas\n"
+            f"📊 <b>Resumen Ejecutivo • Capital Humano</b>\n"
+            f"<i>Corte: {fecha_str}</i>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"<b>ESTATUS GLOBAL DE VACANTES:</b> <b>{total}</b> plazas\n"
+            f"🟢 {en_tiempo} en tiempo │ 🟡 {en_riesgo} en riesgo │ 🔴 {vencidas} vencidas\n\n"
+            f"⚡ <b>Velocidad:</b> {tiempo_prom:.1f}d promedio (Meta: ≤20d)\n"
+            f"🎉 <b>Ingresos del mes:</b> <b>{contrataciones_mes}</b> contratados\n"
+            f"⚠️ <b>Atención:</b> {estancados_count} detenidos (+7d) • {sin_cand} sin candidatos\n\n"
+            f"<i>💡 Usa los botones abajo para filtrar por Ciudad, Asesora o Agencia.</i>"
         )
         return msg
 
     @classmethod
     def generar_vacantes_agencias_texto(cls, usuario=None):
-        """Desglose de plazas abiertas organizadas por agencia y ciudad."""
+        """Desglose de plazas abiertas agrupadas por Ciudad y Agencia."""
         from .services import ReportesService
-        qs = ReportesService.get_base_queryset(usuario).filter(esta_abierto=True)
-        agencias_scorecard = ReportesService.compute_agencias_scorecard(list(qs))
+        from .models import Puesto
 
-        if not agencias_scorecard:
-            return "🏢 <b>VACANTES POR AGENCIA</b>\n\nActualmente no hay vacantes abiertas en el grupo."
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO'
+        ).select_related('marca')
 
-        msg = "🏢 <b>VACANTES ABIERTAS POR AGENCIA</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        for item in sorted(agencias_scorecard, key=lambda x: x.get('total_abiertas', 0), reverse=True)[:15]:
-            nombre = item.get('agencia', 'Sin Agencia')
-            abiertas = item.get('total_abiertas', 0)
-            vencidas = item.get('vencidas_sla', 0)
-            marca = item.get('marca', '')
+        if not qs.exists():
+            return "🏢 <b>VACANTES ABIERTAS POR AGENCIA</b>\n\nActualmente no hay vacantes abiertas en el grupo."
 
-            marca_tag = f"[{marca}] " if marca else ""
-            alerta_txt = f" (🔴 {vencidas} vencidas)" if vencidas > 0 else " (🟢 OK)"
-            msg += f"• <b>{marca_tag}{nombre}:</b> <b>{abiertas}</b> plazas{alerta_txt}\n"
+        dict_ciudades = dict(Puesto.CIUDADES_CHOICES)
 
+        # Agrupar por ciudad -> agencias
+        ciudades_map = {}
+        for p in qs:
+            cd_nombre = dict_ciudades.get(p.ciudad, p.ciudad) or 'Otras Plazas'
+            agencia = p.agencia or 'Sin Agencia'
+            if cd_nombre not in ciudades_map:
+                ciudades_map[cd_nombre] = {'total': 0, 'agencias': {}}
+            ciudades_map[cd_nombre]['total'] += p.cantidad_vacantes
+
+            if agencia not in ciudades_map[cd_nombre]['agencias']:
+                ciudades_map[cd_nombre]['agencias'][agencia] = {'total': 0, 'vencidas': 0}
+            ciudades_map[cd_nombre]['agencias'][agencia]['total'] += p.cantidad_vacantes
+            if p.dias_transcurridos > (p.dias_meta or 20):
+                ciudades_map[cd_nombre]['agencias'][agencia]['vencidas'] += p.cantidad_vacantes
+
+        msg = "🏢 <b>VACANTES ABIERTAS POR AGENCIA Y CIUDAD</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        for cd, data in sorted(ciudades_map.items(), key=lambda x: x[1]['total'], reverse=True):
+            msg += f"📍 <b>{cd.upper()} ({data['total']} plazas):</b>\n"
+            for ag, ag_info in sorted(data['agencias'].items(), key=lambda x: x[1]['total'], reverse=True)[:6]:
+                alerta = f" (🔴 {ag_info['vencidas']} venc.)" if ag_info['vencidas'] > 0 else ""
+                msg += f" • {ag}: <b>{ag_info['total']}</b>{alerta}\n"
+            msg += "\n"
+
+        msg += "<i>💡 Toca «🔍 Filtrar» para consultar una ciudad o agencia específica.</i>"
         return msg
 
     @classmethod
     def generar_alertas_sla_texto(cls, usuario=None):
-        """Detalle prioritario de vacantes vencidas o a punto de vencer."""
+        """Detalle prioritario de vacantes críticas vencidas o próximas a vencer (SLA)."""
         from .services import ReportesService
         qs = ReportesService.get_base_queryset(usuario).filter(
             esta_abierto=True,
@@ -324,49 +368,57 @@ class TelegramService:
             meta = p.dias_meta or 20
             diff = meta - dias
 
+            asesora_nom = (
+                p.asesora_encargada.first_name or p.asesora_encargada.username
+                if p.asesora_encargada else 'Sin asignar'
+            )
+            titulo_nom = p.titulo.nombre if p.titulo else 'Puesto'
+            agencia_nom = p.agencia or 'General'
+
             info = {
-                'titulo': p.titulo.nombre if p.titulo else 'Puesto',
-                'agencia': p.agencia or 'General',
+                'titulo': titulo_nom,
+                'agencia': agencia_nom,
                 'dias': dias,
                 'meta': meta,
-                'asesora': p.asesora_encargada.get_full_name() if p.asesora_encargada else (p.asesora_encargada.username if p.asesora_encargada else 'Sin asignar')
+                'asesora': asesora_nom,
+                'exceso': abs(diff),
+                'restantes': diff
             }
 
             if diff < 0:
-                info['exceso'] = abs(diff)
                 vencidas.append(info)
             elif diff <= 4:
-                info['restantes'] = diff
                 en_riesgo.append(info)
+
+        vencidas.sort(key=lambda x: x['exceso'], reverse=True)
+        en_riesgo.sort(key=lambda x: x['restantes'])
 
         msg = "⏱️ <b>MONITOREO DE TIEMPOS DE COBERTURA (SLA)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
         if vencidas:
-            msg += "<b>🔴 VACANTES VENCIDAS SLA:</b>\n"
+            msg += f"🔴 <b>VACANTES VENCIDAS SLA ({len(vencidas)} plazas):</b>\n"
             for v in vencidas[:10]:
-                msg += (
-                    f"• <b>{v['titulo']}</b> ({v['agencia']})\n"
-                    f"   ↳ {v['dias']}d transcurridos (+{v['exceso']}d de meta {v['meta']}d) | 👤 {v['asesora']}\n"
-                )
+                msg += f"• <b>{v['titulo']}</b> ({v['agencia']}) │ <b>+{v['exceso']}d</b> ({v['dias']}/{v['meta']}d) • 👤 {v['asesora']}\n"
+            if len(vencidas) > 10:
+                msg += f"<i>...y {len(vencidas) - 10} más (usa Filtros para ver por Asesora).</i>\n"
             msg += "\n"
         else:
-            msg += "🟢 <b>No hay vacantes vencidas en el grupo.</b>\n\n"
+            msg += "🟢 <b>0 vacantes vencidas en el grupo.</b>\n\n"
 
         if en_riesgo:
-            msg += "<b>🟡 EN RIESGO DE VENCIMIENTO (≤ 4 días):</b>\n"
-            for r in en_riesgo[:10]:
-                msg += (
-                    f"• <b>{r['titulo']}</b> ({r['agencia']})\n"
-                    f"   ↳ {r['dias']}d de {r['meta']}d ({r['restantes']}d restantes) | 👤 {r['asesora']}\n"
-                )
+            msg += f"🟡 <b>EN RIESGO CRÍTICO (≤4d restantes - {len(en_riesgo)} plazas):</b>\n"
+            for r in en_riesgo[:8]:
+                msg += f"• <b>{r['titulo']}</b> ({r['agencia']}) │ <b>{r['restantes']}d rest.</b> ({r['dias']}/{r['meta']}d) • 👤 {r['asesora']}\n"
+            if len(en_riesgo) > 8:
+                msg += f"<i>...y {len(en_riesgo) - 8} más.</i>\n"
         else:
-            msg += "🟢 <b>No hay vacantes en semáforo amarillo próximo.</b>\n"
+            msg += "🟢 <b>0 vacantes en semáforo amarillo próximo.</b>\n"
 
         return msg
 
     @classmethod
     def generar_estancados_texto(cls, usuario=None):
-        """Reporte de cuellos de botella: candidatos con >7 días en la misma etapa."""
+        """Candidatos con más de 7 días sin avance en etapa, agrupados por Asesora."""
         from .models import Proceso
         ahora = timezone.now()
         limite_7d = ahora - timedelta(days=7)
@@ -383,49 +435,316 @@ class TelegramService:
             estatus_proceso__in=terminales
         ).select_related(
             'candidato', 'puesto', 'puesto__titulo', 'asesora_asignada'
-        ).order_by('fecha_inicio_etapa')[:12]
+        ).order_by('fecha_inicio_etapa')
 
-        if not estancados:
-            return "⚠️ <b>PROCESOS ESTANCADOS</b>\n\n🟢 Excelente: No hay candidatos con más de 7 días detenidos en la misma etapa."
+        total_estancados = estancados.count()
+        if total_estancados == 0:
+            return "⚠️ <b>PROCESOS ESTANCADOS</b>\n\n🟢 ¡Excelente! No hay candidatos con más de 7 días detenidos en la misma etapa."
 
-        msg = "⚠️ <b>CANDIDATOS ESTANCADOS (> 7 DÍAS EN ETAPA)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        for proc in estancados:
+        # Agrupar por asesora
+        asesoras_map = {}
+        for proc in estancados[:18]:
             dias = (ahora - proc.fecha_inicio_etapa).days
-            nombre_cand = proc.candidato.nombre_completo if proc.candidato else "Candidato"
-            puesto_nombre = proc.puesto.titulo.nombre if (proc.puesto and proc.puesto.titulo) else "Vacante"
-            agencia = proc.puesto.agencia if proc.puesto else "General"
-            etapa = proc.get_estatus_proceso_display()
-            asesora = proc.asesora_asignada.first_name if proc.asesora_asignada else "Sin asignar"
-
-            msg += (
-                f"• <b>{nombre_cand}</b> → {puesto_nombre} ({agencia})\n"
-                f"   ↳ Etapa: <i>{etapa}</i> (<b>{dias} días detenidos</b>) | 👤 {asesora}\n"
+            asesora_nom = (
+                proc.asesora_asignada.first_name or proc.asesora_asignada.username
+                if proc.asesora_asignada else "Sin asignar"
             )
+            cand_nom = proc.candidato.nombre_completo if proc.candidato else "Candidato"
+            puesto_nom = proc.puesto.titulo.nombre if (proc.puesto and proc.puesto.titulo) else "Vacante"
+            agencia_nom = proc.puesto.agencia if proc.puesto else "General"
+            etapa_nom = proc.get_estatus_proceso_display()
+
+            if asesora_nom not in asesoras_map:
+                asesoras_map[asesora_nom] = []
+            asesoras_map[asesora_nom].append({
+                'cand': cand_nom,
+                'puesto': puesto_nom,
+                'agencia': agencia_nom,
+                'dias': dias,
+                'etapa': etapa_nom
+            })
+
+        msg = (
+            f"⚠️ <b>PROCESOS ESTANCADOS (+7 DÍAS EN ETAPA)</b>\n"
+            f"<b>{total_estancados} candidatos</b> requieren seguimiento urgente\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+        for asesora, lista in asesoras_map.items():
+            msg += f"👤 <b>{asesora} ({len(lista)}):</b>\n"
+            for item in lista:
+                msg += f" • <b>{item['cand']}</b> (<b>{item['dias']}d</b>) • {item['etapa']}\n   ↳ {item['puesto']} ({item['agencia']})\n"
+            msg += "\n"
 
         return msg
 
     @classmethod
     def generar_contrataciones_mes_texto(cls, usuario=None):
-        """Lista de ingresos exitosos concretados en el mes en curso."""
+        """Lista compacta de ingresos exitosos del mes en curso."""
         from .models import Proceso
         ahora = timezone.now()
         mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        nombre_mes = ahora.strftime('%B').upper()
 
         contratados = Proceso.objects.filter(
             estatus_proceso=Proceso.Estatus.CONTRATADO,
             fecha_inicio_etapa__gte=mes_inicio
-        ).select_related('candidato', 'puesto', 'puesto__titulo', 'asesora_asignada').order_by('-fecha_inicio_etapa')[:15]
+        ).select_related('candidato', 'puesto', 'puesto__titulo', 'asesora_asignada').order_by('-fecha_inicio_etapa')
 
-        if not contratados:
-            return f"🎉 <b>CONTRATACIONES DE {ahora.strftime('%B').upper()}</b>\n\nAún no se registran contrataciones en lo que va del mes."
+        total = contratados.count()
+        if total == 0:
+            return f"🎉 <b>CONTRATACIONES DE {nombre_mes}</b>\n\nAún no se registran contrataciones en lo que va del mes."
 
-        msg = f"🎉 <b>CONTRATACIONES CONCRETADAS EN {ahora.strftime('%B').upper()} ({len(contratados)} total)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        for c in contratados:
+        msg = (
+            f"🎉 <b>CONTRATACIONES DE {nombre_mes}</b>\n"
+            f"<b>{total} ingresos concretados</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+        for c in contratados[:15]:
             cand = c.candidato.nombre_completo if c.candidato else "Colaborador"
             puesto = c.puesto.titulo.nombre if (c.puesto and c.puesto.titulo) else "Puesto"
             agencia = c.puesto.agencia if c.puesto else "Agencia"
-            fecha_ingreso = c.fecha_inicio_etapa.strftime("%d/%m")
-            msg += f"• <b>{cand}</b> ({fecha_ingreso})\n   ↳ <i>{puesto}</i> • {agencia}\n"
+            fecha_ingreso = c.fecha_inicio_etapa.strftime("%d/%b")
+            msg += f"• <b>{cand}</b> ({fecha_ingreso}) │ {puesto} • {agencia}\n"
+
+        return msg
+
+    # -------------------------------------------------------------------------
+    # 3.1 FICHAS EJECUTIVAS FILTRADAS POR DIMENSIÓN (CIUDAD / ASESORA / AGENCIA)
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def generar_ficha_ciudad_texto(cls, ciudad_query, usuario=None):
+        """Ficha ejecutiva condensada para una ciudad específica."""
+        from .services import ReportesService
+        from .models import Puesto
+
+        dict_ciudades = dict(Puesto.CIUDADES_CHOICES)
+        cd_code = None
+        cd_nombre = None
+        q_norm = str(ciudad_query).strip().lower()
+
+        for code, name in Puesto.CIUDADES_CHOICES:
+            if code.lower() == q_norm or name.lower() == q_norm or q_norm in name.lower():
+                cd_code = code
+                cd_nombre = name
+                break
+
+        if not cd_code:
+            cd_code = ciudad_query.upper()
+            cd_nombre = dict_ciudades.get(cd_code, cd_code)
+
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO',
+            ciudad=cd_code
+        ).select_related('titulo', 'marca', 'asesora_encargada')
+
+        total = qs.count()
+        if total == 0:
+            return f"📍 <b>FICHA DE CIUDAD: {cd_nombre.upper()}</b>\n\n🟢 0 vacantes abiertas en esta plaza."
+
+        en_tiempo = 0
+        en_riesgo = 0
+        vencidas = 0
+        agencias = {}
+        asesoras = set()
+        alertas = []
+
+        for p in qs:
+            dias = p.dias_transcurridos
+            meta = p.dias_meta or 20
+            diff = meta - dias
+
+            ag = p.agencia or "Sin Agencia"
+            if ag not in agencias:
+                agencias[ag] = {'total': 0, 'vencidas': 0}
+            agencias[ag]['total'] += p.cantidad_vacantes
+
+            if p.asesora_encargada:
+                asesoras.add(p.asesora_encargada.first_name or p.asesora_encargada.username)
+
+            if diff < 0:
+                vencidas += p.cantidad_vacantes
+                agencias[ag]['vencidas'] += p.cantidad_vacantes
+                alertas.append({
+                    'titulo': p.titulo.nombre if p.titulo else 'Puesto',
+                    'ag': ag,
+                    'dias': dias,
+                    'meta': meta,
+                    'exceso': abs(diff),
+                    'asesora': p.asesora_encargada.first_name if p.asesora_encargada else 'Sin asignar'
+                })
+            elif diff <= 4:
+                en_riesgo += p.cantidad_vacantes
+            else:
+                en_tiempo += p.cantidad_vacantes
+
+        msg = (
+            f"📍 <b>FICHA DE CIUDAD: {cd_nombre.upper()}</b>\n"
+            f"<b>{total} vacantes abiertas</b> │ 🟢 {en_tiempo} │ 🟡 {en_riesgo} │ 🔴 {vencidas}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🏢 <b>Agencias en la plaza:</b>\n"
+        )
+        for ag, ag_info in sorted(agencias.items(), key=lambda x: x[1]['total'], reverse=True):
+            alerta = f" (🔴 {ag_info['vencidas']} venc.)" if ag_info['vencidas'] > 0 else ""
+            msg += f" • {ag}: <b>{ag_info['total']}</b> plazas{alerta}\n"
+
+        if asesoras:
+            msg += f"\n👤 <b>Asesoras a cargo:</b> {', '.join(sorted(asesoras))}\n"
+
+        if alertas:
+            msg += f"\n🔴 <b>Alertas Críticas (>20d SLA):</b>\n"
+            for a in alertas[:5]:
+                msg += f" • <b>{a['titulo']}</b> ({a['ag']}) │ <b>+{a['exceso']}d</b> • 👤 {a['asesora']}\n"
+
+        return msg
+
+    @classmethod
+    def generar_scorecard_asesora_texto(cls, asesora_id_or_name, usuario=None):
+        """Scorecard de productividad y SLAs para una asesora de atracción de talento."""
+        from .services import ReportesService
+        from .models import Proceso
+        from django.contrib.auth.models import User
+
+        asesora = None
+        if str(asesora_id_or_name).isdigit():
+            asesora = User.objects.filter(id=int(asesora_id_or_name)).first()
+        else:
+            q_norm = str(asesora_id_or_name).strip()
+            asesora = User.objects.filter(
+                Q(username__icontains=q_norm) |
+                Q(first_name__icontains=q_norm) |
+                Q(last_name__icontains=q_norm)
+            ).first()
+
+        if not asesora:
+            return f"👤 <b>ASESORA DE TALENTO</b>\n\nNo se encontró asesora con el identificador «{asesora_id_or_name}»."
+
+        nombre = asesora.get_full_name() or asesora.username
+
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO',
+            asesora_encargada=asesora
+        ).select_related('titulo', 'marca')
+
+        total = qs.count()
+        ahora = timezone.now()
+        mes_inicio = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        contrataciones = Proceso.objects.filter(
+            asesora_asignada=asesora,
+            estatus_proceso=Proceso.Estatus.CONTRATADO,
+            fecha_inicio_etapa__gte=mes_inicio
+        ).count()
+
+        limite_7d = ahora - timedelta(days=7)
+        terminales = [
+            Proceso.Estatus.CONTRATADO,
+            Proceso.Estatus.DESCARTADO_CH,
+            Proceso.Estatus.NO_PRUEBAS,
+            Proceso.Estatus.ABANDONO,
+        ]
+        estancados = Proceso.objects.filter(
+            asesora_asignada=asesora,
+            fecha_inicio_etapa__lte=limite_7d
+        ).exclude(estatus_proceso__in=terminales).count()
+
+        en_tiempo = 0
+        en_riesgo = 0
+        vencidas = 0
+        dias_totales = 0
+        criticas = []
+
+        for p in qs:
+            dias = p.dias_transcurridos
+            dias_totales += dias
+            meta = p.dias_meta or 20
+            diff = meta - dias
+            if diff < 0:
+                vencidas += p.cantidad_vacantes
+                criticas.append({
+                    'titulo': p.titulo.nombre if p.titulo else 'Puesto',
+                    'ag': p.agencia or 'General',
+                    'exceso': abs(diff),
+                    'dias': dias,
+                    'meta': meta
+                })
+            elif diff <= 4:
+                en_riesgo += p.cantidad_vacantes
+            else:
+                en_tiempo += p.cantidad_vacantes
+
+        promedio = (dias_totales / total) if total > 0 else 0
+
+        msg = (
+            f"👤 <b>SCORECARD: {nombre.upper()}</b>\n"
+            f"<b>{total} vacantes asignadas</b> │ 🟢 {en_tiempo} │ 🟡 {en_riesgo} │ 🔴 {vencidas}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"⚡ <b>SLA Promedio Actual:</b> {promedio:.1f} días\n"
+            f"🎉 <b>Ingresos del mes:</b> {contrataciones} ingresos\n"
+            f"⚠️ <b>Candidatos detenidos (+7d):</b> {estancados}\n"
+        )
+
+        if criticas:
+            msg += f"\n🔴 <b>Vacantes Críticas Vencidas:</b>\n"
+            for c in criticas[:6]:
+                msg += f" • <b>{c['titulo']}</b> ({c['ag']}) │ <b>+{c['exceso']}d</b> ({c['dias']}/{c['meta']}d)\n"
+
+        return msg
+
+    @classmethod
+    def generar_ficha_agencia_texto(cls, agencia_query, usuario=None):
+        """Ficha condensada de vacantes abiertas en una agencia específica."""
+        from .services import ReportesService
+        from .models import Puesto
+
+        q_norm = str(agencia_query).strip()
+        qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO',
+            agencia__icontains=q_norm
+        ).select_related('titulo', 'marca', 'asesora_encargada')
+
+        if not qs.exists():
+            return f"🏢 <b>AGENCIA: {agencia_query.upper()}</b>\n\n🟢 0 vacantes abiertas en esta agencia."
+
+        agencia_real = qs.first().agencia
+        dict_ciudades = dict(Puesto.CIUDADES_CHOICES)
+        ciudad_nombre = dict_ciudades.get(qs.first().ciudad, qs.first().ciudad)
+
+        total = qs.count()
+        en_tiempo = 0
+        en_riesgo = 0
+        vencidas = 0
+        vacantes_list = []
+
+        for p in qs:
+            dias = p.dias_transcurridos
+            meta = p.dias_meta or 20
+            diff = meta - dias
+
+            if diff < 0:
+                vencidas += p.cantidad_vacantes
+                tag = f"🔴 +{abs(diff)}d"
+            elif diff <= 4:
+                en_riesgo += p.cantidad_vacantes
+                tag = f"🟡 {diff}d rest."
+            else:
+                en_tiempo += p.cantidad_vacantes
+                tag = "🟢 OK"
+
+            asesora = p.asesora_encargada.first_name if p.asesora_encargada else "Sin asignar"
+            vacantes_list.append(f" • <b>{p.titulo.nombre if p.titulo else 'Puesto'}</b> │ {tag} • 👤 {asesora}")
+
+        msg = (
+            f"🏢 <b>FICHA AGENCIA: {agencia_real.upper()}</b>\n"
+            f"<i>Plaza: {ciudad_nombre}</i>\n"
+            f"<b>{total} vacantes activas</b> │ 🟢 {en_tiempo} │ 🟡 {en_riesgo} │ 🔴 {vencidas}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📋 <b>Plazas en Proceso:</b>\n"
+        )
+        for line in vacantes_list[:12]:
+            msg += f"{line}\n"
 
         return msg
 
@@ -438,26 +757,176 @@ class TelegramService:
         nombre_archivo = f"Reporte_Ejecutivo_Premier_{fecha_tag}.xlsx"
         return buffer, nombre_archivo
 
+    @classmethod
+    def generar_excel_filtrado_buffer(cls, tipo, valor, usuario=None):
+        """Genera el Excel oficial filtrado específicamente por ciudad, asesora o agencia."""
+        from .services import ReportesService
+        filtros = {}
+        if tipo == 'ciudad':
+            filtros['ciudad'] = str(valor)
+        elif tipo == 'asesora':
+            filtros['asesora'] = str(valor)
+        elif tipo == 'agencia':
+            filtros['agencia'] = str(valor)
+
+        buffer = ReportesService.generar_excel_resumen_ejecutivo(filtros, usuario)
+        fecha_tag = timezone.now().strftime("%Y%m%d_%H%M")
+        nombre_archivo = f"Reporte_{tipo}_{valor}_{fecha_tag}.xlsx"
+        return buffer, nombre_archivo
+
     # -------------------------------------------------------------------------
     # 4. TECLADOS INTERACTIVOS (INLINE KEYBOARDS)
     # -------------------------------------------------------------------------
 
     @classmethod
     def obtener_teclado_ejecutivo(cls):
-        """Teclado inline interactivo con accesos directos de BI."""
+        """Teclado inline interactivo principal con accesos directos y filtros."""
         return {
             'inline_keyboard': [
                 [
                     {'text': '📊 Resumen General', 'callback_data': 'cmd_resumen'},
-                    {'text': '🏢 Por Agencia', 'callback_data': 'cmd_agencias'}
+                    {'text': '⏱️ Alertas SLA', 'callback_data': 'cmd_sla'}
                 ],
                 [
-                    {'text': '⏱️ Alertas SLA', 'callback_data': 'cmd_sla'},
-                    {'text': '⚠️ Estancados', 'callback_data': 'cmd_estancados'}
+                    {'text': '🏢 Por Agencia y Ciudad', 'callback_data': 'cmd_agencias'},
+                    {'text': '🔍 Filtrar por...', 'callback_data': 'flt_menu'}
                 ],
                 [
-                    {'text': '🎉 Contrataciones', 'callback_data': 'cmd_contrataciones'},
-                    {'text': '📥 Descargar Excel', 'callback_data': 'cmd_excel'}
+                    {'text': '⚠️ Estancados', 'callback_data': 'cmd_estancados'},
+                    {'text': '🎉 Contrataciones', 'callback_data': 'cmd_contrataciones'}
+                ],
+                [
+                    {'text': '📥 Descargar Excel Global', 'callback_data': 'cmd_excel'}
+                ]
+            ]
+        }
+
+    @classmethod
+    def obtener_teclado_menu_filtros(cls):
+        """Menú selector de dimensión a filtrar."""
+        return {
+            'inline_keyboard': [
+                [
+                    {'text': '📍 Por Ciudad', 'callback_data': 'flt_tipo:ciudad'},
+                    {'text': '👤 Por Asesora', 'callback_data': 'flt_tipo:asesora'}
+                ],
+                [
+                    {'text': '🏢 Por Agencia', 'callback_data': 'flt_tipo:agencia'}
+                ],
+                [
+                    {'text': '⬅️ Menú Principal', 'callback_data': 'menu_principal'}
+                ]
+            ]
+        }
+
+    @classmethod
+    def obtener_teclado_ciudades(cls, usuario=None):
+        """Genera botones dinámicos con las ciudades que tienen plazas abiertas."""
+        from .services import ReportesService
+        from .models import Puesto
+        from django.db.models import Sum
+
+        dict_ciudades = dict(Puesto.CIUDADES_CHOICES)
+        ciudades_qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO'
+        ).values('ciudad').annotate(total=Sum('cantidad_vacantes')).order_by('-total')
+
+        buttons = []
+        row = []
+        for item in ciudades_qs:
+            code = item['ciudad']
+            total = item['total'] or 1
+            nombre = dict_ciudades.get(code, code)
+            row.append({'text': f"📍 {nombre} ({total})", 'callback_data': f"flt_cd:{code}"})
+            if len(row) == 2:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
+
+        buttons.append([
+            {'text': '⬅️ Volver a Filtros', 'callback_data': 'flt_menu'},
+            {'text': '🏠 Menú', 'callback_data': 'menu_principal'}
+        ])
+        return {'inline_keyboard': buttons}
+
+    @classmethod
+    def obtener_teclado_asesoras(cls, usuario=None):
+        """Genera botones dinámicos con las asesoras que tienen vacantes asignadas."""
+        from .services import ReportesService
+        from django.db.models import Sum
+
+        asesoras_qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO',
+            asesora_encargada__isnull=False
+        ).values(
+            'asesora_encargada__id',
+            'asesora_encargada__first_name',
+            'asesora_encargada__username'
+        ).annotate(total=Sum('cantidad_vacantes')).order_by('-total')
+
+        buttons = []
+        row = []
+        for item in asesoras_qs:
+            u_id = item['asesora_encargada__id']
+            nom = item['asesora_encargada__first_name'] or item['asesora_encargada__username']
+            total = item['total'] or 1
+            row.append({'text': f"👤 {nom} ({total})", 'callback_data': f"flt_as:{u_id}"})
+            if len(row) == 2:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
+
+        buttons.append([
+            {'text': '⬅️ Volver a Filtros', 'callback_data': 'flt_menu'},
+            {'text': '🏠 Menú', 'callback_data': 'menu_principal'}
+        ])
+        return {'inline_keyboard': buttons}
+
+    @classmethod
+    def obtener_teclado_agencias(cls, usuario=None):
+        """Genera botones dinámicos con las agencias con más plazas abiertas."""
+        from .services import ReportesService
+        from django.db.models import Sum
+
+        agencias_qs = ReportesService.get_base_queryset(usuario).filter(
+            esta_abierto=True,
+            estatus_autorizacion='AUTORIZADO'
+        ).values('agencia').annotate(total=Sum('cantidad_vacantes')).order_by('-total')[:10]
+
+        buttons = []
+        row = []
+        for item in agencias_qs:
+            ag = item['agencia']
+            total = item['total'] or 1
+            texto_btn = (ag[:18] + '..') if len(ag) > 20 else ag
+            row.append({'text': f"🏢 {texto_btn} ({total})", 'callback_data': f"flt_ag:{ag[:24]}"})
+            if len(row) == 2:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
+
+        buttons.append([
+            {'text': '⬅️ Volver a Filtros', 'callback_data': 'flt_menu'},
+            {'text': '🏠 Menú', 'callback_data': 'menu_principal'}
+        ])
+        return {'inline_keyboard': buttons}
+
+    @classmethod
+    def obtener_teclado_detalle_filtro(cls, tipo, valor):
+        """Botones de acción al consultar el detalle de una dimensión."""
+        return {
+            'inline_keyboard': [
+                [
+                    {'text': f"📥 Descargar Excel de {tipo.capitalize()}", 'callback_data': f"cmd_excel_filtro:{tipo}:{valor}"}
+                ],
+                [
+                    {'text': '🔄 Cambiar Filtro', 'callback_data': f"flt_tipo:{tipo}"},
+                    {'text': '🏠 Menú Principal', 'callback_data': 'menu_principal'}
                 ]
             ]
         }

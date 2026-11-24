@@ -1991,7 +1991,7 @@ class TelegramBotExecutiveTests(TestCase):
                 'callback_query': {
                     'id': 'cb_test_1',
                     'data': 'cmd_excel',
-                    'message': {'chat': {'id': 998877}}
+                    'message': {'chat': {'id': 998877}, 'message_id': 42}
                 }
             }),
             content_type='application/json',
@@ -1999,6 +1999,102 @@ class TelegramBotExecutiveTests(TestCase):
         )
         self.assertEqual(resp_cb.status_code, 200)
         self.assertTrue(mock_api.called)
+
+        # Flujo de filtros interactivos vía Callback Queries
+        # 1. Menú de filtros
+        mock_api.reset_mock()
+        resp_flt = self.client.post(
+            url,
+            data=json.dumps({
+                'callback_query': {
+                    'id': 'cb_test_flt',
+                    'data': 'flt_menu',
+                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                }
+            }),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp_flt.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+        # 2. Selección de filtro por ciudad
+        mock_api.reset_mock()
+        resp_cd = self.client.post(
+            url,
+            data=json.dumps({
+                'callback_query': {
+                    'id': 'cb_test_cd',
+                    'data': 'flt_tipo:ciudad',
+                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                }
+            }),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp_cd.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+        # 3. Ficha de Culiacán (flt_cd:CUL)
+        mock_api.reset_mock()
+        resp_cul = self.client.post(
+            url,
+            data=json.dumps({
+                'callback_query': {
+                    'id': 'cb_test_cul',
+                    'data': 'flt_cd:CUL',
+                    'message': {'chat': {'id': 998877}, 'message_id': 42}
+                }
+            }),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp_cul.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+        # 4. Comandos de texto parametrizados (/ciudad culiacan y /asesora)
+        mock_api.reset_mock()
+        resp_cmd_cd = self.client.post(
+            url,
+            data=json.dumps({'message': {'chat': {'id': 998877}, 'text': '/ciudad culiacan'}}),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp_cmd_cd.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+        mock_api.reset_mock()
+        resp_cmd_as = self.client.post(
+            url,
+            data=json.dumps({'message': {'chat': {'id': 998877}, 'text': '/asesora'}}),
+            content_type='application/json',
+            **headers
+        )
+        self.assertEqual(resp_cmd_as.status_code, 200)
+        self.assertTrue(mock_api.called)
+
+    def test_fichas_filtradas_por_dimension(self):
+        """Verifica la generación de micro-fichas especializadas por Ciudad, Asesora y Agencia."""
+        from reclutamiento.telegram_service import TelegramService
+
+        # 1. Ficha de Ciudad Culiacán
+        ficha_cd = TelegramService.generar_ficha_ciudad_texto('CUL', self.directora)
+        self.assertIn("FICHA DE CIUDAD: CULIACÁN", ficha_cd)
+        self.assertIn("Toyota Culiacán", ficha_cd)
+
+        # 2. Scorecard de Asesora
+        scorecard_as = TelegramService.generar_scorecard_asesora_texto(self.asesora.id, self.directora)
+        self.assertIn("SCORECARD:", scorecard_as)
+        self.assertIn("vacantes asignadas", scorecard_as)
+
+        # 3. Ficha de Agencia
+        ficha_ag = TelegramService.generar_ficha_agencia_texto('Toyota', self.directora)
+        self.assertIn("FICHA AGENCIA: TOYOTA CULIACÁN", ficha_ag)
+
+        # 4. Excel filtrado
+        buf_flt, fname_flt = TelegramService.generar_excel_filtrado_buffer('ciudad', 'CUL', self.directora)
+        self.assertTrue(fname_flt.endswith('.xlsx'))
+        self.assertGreater(buf_flt.getbuffer().nbytes, 1000)
 
     @override_settings(TELEGRAM_BOT_TOKEN='123456789:ABCDefghIJKlmnoPQRstuvwxYZ')
     @patch('reclutamiento.telegram_service.TelegramService.api_call')
