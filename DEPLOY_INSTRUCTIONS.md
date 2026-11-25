@@ -45,9 +45,9 @@ DJANGO_SETTINGS_MODULE = mi_proyecto.settings
 
 # Database (AWS RDS)
 DB_NAME = recursos_humanos
-DB_USER = postgres
-DB_PASSWORD = GrupoPremier433
-DB_HOST = recursos-humanos.ckgrykmwkt91.us-east-1.rds.amazonaws.com
+DB_USER = tu-usuario-bd
+DB_PASSWORD = tu-password-segura-aqui
+DB_HOST = tu-db-host.rds.amazonaws.com
 DB_PORT = 5432
 
 # Security
